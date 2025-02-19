@@ -1,0 +1,32 @@
+:root {
+  --font-lora: 'Lora', serif;
+}
+
+html,body
+
+{
+  height: 100vh;
+  width: 100vw;
+}
+
+body {
+  font-family: var(--font-lora);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 8px; 
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DBC166; 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e68900;
+}
