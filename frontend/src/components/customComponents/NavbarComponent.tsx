@@ -46,15 +46,22 @@ const NavbarComponent = () => {
                         </Link>
                     </li>
                     <li>
-                        <Link to="/about" className="hover:text-[#DBC166] transition-colors duration-300 cursor-pointer transform hover:scale-105">
+                        <Link
+                            to="/about"
+                            className="text-gray-400 cursor-not-allowed opacity-50 transition-colors duration-300 pointer-events-none"
+                        >
                             About Us
                         </Link>
                     </li>
                     <li>
-                        <Link to="/contact" className="hover:text-[#DBC166] transition-colors duration-300 cursor-pointer transform hover:scale-105">
+                        <Link
+                            to="/contact"
+                            className="text-gray-400 cursor-not-allowed opacity-50 transition-colors duration-300 pointer-events-none"
+                        >
                             Contact
                         </Link>
                     </li>
+
                     <li>
                         <Link to="/affiliated/register" className="hover:text-[#DBC166] transition-colors duration-300 cursor-pointer transform hover:scale-105">
                             Affiliate Register
