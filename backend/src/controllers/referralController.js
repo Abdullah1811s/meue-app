@@ -1,6 +1,5 @@
 import referralModel from "../models/referral.model.js";
-import usersModel from '../models/users.model.js';
-
+import affiliateModel from "../models/affiliate.model.js";
 export const getCurrentUserReferral = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -8,14 +7,14 @@ export const getCurrentUserReferral = async (req, res) => {
             throw new Error("User ID is required");
         }
 
-        const user = await usersModel
+        const user = await affiliateModel
             .findOne({ _id: userId })
             .populate("referralCode");
 
         if (!user)
             throw new Error("User not found");
         const { referralCode } = user;
-        console.log(user);
+     
         res.status(200).json({ referralCode });
 
     } catch (error) {
@@ -24,8 +23,6 @@ export const getCurrentUserReferral = async (req, res) => {
     }
 
 }
-
-
 
 
 export const getReferredByUser = async (req, res) => {

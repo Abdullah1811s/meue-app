@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion } from 'framer-motion';
 import Button from "../components/ui/button";
 import { StatCard } from "../components/customComponents/StatCard";
@@ -11,8 +11,8 @@ import SpinWheel from "../components/customComponents/SpinWheel";
 import { Gift, ShoppingBag, Trophy, Megaphone, DollarSign, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NavbarComponent from "../components/customComponents/NavbarComponent";
-import { RootState } from "../store/store";
 import { useSelector } from "react-redux";
+import Footer from '../components/customComponents/Footer';
 
 // Enhanced animation variants
 const fadeInUp = {
@@ -75,7 +75,7 @@ const scaleUp = {
 };
 
 export default function Home() {
-  const isAuth = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const isAuth = useSelector((state: any) => state.auth.isAuthenticated);
   const navigate = useNavigate();
 
   return (
@@ -84,78 +84,150 @@ export default function Home() {
       <motion.main
         initial="hidden"
         animate="visible"
-        className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-10 w-full max-w-7xl mx-auto"
+        className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-2 w-full max-w-7xl mx-auto"
       >
         <motion.section
-          variants={staggerChildren}
-          className="flex flex-col md:flex-row items-center justify-between w-full gap-8 md:gap-14 px-4 sm:px-6 lg:px-8"
+          initial="hidden"
+          animate="visible"
+          className="py-10 md:py-16"
         >
-          {/* Hero Section */}
-          <motion.div
-            variants={slideIn}
-            className="flex flex-col justify-start max-w-lg text-center md:text-left"
-          >
-            <motion.h1
-              variants={fadeInUp}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-tight"
-            >
-              Join <span className="text-[#DBC166] font-bold">The Menu</span> <br /> Today!
-            </motion.h1>
-            <motion.p
-              variants={fadeInUp}
-              className="mt-4 text-sm sm:text-base md:text-lg text-gray-600"
-            >
-              Unlock exclusive discounts, compete for exciting prizes, and earn rewards through referrals—join The Menu today!
-            </motion.p>
+          <div className="container mx-auto px-4">
             <motion.div
               variants={staggerChildren}
-              className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center md:justify-start"
+              className="flex flex-col lg:flex-row items-center justify-between gap-6"
             >
+              {/* Left Content */}
               <motion.div
-                variants={scaleUp}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                variants={slideIn}
+                className="flex-1 text-center lg:text-left"
               >
-                <Button
-                  text="Get Instant Access for Just R50!"
-                  onClick={() => navigate('Signup')}
-                  className="w-full sm:w-auto md:w-fit bg-[#fbd23f] text-black px-6 h-10 flex items-center justify-center sm:py-5 text-base sm:text-lg md:text-sm lg:text-base text-wrap rounded-full font-medium transition-all duration-300 ease-in-out hover:bg-[#C0B060] hover:shadow-lg"
-                />
-              </motion.div>
-              <motion.div
-                variants={scaleUp}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  onClick={() => navigate('vendorOnBoarding')}
-                  text="Register Now"
-                  className="w-full sm:w-auto whitespace-nowrap bg-transparent border-2 border-gray-800 h-10 flex items-center justify-center text-center rounded-2xl px-6 py-2 text-lg sm:px-8 sm:py-3 sm:text-lg md:text-base lg:text-lg transition-transform duration-300 ease-in-out"
-                />
-              </motion.div>
-            </motion.div>
-          </motion.div>
+                <motion.h1
+                  variants={fadeInUp}
+                  className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
+                >
+                  Claim Your <span className="text-[#DBC166]">R50</span> Early Access
+                  <br />& Join The Beta Experience!
+                </motion.h1>
 
-          {/* Hero Image */}
-          <motion.div
-            variants={scaleUp}
-            whileHover={{ scale: 1.02 }}
-            className="mt-10 md:mt-0 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto md:mx-0"
-          >
-            <img
-              src="/LaptopCart.jpg"
-              alt="Shopping Cart on Laptop"
-              width={500}
-              height={350}
-              className="rounded-xl shadow-lg w-full h-auto"
-            />
-          </motion.div>
+                <motion.div variants={staggerChildren} className="mt-6 space-y-4">
+                  <motion.p variants={fadeInUp} className="text-lg text-gray-600">
+                    Sign up today and receive:
+                  </motion.p>
+                  <motion.ul
+                    variants={staggerChildren}
+                    className="space-y-2 text-left max-w-md mx-auto lg:mx-0"
+                  >
+                    {[
+                      "1 Month FREE Lion Membership (R500 Value)",
+                      "1,000 Leaderboard Points",
+                      "Exclusive Early-Bird Deals",
+                      "Shape The Menu Platform!",
+                    ].map((benefit, index) => (
+                      <motion.li
+                        key={index}
+                        variants={fadeInUp}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="text-green-500">✓</span>
+                        <span>{benefit}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </motion.div>
+
+                {/* Timer */}
+                <motion.div
+                  variants={scaleUp}
+                  className="mt-6 p-3 bg-gray-50 rounded-lg inline-block"
+                >
+                  <p className="text-sm text-gray-600 mb-1">Beta Access Offer Ends in:</p>
+                  <p className="text-2xl font-bold text-gray-800">60 Days</p>
+                </motion.div>
+
+                {/* CTA Button */}
+                <motion.div variants={fadeInUp} className="mt-6">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => navigate("Signup")}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-[#fbd23f] hover:bg-[#DBC166] text-black px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300"
+                  >
+                    🔥 Claim Early Access for R50
+                  </motion.button>
+
+                </motion.div>
+                <div className='flex gap-3'>
+                  <motion.div variants={fadeInUp} className="mt-6">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => navigate('/affiliated/register')}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-white border-2 border-[#fbd23f] text-black px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300"
+                    >
+                      Affiliate Register
+                    </motion.button>
+                  </motion.div>
+                  <motion.div variants={fadeInUp} className="mt-6">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => navigate('/vendorOnBoarding')}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-white border-2 border-[#fbd23f] text-black px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300"
+                    >
+                      Vendor Register
+                    </motion.button>
+                  </motion.div>
+                </div>
+
+              </motion.div>
+
+              {/* Right Image */}
+              <motion.div variants={scaleUp} className="w-[60%] lg:w-[50%] flex">
+                <motion.img
+                  whileHover={{ scale: 1.02 }}
+                  src="/LaptopCart.jpg"
+                  alt="Beta Platform Preview"
+                  className="rounded-2xl shadow-2xl w-full max-w-2xl"
+                />
+              </motion.div>
+
+            </motion.div>
+          </div>
         </motion.section>
+
 
         <motion.div
           variants={staggerChildren}
           className="mt-10 text-center w-full"
         >
+          <motion.section
+            variants={fadeInUp}
+            className="mt-12 w-full text-center"
+          >
+            <TitleCard title="Become a Vendor & Grow Your Business" IconComponent={ShoppingBag} />
+            <motion.div
+              variants={staggerChildren}
+              className="flex flex-col items-center justify-center gap-12 mt-12"
+            >
+              <motion.p
+                variants={fadeInUp}
+                className="mt-2 sm:text-xl md:text-xl max-w-4xl mx-auto"
+              >
+                Register your business with The Menu Portal to reach more customers, showcase your offerings, and access exclusive tools like a personalized dashboard and automated contracts. Join today and grow with us!
+              </motion.p>
+              <motion.div
+                variants={scaleUp}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  onClick={() => navigate('/vendorOnBoarding')}
+                  text="Join as a Vendor Get Free Exposure!"
+                  className="w-fit sm:w-fit bg-[#fbd23f] text-black px-6 py-4 sm:py-5 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out hover:bg-[#C0B060] hover:shadow-lg"
+                />
+              </motion.div>
+            </motion.div>
+          </motion.section>
           {isAuth ? (
             <motion.div
               variants={staggerChildren}
@@ -164,33 +236,7 @@ export default function Home() {
               viewport={{ once: true, margin: "-100px" }}
             >
               {/* Vendor Section */}
-              <motion.section
-                variants={fadeInUp}
-                className="mt-12 w-full text-center"
-              >
-                <TitleCard title="Become a Vendor & Grow Your Business" IconComponent={ShoppingBag} />
-                <motion.div
-                  variants={staggerChildren}
-                  className="flex flex-col items-center justify-center gap-12 mt-12"
-                >
-                  <motion.p
-                    variants={fadeInUp}
-                    className="mt-2 sm:text-xl md:text-xl max-w-4xl mx-auto"
-                  >
-                    Register your business with The Menu Portal to reach more customers, showcase your offerings, and access exclusive tools like a personalized dashboard and automated contracts. Join today and grow with us!
-                  </motion.p>
-                  <motion.div
-                    variants={scaleUp}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      text="Join as a Vendor Get Free Exposure!"
-                      className="w-fit sm:w-fit bg-[#fbd23f] text-black px-6 py-4 sm:py-5 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out hover:bg-[#C0B060] hover:shadow-lg"
-                    />
-                  </motion.div>
-                </motion.div>
-              </motion.section>
+
 
               {/* Referral Program Section */}
               <motion.section className="mt-12 w-full text-center" variants={fadeInUp} initial="hidden" animate="visible">
@@ -454,6 +500,7 @@ export default function Home() {
           )}
         </motion.div>
       </motion.main>
+      <Footer />
     </>
   );
 }

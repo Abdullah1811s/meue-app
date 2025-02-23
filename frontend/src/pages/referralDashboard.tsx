@@ -7,15 +7,15 @@ import DashboardDetailCard from "../components/customComponents/DashboardDetailC
 const Dashboard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   // Initialize state for API data
-  const [referredBy, setReferredBy] = useState(null);
-  const [userCode, setUserCode] = useState(null);
-  const [referrals, setReferrals] = useState([]);
-  const [user, setUser] = useState(null);
-  const [earnings, setEarnings] = useState(null);
-  const [payout, setPayout] = useState(null);
-  const [referralCodes, setReferralCodes] = useState(null);
+  const [referredBy, setReferredBy] = useState<any>(null);
+  const [userCode, setUserCode] =  useState<any>(null);
+  const [referrals, setReferrals] =  useState<any>([]);
+  const [user, setUser] =  useState<any>(null);
+  const [earnings, setEarnings] =  useState<any>(null);
+  const [payout, setPayout] =  useState<any>(null);
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,10 +27,10 @@ const Dashboard = () => {
 
         // Fetch all API data concurrently
         const [userInfo, referralDetails, userCodeResponse, allReferredUser] = await Promise.all([
-          axios.get(`http://localhost:8000/api/users/${id}`).catch(() => null),
-          axios.get(`http://localhost:8000/api/referral/${id}/ReferredBy`).catch(() => null),
-          axios.get(`http://localhost:8000/api/referral/${id}/Code`).catch(() => null),
-          axios.get(`http://localhost:8000/api/referral/${id}/referrals`).catch(() => null),
+          axios.get(`${API_BASE_URL}/users/${id}`).catch(() => null),
+          axios.get(`${API_BASE_URL}/referral/${id}/ReferredBy`).catch(() => null),
+          axios.get(`${API_BASE_URL}/referral/${id}/Code`).catch(() => null),
+          axios.get(`${API_BASE_URL}/referral/${id}/referrals`).catch(() => null),
         ]);
 
 
@@ -127,7 +127,7 @@ const Dashboard = () => {
       >
         <h2 className="text-lg font-semibold">Referrals</h2>
         <ul>
-          {referrals.map((ref) => (
+          {referrals.map((ref:any) => (
             <motion.li
               key={ref?.user?._id} // Use the user's _id as a unique key
               initial={{ x: -100, opacity: 0 }}

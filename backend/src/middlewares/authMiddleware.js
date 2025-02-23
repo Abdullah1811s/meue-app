@@ -7,8 +7,6 @@ export const authenticate = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({ message: "Access Denied. No token provided." });
         }
-
-    
         const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
         if (!verifyToken) {
             return res.status(401).json({ message: "Invalid token" });

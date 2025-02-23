@@ -6,6 +6,8 @@ import authRoutes from './routes/authRoute.js';
 import vendorRoutes from './routes/vendorOnBoardRoute.js'
 import userRoute from './routes/userRoute.js'
 import referralRoutes from './routes/referralRoutes.js'
+import affiliateRoutes from './routes/affiliateRoute.js'
+import adminRoutes from './routes/adminRoute.js'
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -18,6 +20,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoute);
 app.use('/api/vendor',  vendorRoutes);
 app.use("/api/referral", referralRoutes);
+app.use("/api/affiliated", affiliateRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 const PORT = process.env.PORT || 4000;

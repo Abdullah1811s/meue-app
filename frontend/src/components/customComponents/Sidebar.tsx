@@ -1,13 +1,17 @@
 import { Home, Settings, CreditCard, Menu, X } from 'lucide-react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
 export function Sidebar() {
     const { id } = useParams();
     const location = useLocation();
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
-
+    const handleLogout = () => {
+        localStorage.removeItem("VendorToken");
+        navigate('/');
+    }
     const menuItems = [
         { icon: Home, label: 'Dashboard', path: `/vendor/dashboard/${id}` },
         { icon: CreditCard, label: 'Automated Pay', path: '/automated-pay' },
@@ -66,9 +70,8 @@ export function Sidebar() {
                                     >
                                         <Link
                                             to={item.path}
-                                            className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 ${
-                                                isActive ? 'bg-[#6f6aff] text-white' : 'text-gray-600 hover:bg-gray-100'
-                                            }`}
+                                            className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 ${isActive ? 'bg-[#6f6aff] text-white' : 'text-gray-600 hover:bg-gray-100'
+                                                }`}
                                             onClick={() => setIsOpen(false)}
                                         >
                                             <Icon className="w-5 h-5 mr-3" />
@@ -79,6 +82,30 @@ export function Sidebar() {
                             })}
                         </ul>
                     </nav>
+
+                    {/* Home Button */}
+                    <div className="p-4 mt-auto">
+                        <button
+                            className="w-full flex items-center justify-center px-4 py-3 bg-[#6f6aff] text-white rounded-lg hover:bg-[#5b5ae6] transition-transform duration-200 hover:scale-105"
+                            onClick={() => navigate(`/vendor/${id}`)}
+                        >
+                            <Home className="w-5 h-5 mr-3" />
+                            <span>Home</span>
+                        </button>
+                    </div>
+
+                    <div className="p-4 mt-auto">
+                        <button
+                            className="w-full flex items-center justify-center px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-transform duration-200 hover:scale-105"
+                            onClick={handleLogout}
+                        >
+                            <Home className="w-5 h-5 mr-3" />
+                            <span>Logout</span>
+                        </button>
+                    </div>
+
+
+
                 </div>
             </motion.div>
         </>

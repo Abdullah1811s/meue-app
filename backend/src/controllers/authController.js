@@ -1,18 +1,19 @@
 import usersModel from '../models/users.model.js';
 import referralModel from "../models/referral.model.js";
+import Admin from '../models/admin.model.js';
+import affiliateModel from "../models/affiliate.model.js";
 import { generateToken } from '../utils/generateToken.js';
 import { generateReferralCode } from "../utils/generateReferralCode.js";
-
 
 
 export const signUp = async (req, res) => {
     try {
         const { name, email, password, phone, referralCode } = req.body;
-        console.log("Received Request Body:", req.body);
 
-        // Check for required fields
-        if (!name || !email || !password || !phone)
+        // Validate required fields
+        if (!name || !email || !password || !phone) {
             return res.status(400).json({ message: "All fields are required" });
+        }
 
         // Check if email already exists
         const isEmailExist = await usersModel.findOne({ email });
@@ -26,44 +27,46 @@ export const signUp = async (req, res) => {
             return res.status(409).json({ message: "Phone number already registered, please use a different one" });
         }
 
-        // Generate new referral code
-        const newReferralCode = generateReferralCode();
-        console.log("Generated Referral Code:", newReferralCode);
+        let finalReferralCode = referralCode;
+        let referrer = null;
 
-        // Create the new user
+        if (referralCode) {
+         
+            referrer = await affiliateModel.findOne({ referralCode });
+          
+
+            if (referrer) {
+                finalReferralCode = referrer.referralCode; 
+              
+            } else {
+                return res.status(400).json({ message: "Invalid referral code" });
+            }
+        } else {
+            finalReferralCode = generateReferralCode();  
+        }
+
+    
         const newUser = await usersModel.create({
             name,
             email,
             password,
             phone,
             role: "user",
-            referralCode: newReferralCode,
+            referralCode: finalReferralCode,
         });
 
-        // Handle referral code logic
-        if (referralCode) {
-            // If referral code is provided, validate the referrer
-            const referrer = await usersModel.findOne({ referralCode });
-
-            if (!referrer) {
-                return res.status(400).json({ message: "Invalid referral code" });
-            }
-
-            console.log("Referrer found:", referrer);
-
-            // Create a referral record
-            await referralModel.create({
-                referrer: referrer._id,
+        // Create referral only if a valid referral code was provided
+        if (referrer) {
+            const newr = await referralModel.create({
+                referrer: referrer._id, 
                 referredUser: newUser._id,
-                referralCode,
+                referralCode: finalReferralCode,
                 status: "pending",
             });
-        } else {
-            // No referral code provided, so no referral relationship is established
-            console.log("No referral code provided");
+          
         }
 
-        // Generate JWT token
+        // Generate token for the new user
         const tokenPayload = {
             id: newUser._id,
             name: newUser.name
@@ -72,7 +75,7 @@ export const signUp = async (req, res) => {
 
         return res.status(201).json({
             message: "User created successfully",
-            user: { ...newUser.toObject(), password: undefined }, // Don't send password in the response
+            user: { ...newUser.toObject(), password: undefined }, // Hide password
             token,
         });
 
@@ -83,32 +86,65 @@ export const signUp = async (req, res) => {
             error: error.message,
         });
     }
-}
+};
+
+
+
 
 
 
 export const Login = async (req, res) => {
     try {
+        
         const { email, password } = req.body;
         if (!email || !password)
             return res.status(400).json({ message: "All fields are required" });
 
+        // Check if the email belongs to an admin
+        if (email.endsWith("@adminMenu.com")) {
+            const admin = await Admin.findOne({ email });
+            if (!admin || !(await admin.comparePassword(password))) {
+                return res.status(401).json({ message: "Invalid Admin Credentials" });
+            }
+
+            const adminTokenPayload = {
+                id: admin._id,
+                name: admin.name || "Admin",
+                role: "admin"
+            };
+            const adminToken = generateToken(adminTokenPayload);
+
+            return res.status(200).json({
+                message: "Admin Logged in",
+                admin: {
+                    ...admin.toObject(),
+                    password: undefined
+                },
+                token: adminToken
+            });
+        }
+
+        // Normal User Login
         const user = await usersModel.findOne({ email });
         if (!user || !(await user.comparePassword(password)))
             return res.status(401).json({ message: "Email or Password is wrong" });
+
         const tokenPayload = {
             id: user._id,
             name: user.name
         };
         const token = generateToken(tokenPayload);
+
         const referrals = await referralModel.find({ referrer: user._id });
+      
+
         return res.status(200).json({
             message: "User Logged in",
             user: {
                 ...user.toObject(),
-                password: undefined, 
+                password: undefined,
                 referralCode: user.referralCode,
-                referrals, 
+                referrals
             },
             token
         });

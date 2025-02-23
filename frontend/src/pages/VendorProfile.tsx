@@ -1,4 +1,4 @@
-import { Check, Package, PlusCircle } from 'lucide-react';
+import { Check, Package } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
@@ -23,7 +23,7 @@ const businessSchema = z.object({
 type BusinessFormData = z.infer<typeof businessSchema>;
 
 function VendorProfile() {
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { id } = useParams();
   const [initialData, setInitialData] = useState<Partial<BusinessFormData> | null>(null);
   const [offeringInput, setOfferingInput] = useState('');
@@ -34,7 +34,7 @@ function VendorProfile() {
   useEffect(() => {
     const fetchVendorData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/api/vendor/${id}`);
+        const response = await axios.get(`${API_BASE_URL}/vendor/${id}`);
         setInitialData(response.data);
 
         // Populate form fields with fetched data
@@ -64,7 +64,7 @@ function VendorProfile() {
       }
 
       await axios.put(
-        `http://localhost:8000/api/vendor/update/${id}`,
+        `${API_BASE_URL}/vendor/update/${id}`,
         data,
         {
           headers: {

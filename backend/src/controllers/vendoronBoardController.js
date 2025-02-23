@@ -1,9 +1,35 @@
 import vendorModel from "../models/vendor.model.js";
 import { generateToken } from "../utils/generateToken.js";
+export const vendorLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required." });
+        }
+        const oldVendor = await vendorModel.findOne({ email });
+        if (!oldVendor) {
+            return res.status(401).json({ message: "Invalid email or password." });
+        }
+        const isMatch = await oldVendor.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ message: "Invalid email or password." });
+        }
+
+        const detailForToken = { id: oldVendor._id, role: oldVendor.role };
+        const token = generateToken(detailForToken);
+        res.status(200).json({ message: "Vendor logged in successfully!", vendor: oldVendor, token });
+    } catch (error) {
+        console.error("Error logging in vendor:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+
+
 // the vendor is being register
 export const registerVendor = async (req, res) => {
     try {
-        const { businessName, contactPerson, email, phone, address, offerings } = req.body;
+        const { businessName, contactPerson, email, phone, address, offerings, password } = req.body;
 
         const existingVendor = await vendorModel.findOne({ email });
         if (existingVendor) {
@@ -19,8 +45,9 @@ export const registerVendor = async (req, res) => {
             offerings,
             status: "Pending",
             role: "vendor",
+            password,
         });
-        const detailForToken = { id: newVendor._id, role: newVendor.role }; //we use vendor id for authorization and role  Authenticate 
+        const detailForToken = { id: newVendor._id, role: newVendor.role };
         const token = generateToken(detailForToken);
         if (newVendor || token)
             res.status(201).json({ message: "Vendor registered successfully!", vendor: newVendor, token });
@@ -82,17 +109,17 @@ export const updateVendorStatus = async (req, res) => {
 export const updateVendorDetails = async (req, res) => {
     try {
         const { businessName, contactPerson, email, phone, address, offerings } = req.body;
-        
+
         const updatedVendor = await vendorModel.findByIdAndUpdate(
             req.params.id,
             { businessName, contactPerson, email, phone, address, offerings },
             { new: true, runValidators: true }
         );
-        
+
         if (!updatedVendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
-        
+
         res.status(200).json({ message: "Vendor details updated successfully", vendor: updatedVendor });
     } catch (error) {
         console.error("Error updating vendor details:", error);

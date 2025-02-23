@@ -26,7 +26,7 @@ const signUpSchema = z.object({
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 function SignUp() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +34,7 @@ function SignUp() {
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const dispatch = useDispatch();
+
   const {
     register,
     handleSubmit,
@@ -45,7 +46,7 @@ function SignUp() {
     
   
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/signUp', data, {
+      const response = await axios.post(`${API_BASE_URL}/auth/signUp`, data, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -55,7 +56,7 @@ function SignUp() {
       setSignupSuccess(true); 
       dispatch(login()); 
       navigate(`/users/${response?.data.user._id}`);
-    } catch (error) {
+    } catch (error:any) {
       console.error('Signup Error:', error?.response?.data?.message || error?.message);
 
       if (error?.response?.data?.message) {
@@ -79,7 +80,7 @@ function SignUp() {
     <div className="min-h-screen flex flex-col lg:flex-row">
     {/* Left Section (Image) */}
     <div className="flex-1 flex justify-center bg-[#DBC166] rounded-t-full items-center p-4">
-      <img src="guyLap.png" alt="Illustration"  className="w-96 h-96"/>
+      <img src="guyLap.png" alt="Illustration"  className="w-auto h-auto"/>
     </div>
   
     {/* Right Section (Form) */}
@@ -105,7 +106,7 @@ function SignUp() {
           to="/" 
           className="text-[#DBC166] hover:text-[#C8A13A] text-sm"
         >
-          ← Back
+          ← Back to home
         </Link>
       </motion.div>
         <motion.h2

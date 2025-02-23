@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema(
             },
         },
         role: { type: String, default: "user" },
-        referralCode: { type: String, unique: true },
+        referralCode: { type: String }
     },
 
     { timestamps: true }
