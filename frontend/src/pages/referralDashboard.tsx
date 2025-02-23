@@ -13,8 +13,8 @@ const Dashboard = () => {
   const [userCode, setUserCode] =  useState<any>(null);
   const [referrals, setReferrals] =  useState<any>([]);
   const [user, setUser] =  useState<any>(null);
-  const [earnings, setEarnings] =  useState<any>(null);
-  const [payout, setPayout] =  useState<any>(null);
+  const [earnings] =  useState<any>(null);
+  const [payout] =  useState<any>(null);
   
 
   useEffect(() => {

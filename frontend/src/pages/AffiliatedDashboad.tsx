@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 import DashboardDetailCard from "../components/customComponents/DashboardDetailCard ";
@@ -15,37 +15,37 @@ interface Referral {
     referralCode?: string;
 }
 
-interface ReferralDetailsResponse {
-    referrer?: User;
-}
+// interface ReferralDetailsResponse {
+//     referrer?: User;
+// }
 
-interface UserCodeResponse {
-    referralCode?: string;
-}
+// interface UserCodeResponse {
+//     referralCode?: string;
+// }
 
-interface ReferralsResponse {
-    referrals: Referral[];
-}
+// interface ReferralsResponse {
+//     referrals: Referral[];
+// }
 
-interface UserResponse {
-    user: User;
-}
+// interface UserResponse {
+//     user: User;
+// }
 
-interface ApiResponse<T> {
-    data: T;
-}
+// interface ApiResponse<T> {
+//     data: T;
+// }
 
 const AffiliatedDashboard = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const { id } = useParams();
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     const [referredBy, setReferredBy] = useState<User | null>(null);
     const [userCode, setUserCode] = useState<string | null>(null);
     const [referrals, setReferrals] = useState<Referral[]>([]);
     const [user, setUser] = useState<User | null>(null);
-    const [earnings, setEarnings] = useState<{ total: string } | null>(null);
-    const [payout, setPayout] = useState<{ status: string } | null>(null);
+    const [earnings] = useState<{ total: string } | null>(null);
+    const [payout] = useState<{ status: string } | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
