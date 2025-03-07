@@ -1,8 +1,6 @@
-"use client";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
-import TitleCard from "./TitleCard";
-
 const prizes = [100, 500, 900, 160, 120, 700, 350, 60, 400, 320, 800, 200];
 
 const SpinWheel = () => {
@@ -30,11 +28,12 @@ const SpinWheel = () => {
   return (
     <div className="flex flex-col items-center justify-center gap-8 py-10">
       <div className="text-center">
-        <TitleCard title=" 🎡 Try Your Luck & Spin the Wheel!" />
+       
+
         <button
           onClick={spinWheel}
           disabled={spinning}
-          className="w-fit sm:w-fit bg-[#fbd23f] mt-4 text-black px-2 sm:py-2 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out hover:bg-[#C0B060] hover:shadow-lg hover:scale-105">
+          className="w-fit sm:w-fit bg-[#DBC166] mt-4 text-black px-2 sm:py-2 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out hover:bg-[#e9dbac] hover:shadow-lg hover:scale-105">
           {spinning ? "Spinning..." : "Spin & Win – Exclusive Rewards Await!🎉"}
         </button>
 

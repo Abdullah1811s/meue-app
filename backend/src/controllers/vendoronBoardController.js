@@ -1,5 +1,6 @@
 import vendorModel from "../models/vendor.model.js";
 import { generateToken } from "../utils/generateToken.js";
+import { sendEmail } from "../utils/emailService.js";
 export const vendorLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -29,28 +30,86 @@ export const vendorLogin = async (req, res) => {
 // the vendor is being register
 export const registerVendor = async (req, res) => {
     try {
-        const { businessName, contactPerson, email, phone, address, offerings, password } = req.body;
-
-        const existingVendor = await vendorModel.findOne({ email });
+        const {
+            businessName,
+            businessType,
+            companyRegNumber,
+            vatNumber,
+            tradingAddress,
+            province,
+            city,
+            businessContactNumber,
+            businessEmail,
+            websiteUrl,
+            socialMediaHandles,
+            representativeName,
+            representativePosition,
+            representativeEmail,
+            representativePhone,
+            businessDescription,
+            offerings,
+            exclusiveOffer,
+            vendorTier,
+            agreedToTerms,
+            companyRegistrationCertificateURl,
+            vendorIdURl,
+            addressProofURl,
+            confirmationLetterURl,
+            businessPromotionalMaterialURl,
+            password
+        } = req.body;
+        console.log(req.body);
+        const existingVendor = await vendorModel.findOne({ businessEmail });
         if (existingVendor) {
-            return res.status(400).json({ message: "Vendor with this email already exists." });
+            return res.status(400).json({ message: "Partner already exists" });
+        }
+        if (
+            !businessName ||
+            !businessType ||
+            !companyRegNumber ||
+            !tradingAddress ||
+            !businessContactNumber ||
+            !businessEmail ||
+            !representativeName ||
+            !representativePosition ||
+            !representativeEmail ||
+            !representativePhone ||
+            !agreedToTerms ||
+            !exclusiveOffer
+        ) {
+            return res.status(400).json({ message: "Missing required fields" });
         }
 
         const newVendor = await vendorModel.create({
             businessName,
-            contactPerson,
-            email,
-            phone,
-            address,
+            businessType,
+            companyRegNumber,
+            vatNumber,
+            tradingAddress,
+            province,
+            city,
+            businessContactNumber,
+            businessEmail,
+            websiteUrl,
+            socialMediaHandles,
+
+            representativeName,
+            representativePosition,
+            representativeEmail,
+            representativePhone,
+            businessDescription,
             offerings,
-            status: "Pending",
-            role: "vendor",
-            password,
+            exclusiveOffer,
+            vendorTier,
+            agreedToTerms,
+            companyRegistrationCertificateURl,
+            vendorIdURl,
+            addressProofURl,
+            confirmationLetterURl,
+            businessPromotionalMaterialURl,
+            password
         });
-        const detailForToken = { id: newVendor._id, role: newVendor.role };
-        const token = generateToken(detailForToken);
-        if (newVendor || token)
-            res.status(201).json({ message: "Vendor registered successfully!", vendor: newVendor, token });
+        res.status(201).json({ message: "Vendor created successfully", vendor: newVendor });
     } catch (error) {
         console.error("Error registering vendor:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -60,8 +119,16 @@ export const registerVendor = async (req, res) => {
 // Get all vendors
 export const getVendors = async (req, res) => {
     try {
+        // Fetch all vendors from the database
         const vendors = await vendorModel.find();
-        res.status(200).json(vendors);
+
+        const updatedVendors = vendors.map(vendor => {
+            const { companyRegistrationCertificateURl, vendorIdURl, addressProofURl, confirmationLetterURl, ...rest } = vendor.toObject();
+            return rest;
+        });
+
+
+        res.status(200).json(updatedVendors);
     } catch (error) {
         console.error("Error fetching vendors:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -82,47 +149,92 @@ export const getVendorById = async (req, res) => {
     }
 };
 
+export const getALlDetails = async (req, res) => {
+    try {
+        const vendor = await vendorModel.find();
+        if (!vendor) {
+            return res.status(404).json({ message: "Vendor not found" });
+        }
+        res.status(200).json(vendor);
+    } catch (error) {
+        console.error("Error fetching vendor:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
 export const updateVendorStatus = async (req, res) => {
     try {
-        const { status } = req.body;
+        const { id, status } = req.body;
+        console.log(req.body);
 
-        if (!["Pending", "Approved", "Rejected"].includes(status)) {
+        // Validate input
+        if (!id || !status) {
+            return res.status(400).json({ message: "Vendor ID and status are required" });
+        }
+
+        // Ensure the status is valid
+        const validStatuses = ["pending", "approved", "rejected"];
+        if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: "Invalid status value" });
         }
 
+        // Find and update vendor status
         const updatedVendor = await vendorModel.findByIdAndUpdate(
-            req.params.id,
+            id,
             { status },
-            { new: true }
+            { new: true } // Returns the updated document
         );
 
         if (!updatedVendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
 
-        res.status(200).json({ message: "Vendor status updated", vendor: updatedVendor });
+        let emailSent = { success: true }; // Default to prevent undefined errors
+
+        if (updatedVendor.businessEmail) {
+            if (status === "approved") {
+                const subject = "Your Vendor Application is Approved 🎉";
+                const message = `
+                    <p>Dear ${updatedVendor.fullName},</p>
+                    <p>Congratulations! Your vendor application has been <strong>approved</strong>. 🎉</p>
+                    <p>You can now proceed to <strong>Partner → Register → Login</strong> to access your vendor dashboard and start managing your business.</p>
+                    <p>If you have any questions, feel free to reach out to our support team.</p>
+                    <p>Best regards, <br> The Menu Team</p>
+                `;
+
+                emailSent = await sendEmail(updatedVendor.businessEmail, subject, "Your vendor application has been approved.", message);
+            } else if (status === "rejected") {
+                const subject = "Your Vendor Application Status";
+                const message = `
+                    <p>Dear ${updatedVendor.fullName},</p>
+                    <p>We appreciate your interest in becoming a vendor on our platform. After review, we regret to inform you that your application has been <strong>rejected</strong>.</p>
+                    <p>If you have any questions or would like to reapply in the future, please feel free to reach out.</p>
+                    <p>Best regards, <br> The Menu Team</p>
+                `;
+
+                emailSent = await sendEmail(updatedVendor.businessEmail, subject, "Your vendor application was not approved.", message);
+            }
+
+            if (!emailSent.success) {
+                console.error("Email sending failed but status updated.");
+            }
+        } else {
+            console.warn("Vendor email not found, skipping email notification.");
+        }
+
+        return res.status(200).json({
+            message: `Vendor status updated to '${status}' successfully`,
+            vendor: updatedVendor,
+            emailSent: emailSent.success ? "Email sent successfully" : "Email failed to send",
+        });
+
     } catch (error) {
         console.error("Error updating vendor status:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
+
+
 export const updateVendorDetails = async (req, res) => {
-    try {
-        const { businessName, contactPerson, email, phone, address, offerings } = req.body;
 
-        const updatedVendor = await vendorModel.findByIdAndUpdate(
-            req.params.id,
-            { businessName, contactPerson, email, phone, address, offerings },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedVendor) {
-            return res.status(404).json({ message: "Vendor not found" });
-        }
-
-        res.status(200).json({ message: "Vendor details updated successfully", vendor: updatedVendor });
-    } catch (error) {
-        console.error("Error updating vendor details:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
 };

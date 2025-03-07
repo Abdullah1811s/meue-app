@@ -3,6 +3,7 @@ import { CheckEmailAndPh } from "../utils/checkEmailandPhone.js";
 import jwt from "jsonwebtoken";
 import { generateReferralCode } from "../utils/generateReferralCode.js";
 import { sendEmail } from "../utils/emailService.js"; // Import email function
+import referralModel from "../models/referral.model.js";
 
 export const getAffiliateById = async (req, res) => {
     try {
@@ -26,35 +27,38 @@ export const getAffiliateById = async (req, res) => {
 
 export const registerAffiliate = async (req, res) => {
     try {
-        const { fullname, email, phone, address, agreedToTerms, marketingChannel, password, offering } = req.body;
+        const { fullName, surname, email, phoneNumber, type, businessName, companyRegistrationNumber, vatNumber, tradingAddress, provinceCity, businessContactNumber, businessEmailAddress, password, promotionChannels, socialMediaPlatforms, otherPromotionMethod, targetAudience } = req.body;
 
-        const checkResult = await CheckEmailAndPh(affiliateModel, email, phone);
-        if (checkResult.status !== 200) {
-            return res.status(checkResult.status).json({ message: checkResult.message });
+        const existingAffiliate = await affiliateModel.findOne({ email });
+        if (existingAffiliate) {
+            return res.status(400).json({ message: "Affiliate with this email already exists" });
         }
-
-
-        const newReferralCode = generateReferralCode();
+        const referralCode = generateReferralCode();
         const newAffiliate = await affiliateModel.create({
-            fullname,
+            fullName,
+            surname,
             email,
-            phone,
-            address,
-            agreedToTerms,
-            marketingChannel,
+            phoneNumber,
+            type,
+            businessName: type === "business" ? businessName : null,
+            companyRegistrationNumber: type === "business" ? companyRegistrationNumber : null,
+            vatNumber: type === "business" ? vatNumber : null,
+            tradingAddress: type === "business" ? tradingAddress : null,
+            provinceCity: type === "business" ? provinceCity : null,
+            businessContactNumber: type === "business" ? businessContactNumber : null,
+            businessEmailAddress: type === "business" ? businessEmailAddress : null,
             password,
-            referralCode: newReferralCode,
-            offering
+            promotionChannels,
+            socialMediaPlatforms,
+            otherPromotionMethod,
+            targetAudience,
+            referralCode
         });
-
-        const { password: _, ...affiliateData } = newAffiliate.toObject();
-        res.status(201).json({
-            message: "Affiliate registration successful!",
-            data: affiliateData
-        });
+       
+        
+        res.status(201).json({ message: "Affiliate registered successfully" });
     } catch (error) {
-        console.error("[AFFILIATE SERVER ERROR]", error);
-        res.status(500).json({ message: "[AFFILIATE SERVER ERROR]", error: error.message });
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
@@ -67,11 +71,17 @@ export const loginAffiliate = async (req, res) => {
         }
 
         const affiliate = await affiliateModel.findOne({ email });
-
         if (!affiliate) {
             return res.status(404).json({ message: "Affiliate not found" });
         }
 
+        // Check affiliate status
+        if (affiliate.status === "pending") {
+            return res.status(403).json({ message: "Your application is still under review. Please wait for approval." });
+        }
+        if (affiliate.status === "rejected") {
+            return res.status(403).json({ message: "Your application has been rejected. You cannot log in." });
+        }
 
         const isMatch = await affiliate.comparePassword(password);
         console.log("Password match:", isMatch);
@@ -102,8 +112,8 @@ export const getAllAffiliates = async (req, res) => {
 
 export const removeAffiliateById = async (req, res) => {
     try {
-        const { id } = req.query;
-     
+        const { id } = req.body;
+
         if (!id) {
             return res.status(400).json({ message: "id is required" });
         }
@@ -132,8 +142,6 @@ export const updateStatus = async (req, res) => {
         if (!id) {
             return res.status(400).json({ message: "Affiliate ID is required" });
         }
-
-
         const affiliate = await affiliateModel.findByIdAndUpdate(
             { _id: id },
             { status },
@@ -147,7 +155,7 @@ export const updateStatus = async (req, res) => {
         if (status === "approved") {
             const subject = "Your Affiliate Status is Approved 🎉";
             const message = `
-                <p>Dear ${affiliate.fullname},</p>
+                <p>Dear ${affiliate.fullName},</p>
                 <p>We are pleased to inform you that your affiliate application has been <strong>approved</strong>.</p>
                 <p>Welcome aboard! You can now start earning commissions through our program.</p>
                 <p>The referral code is ${affiliate.referralCode}</p>

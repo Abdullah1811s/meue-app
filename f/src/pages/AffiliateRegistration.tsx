@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { User, Lock,  CheckCircle, Eye, EyeOff, Briefcase, Share2 } from "lucide-react";
+import { User, Lock, CheckCircle, Eye, EyeOff, Briefcase, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 
@@ -26,8 +26,8 @@ const AffiliateSchema = z
         companyRegistrationNumber: z.string().optional(),
         vatNumber: z.string().optional(),
         tradingAddress: z.string().optional(),
-        province: z.string().nonempty("Please select a province"),
-        city: z.string().nonempty("Please select a city"),
+        province: z.string().optional(),
+        city: z.string().optional(),
         businessContactNumber: z.string().optional(),
         businessEmail: z.string().email("Invalid business email address").optional(),
         promotionChannels: z.array(z.string()).nonempty("Please select at least one promotion channel"),
@@ -82,8 +82,7 @@ function AffiliateRegistration() {
     });
 
     const affiliateType = watch("affiliateType");
-    const selectedProvince = watch("province");
-
+  
     // Update cities based on selected province
     const handleProvinceChange = (provinceName: string) => {
         const province = provinces.find((p) => p.name === provinceName);
@@ -98,7 +97,33 @@ function AffiliateRegistration() {
 
     const onSubmit = async (data: AffiliateFormData) => {
         try {
-            const response = await axios.post(`${API_BASE_URL}/affiliated/register`, data, {
+            // Ensure password and confirmPassword match
+            if (data.password !== data.confirmPassword) {
+                toast.error("Passwords do not match.");
+                return;
+            }
+
+            // Prepare data to match schema
+            const payload: Record<string, any> = {
+                fullName: data.fullname,
+                surname: data.surname,
+                email: data.email,
+                phoneNumber: data.phone,
+                type: data.affiliateType, // Match schema field name
+                businessName: data.businessName || null,
+                companyRegistrationNumber: data.companyRegistrationNumber || null,
+                vatNumber: data.vatNumber || null,
+                tradingAddress: data.tradingAddress || null,
+                provinceCity: `${data.province || ""} ${data.city || ""}`.trim() || null,
+                businessContactNumber: data.businessContactNumber || null,
+                businessEmailAddress: data.businessEmail || null,
+                password: data.password,
+                promotionChannels: data.promotionChannels || [],
+                targetAudience: data.targetAudience || null,
+            };
+
+            // Send request
+            const response = await axios.post(`${API_BASE_URL}/affiliated/register`, payload, {
                 headers: { "Content-Type": "application/json" },
             });
 

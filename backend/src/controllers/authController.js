@@ -8,20 +8,17 @@ import { generateReferralCode } from "../utils/generateReferralCode.js";
 
 export const signUp = async (req, res) => {
     try {
-        const { name, email, password, phone, referralCode } = req.body;
-
-        // Validate required fields
-        if (!name || !email || !password || !phone) {
+        const { name, email, password, phone, referralCode, city, province, street, town, postalCode } = req.body;
+        console.log("The data has been received from the front , ", req.body);
+        if (!name || !email || !password || !phone || !town || !city || !province || !street || !postalCode) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // Check if email already exists
         const isEmailExist = await usersModel.findOne({ email });
         if (isEmailExist) {
             return res.status(409).json({ message: "Email already registered, please log in" });
         }
 
-        // Check if phone number already exists
         const isPhoneExist = await usersModel.findOne({ phone });
         if (isPhoneExist) {
             return res.status(409).json({ message: "Phone number already registered, please use a different one" });
@@ -31,39 +28,38 @@ export const signUp = async (req, res) => {
         let referrer = null;
 
         if (referralCode) {
-         
             referrer = await affiliateModel.findOne({ referralCode });
-          
-
             if (referrer) {
-                finalReferralCode = referrer.referralCode; 
-              
+                finalReferralCode = referrer.referralCode;
+
             } else {
                 return res.status(400).json({ message: "Invalid referral code" });
             }
         } else {
-            finalReferralCode = generateReferralCode();  
+            finalReferralCode = generateReferralCode();
         }
-
-    
         const newUser = await usersModel.create({
             name,
             email,
             password,
             phone,
             role: "user",
-            referralCode: finalReferralCode,
+            referralCode,
+            city,
+            province,
+            street,
+            town,
+            postalCode
         });
 
-        // Create referral only if a valid referral code was provided
         if (referrer) {
             const newr = await referralModel.create({
-                referrer: referrer._id, 
+                referrer: referrer._id,
                 referredUser: newUser._id,
                 referralCode: finalReferralCode,
                 status: "pending",
             });
-          
+
         }
 
         // Generate token for the new user
@@ -72,10 +68,10 @@ export const signUp = async (req, res) => {
             name: newUser.name
         };
         const token = generateToken(tokenPayload);
-
+        // TODO:Send OTP back to User
         return res.status(201).json({
             message: "User created successfully",
-            user: { ...newUser.toObject(), password: undefined }, // Hide password
+            user: { ...newUser.toObject(), password: undefined },
             token,
         });
 
@@ -95,7 +91,7 @@ export const signUp = async (req, res) => {
 
 export const Login = async (req, res) => {
     try {
-        
+
         const { email, password } = req.body;
         if (!email || !password)
             return res.status(400).json({ message: "All fields are required" });
@@ -136,7 +132,7 @@ export const Login = async (req, res) => {
         const token = generateToken(tokenPayload);
 
         const referrals = await referralModel.find({ referrer: user._id });
-      
+
 
         return res.status(200).json({
             message: "User Logged in",

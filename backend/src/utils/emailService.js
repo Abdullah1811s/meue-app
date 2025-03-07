@@ -2,8 +2,6 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config();
-console.log(process.env.EMAIL_USER);
-console.log(process.env.EMAIL_PASS);
 export const sendEmail = async (to, subject, text, html) => {
     try {
         const transporter = nodemailer.createTransport({
@@ -23,7 +21,7 @@ export const sendEmail = async (to, subject, text, html) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent: " + info.response);
+        console.log("Email sent: " + info.response , to);
         return { success: true, message: "Email sent successfully" };
     } catch (error) {
         console.error("Error sending email:", error);

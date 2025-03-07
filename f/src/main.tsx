@@ -25,6 +25,8 @@ import VendorLogin from './pages/VendorLogin.tsx'
 
 //components
 import { VendorProtectedRoute, PrivateRoute, AdminProtectedRoute, AffiliatedProtectedRoute } from "@/components/customComponents/index.tsx"
+import AllPartners from './pages/AllPartners.tsx'
+import ManagePartner from './components/customComponents/ManagePartner.tsx'
 
 
 const router = createBrowserRouter(
@@ -35,6 +37,7 @@ const router = createBrowserRouter(
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
       <Route path="vendorOnBoarding" element={<VendorOnboarding />} />
+      <Route path="allPartners" element={<AllPartners />} />
       <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/affiliated/register" element={<AffiliateRegistration />} />
       <Route path="/affiliated/login" element={<AffiliateLogin />} />
@@ -49,12 +52,12 @@ const router = createBrowserRouter(
       {/* User Protected Routes */}
       <Route path="users" element={<PrivateRoute />}>
         <Route path=":id" element={<Home />} />
-        <Route path="payFast" element={<PayFastRedirect />} />
       </Route>
       {/* admin protected route */}
       <Route path="admin" element={<AdminProtectedRoute />}>
         <Route path="dashboard/:id" element={<AdminDashboard />} />
         <Route path="manageAffiliated" element={<AdminDashboard />} />
+        <Route path="managePartner" element={<ManagePartner />} />
       </Route>
       {/* affiliated protected route */}
       <Route path="affiliated" element={<AffiliatedProtectedRoute />}>

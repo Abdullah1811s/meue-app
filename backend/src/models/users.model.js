@@ -37,11 +37,17 @@ const userSchema = new mongoose.Schema(
             },
         },
         role: { type: String, default: "user" },
-        referralCode: { type: String }
+        referralCode: { type: String },
+        city: { type: String, required: [true, "City is required"], trim: true },
+        province: { type: String, required: [true, "Province is required"], trim: true },
+        street: { type: String, required: [true, "Street is required"], trim: true },
+        town: { type: String, required: [true, "Town is required"], trim: true },
+        postalCode: { type: String, required: [true, "Postal code is required"], trim: true, match: [/^\d+$/, "Postal code must contain only digits"] },
+        isPaid: { type: Boolean, default: false }
     },
-
     { timestamps: true }
 );
+
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();

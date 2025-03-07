@@ -1,38 +1,39 @@
 const agents = [
   {
-    name: "Saymi",
-    img: "/", 
-    dayReferral: 5,
-    weeklyReferral: 2,
-    monthlyReferral: 6,
+    name: "James Anderson",
+    img: "https://randomuser.me/api/portraits/men/32.jpg",
+    dayReferral: 8,
+    weeklyReferral: 15,
+    monthlyReferral: 45,
   },
   {
-    name: "Saymi",
-    img: "/",
-    dayReferral: 5,
-    weeklyReferral: 2,
-    monthlyReferral: 6,
+    name: "Sophia Carter",
+    img: "https://randomuser.me/api/portraits/women/44.jpg",
+    dayReferral: 10,
+    weeklyReferral: 20,
+    monthlyReferral: 50,
   },
   {
-    name: "Saymi",
-    img: "/",
+    name: "Michael Thompson",
+    img: "https://randomuser.me/api/portraits/men/25.jpg",
     dayReferral: 5,
-    weeklyReferral: 2,
-    monthlyReferral: 6,
+    weeklyReferral: 12,
+    monthlyReferral: 38,
   },
   {
-    name: "Saymi",
-    img: "/",
-    dayReferral: 5,
-    weeklyReferral: 2,
-    monthlyReferral: 6,
+    name: "Emily Roberts",
+    img: "https://randomuser.me/api/portraits/women/36.jpg",
+    dayReferral: 12,
+    weeklyReferral: 22,
+    monthlyReferral: 60,
   },
 ];
+
 
 const Lapboard = () => {
   return (
     <div className="bg-white mt-6 border shadow-sm rounded-lg overflow-hidden w-full max-w-4xl ">
-    
+
       <div className="p-4">
         <h2 className="text-lg text-start font-bold">Statistics</h2>
         <p className="text-gray-600 text-start" >

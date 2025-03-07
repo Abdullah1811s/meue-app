@@ -1,0 +1,15 @@
+fix the email thing 
+
+
+make button disbale after approving or rejected
+
+phone number len 
+
+TODO:sending email to user with there OTP
+TODO:fix navbar context thing
+TODO:fix the vendor dashboard
+
+
+
+today
+

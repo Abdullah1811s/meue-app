@@ -2,13 +2,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Home } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { login } from "../store/authSlice";
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
-
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -57,31 +56,41 @@ const Login = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-white rounded-lg p-8 flex flex-col md:flex-row">
-      <div className="mt-4 text-center">
-        <Link
-          to="/"
-          className="text-[#DBC166] font-semibold whitespace-nowrap text-base hover:underline"
-        >
-          ← Back to home
-        </Link>
-      </div>
+    <div className="w-full h-screen bg-white p-8 flex flex-col md:flex-row">
       {/* Left Side (Form) */}
       <motion.div
-        className="w-full md:w-1/2 flex flex-col h-full justify-center p-6"
+        className="w-full md:w-1/2 flex flex-col h-full  p-6"
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-2xl font-bold text-[#C5AD59] text-center mb-6">
-          Welcome Back! Let’s Pick Up Where You Left Off
+
+
+        {/* Changed heading alignment to be consistent */}
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#DBC166] mt-3">
+          Welcome Back!
         </h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <p className="text-gray-600 mb-8">
+          Let's pick up where you left off
+        </p>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 bg-white p-8 rounded-xl shadow-md">
+          {/* Error Message */}
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-red-50 text-red-600 text-sm p-3 rounded-lg text-center"
+            >
+              {errorMessage}
+            </motion.div>
+          )}
+
           {/* Email Field */}
           <div>
-            <label className="text-gray-700 font-medium">Email</label>
-            <div className="relative mt-1">
+            <label className="text-gray-700 font-medium block mb-1">Email</label>
+            <div className="relative">
               <Mail className="absolute left-3 top-3 text-gray-500" />
               <input
                 {...register("email")}
@@ -97,8 +106,8 @@ const Login = () => {
 
           {/* Password Field */}
           <div>
-            <label className="text-gray-700 font-medium">Password</label>
-            <div className="relative mt-1">
+            <label className="text-gray-700 font-medium block mb-1">Password</label>
+            <div className="relative">
               <Lock className="absolute left-3 top-3 text-gray-500" />
               <input
                 {...register("password")}
@@ -119,50 +128,90 @@ const Login = () => {
             )}
           </div>
 
-          {/* Error Message */}
-          {errorMessage && (
-            <p className="text-red-600 text-sm mt-2 text-center">{errorMessage}</p>
-          )}
+          {/* Forgot Password */}
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-gray-600 text-sm hover:text-[#DBC166]">
+              Forgot Password?
+            </Link>
+          </div>
 
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full bg-[#DBC166] text-white py-2 rounded-md font-semibold hover:bg-[#c5ad59] flex items-center justify-center"
+            className="w-full bg-gradient-to-r from-[#DBC166] to-[#C8A13A] text-white py-3 rounded-lg font-semibold hover:from-[#C8A13A] hover:to-[#B8943A] transition-all duration-300 flex items-center justify-center shadow-md"
             disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
+          {/* Sign Up Link */}
+          <p className="text-center text-sm text-gray-600 mt-4">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-[#DBC166] font-semibold hover:underline">
+              Sign up
+            </Link>
+          </p>
         </form>
-
-        {/* Forgot Password */}
-        <div className="text-right">
-          <Link to="/forgot-password" className="text-gray-600 text-sm">
-            Forgot Password?
-          </Link>
-        </div>
-
-        {/* Sign Up Link */}
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-[#DBC166] font-semibold">
-            Sign up
-          </Link>
-        </p>
-
-        {/* Back Button */}
-
       </motion.div>
 
-      {/* Right Side (Illustration) */}
-      <div className="w-full md:w-1/2 flex items-center justify-center bg-[#ffffff] rounded-t-full mt-6 md:mt-0 h-full">
-        <img
-          src="/log-in.svg"
-          alt="Illustration"
-          className="w-96 h-96"
-        />
+      {/* Right Side (Welcome Message) */}
+      <div className="w-full md:w-1/2 flex flex-col  bg-white rounded-tr-3xl rounded-br-3xl shadow-lg p-8 mt-6 md:mt-0 h-full">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="max-w-lg mx-auto"
+        >
+          {/* Fixed position and alignment for consistent heading */}
+          <motion.h2
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#DBC166] mb-6"
+          >
+            Your exclusive world of benefits awaits
+          </motion.h2>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="w-full max-w-md mx-auto mt-6"
+          >
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 shadow-sm">
+              <h3 className="text-lg font-semibold text-[#C5AD59] mb-3">Ready to access:</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start">
+                  <span className="text-[#DBC166] mr-2">✓</span>
+                  <span className="text-gray-700">Your personalized dashboard</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#DBC166] mr-2">✓</span>
+                  <span className="text-gray-700">Exclusive member discounts</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#DBC166] mr-2">✓</span>
+                  <span className="text-gray-700">Premium vendor offerings</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-[#DBC166] mr-2">✓</span>
+                  <span className="text-gray-700">Special events and promotions</span>
+                </li>
+              </ul>
+            </div>
+            <div className="mt-6">
+              <Link
+                to="/"
+                className="inline-flex items-center px-4 py-2 bg-white border border-[#DBC166] rounded-lg text-[#DBC166] font-medium hover:bg-[#DBC166] hover:text-white transition-all duration-300 shadow-sm"
+              >
+                <Home className="mr-2" />
+                Back to home
+              </Link>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
-
 
   );
 };

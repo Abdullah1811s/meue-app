@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { Store, Phone, Building2, Package, CheckCircle, Lock, Eye, EyeOff } from 'lucide-react';
+import { Store, Phone, Building2, Package, CheckCircle, FileText } from 'lucide-react';
 import axios from "axios";
+import { Button } from '@/components/ui/button';
+import toast from 'react-hot-toast';
 
 type VendorFormData = {
   businessName: string;
   businessType: string;
-  companyRegNumber?: string;
+  companyRegNumber?: string; // Optional
   vatNumber?: string;
   tradingAddress: string;
   province: string;
@@ -16,33 +18,55 @@ type VendorFormData = {
   businessContactNumber: string;
   businessEmail: string;
   websiteUrl?: string;
+
   socialMediaHandles: {
     facebook?: string;
     instagram?: string;
     twitter?: string;
     tiktok?: string;
   };
+
   representativeName: string;
   representativePosition: string;
   representativeEmail: string;
   representativePhone: string;
-  businessDescription: string;
+
+  businessDescription?: string;
   offerings: string[];
+
   exclusiveOffer: {
-    type: 'online' | 'in-store';
+    type: "online" | "in-store";
     details: string;
     terms: string;
-  };
-  vendorTier: 'bronze' | 'silver' | 'gold';
+  },
+
+  vendorTier: "bronze" | "silver" | "gold";
   agreedToTerms: boolean;
+
+  companyRegistrationCertificate: File | null,
+  vendorId: File | null,
+  addressProof: File | null,
+  confirmationLetter: File | null,
+  businessPromotionalMaterial: File | null,
+  password: string,
+  confirmPassword: string
+
 };
 
 function VendorOnboarding() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const navigate = useNavigate();
+  const [Loading, setLoading] = useState<boolean>(false);
+  const [CompanyPreview, setCompanyPreview] = useState<File | null>(null);
+  const [vendorIdPreview, setVendorIdPreview] = useState<File | null>(null);
+  const [addressProofPreview, setAddressProofPreview] = useState<File | null>(null);
+  const [confirmationLetterPreview, setConfirmationLetterPreview] = useState<File | null>(null);
+  const [businessPromotionalMaterialPreview, setBusinessPromotionalMaterialPreview] = useState<File | null>(null);
+  const [offeringInput, setOfferingInput] = useState('');
   const [showModal, setShowModal] = useState(false);
   // const [showPassword, setShowPassword] = useState(false);
   // const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate();
+
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<VendorFormData>({
     defaultValues: {
       offerings: [],
@@ -56,10 +80,206 @@ function VendorOnboarding() {
       agreedToTerms: false
     }
   });
-
-  const [offeringInput, setOfferingInput] = React.useState('');
   const offerings = watch('offerings');
 
+  const getSignature = async (folder: any) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/generateSignature`, { folder });
+      console.log("The signature response is ", response);
+      return response.data;
+    }
+    catch (error) {
+      console.error("Error in getting signature for ", folder)
+    }
+  }
+
+  const makeCloudinaryApiCall = async (data: FormData) => {
+    try {
+      const cloudName = import.meta.env.VITE_CLOUD_NAME;
+      const api = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
+
+      console.log("Uploading to Cloudinary:", data);
+
+      const res = await axios.post(api, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const { secure_url } = res.data;
+      console.log("Uploaded File URL:", secure_url);
+
+      return secure_url;
+    } catch (error) {
+      console.error("Cloudinary Upload Error:", error);
+    }
+  };
+
+  const uploadFile = async (type: string, timestamp: number, signature: string) => {
+    let folder: string;
+    let file: File | null = null;
+
+    switch (type) {
+      case "companyRegistrationCertificate":
+        folder = "companyRegistrationCertificate";
+        file = CompanyPreview;
+        break;
+      case "vendorId":
+        folder = "vendorId";
+        file = vendorIdPreview;
+        break;
+      case "addressProof":
+        folder = "addressProof";
+        file = addressProofPreview;
+        break;
+      case "confirmationLetter":
+        folder = "confirmationLetter";
+        file = confirmationLetterPreview;
+        break;
+      case "businessPromotionalMaterial":
+        folder = "businessPromotionalMaterial";
+        file = businessPromotionalMaterialPreview;
+        break;
+      default:
+        folder = "other-documents";
+    }
+
+    if (!file) {
+      console.error(`No file selected for ${type}`);
+      return;
+    }
+
+    const data = new FormData();
+    data.append("file", file);
+    data.append("timestamp", timestamp.toString());
+    data.append("signature", signature);
+    data.append("api_key", import.meta.env.VITE_CLOUD_API);
+    data.append("folder", folder);
+
+    console.log("Uploading to Cloudinary:", data);
+
+    try {
+      const secure_url = await makeCloudinaryApiCall(data);
+      console.log("Uploaded File URL:", secure_url);
+      return secure_url;
+    } catch (error) {
+      console.error("Upload failed:", error);
+    }
+  };
+
+
+  const onSubmit = async (data: VendorFormData) => {
+    setLoading(true);
+    try {
+      const {
+        companyRegistrationCertificate,
+        vendorId,
+        addressProof,
+        confirmationLetter,
+        businessPromotionalMaterial,
+        ...filterData
+      } = data; // Filtered form data
+
+      //check for existing user
+      const existingUser = await axios.post(`${API_BASE_URL}/checkUser`, {
+        "email": data.businessEmail,
+        "modelName": "vendorModel"
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+
+      if (existingUser.data.existingUser) {
+        toast.error("User with this email already exist");
+        return;
+      }
+      else {
+        const {
+          signature: companyRegistrationSignature,
+          timestamp: companyRegistrationTimestamp
+        } = await getSignature("companyRegistrationCertificate");
+
+        const {
+          signature: vendorIdSignature,
+          timestamp: vendorIdTimestamp
+        } = await getSignature("vendorId");
+
+        const {
+          signature: addressProofSignature,
+          timestamp: addressProofTimestamp
+        } = await getSignature("addressProof");
+
+        const {
+          signature: confirmationLetterSignature,
+          timestamp: confirmationLetterTimestamp
+        } = await getSignature("confirmationLetter");
+
+        const {
+          signature: businessPromotionalMaterialSignature,
+          timestamp: businessPromotionalMaterialTimestamp
+        } = await getSignature("businessPromotionalMaterial");
+
+        const companyRegistrationCertificateURl = await uploadFile(
+          "companyRegistrationCertificate",
+          companyRegistrationTimestamp,
+          companyRegistrationSignature
+        );
+
+        const vendorIdURl = await uploadFile(
+          "vendorId",
+          vendorIdTimestamp,
+          vendorIdSignature
+        );
+
+        const addressProofURl = await uploadFile(
+          "addressProof",
+          addressProofTimestamp,
+          addressProofSignature
+        );
+
+        const confirmationLetterURl = await uploadFile(
+          "confirmationLetter",
+          confirmationLetterTimestamp,
+          confirmationLetterSignature
+        );
+
+        const businessPromotionalMaterialURl = await uploadFile(
+          "businessPromotionalMaterial",
+          businessPromotionalMaterialTimestamp,
+          businessPromotionalMaterialSignature
+        );
+
+        // Add all URLs to the filtered data object
+        const updatedData = {
+          ...filterData,
+          companyRegistrationCertificateURl,
+          vendorIdURl,
+          addressProofURl,
+          confirmationLetterURl,
+          businessPromotionalMaterialURl,
+        };
+
+
+        const response = await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        });
+        console.log(response);
+        setLoading(false);
+        toast.success("Registration completed successfully! Please wait for approval.");
+      }
+
+    }
+    catch (error: any) {
+      setLoading(false);
+      console.log("Registration error", error);
+      toast.error("Something is wrong! Please try again later");
+    }
+
+
+  };
 
   const handleAddOffering = () => {
     if (offeringInput.trim()) {
@@ -72,18 +292,6 @@ function VendorOnboarding() {
     setValue('offerings', offerings.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (data: VendorFormData) => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/vendor/register`, data);
-      console.log("Vendor Registered Successfully:", response.data);
-      const vendorId = response.data.vendor._id;
-      localStorage.setItem("VendorToken", response.data?.token);
-      navigate(`/vendor/dashboard/${vendorId}`);
-    } catch (error: any) {
-      console.error("Error Registering Vendor:", error.response?.data || error.message);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -93,7 +301,7 @@ function VendorOnboarding() {
           className="text-center mb-12"
         >
           <Store className="w-16 h-16 mx-auto mb-4 text-[#C5AD59]" />
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Vendor Registration</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Partner Registration</h1>
           <p className="text-gray-600">Join our marketplace and start selling your products</p>
         </motion.div>
         <div className='flex justify-between'>
@@ -307,6 +515,7 @@ function VendorOnboarding() {
                 />
                 {errors.representativeEmail && <p className="text-red-500 text-sm mt-1">{errors.representativeEmail.message}</p>}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
@@ -316,6 +525,57 @@ function VendorOnboarding() {
                 {errors.representativePhone && <p className="text-red-500 text-sm mt-1">{errors.representativePhone.message}</p>}
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 8,
+                    message: "Password must be at least 8 characters long",
+                  },
+                  validate: {
+                    hasUppercase: (value) =>
+                      /[A-Z]/.test(value) ||
+                      "Password must contain at least one uppercase letter",
+                    hasLowercase: (value) =>
+                      /[a-z]/.test(value) ||
+                      "Password must contain at least one lowercase letter",
+                    hasNumber: (value) =>
+                      /\d/.test(value) ||
+                      "Password must contain at least one number",
+                  },
+                })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                {...register("confirmPassword", {
+                  required: "Please confirm your password",
+                  validate: (value) =>
+                    value === watch("password") || "Passwords do not match",
+                })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+              />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
           </motion.div>
 
           {/* Business Offerings & Exclusive Deals Section */}
@@ -406,6 +666,371 @@ function VendorOnboarding() {
               </div>
             </div>
           </motion.div>
+
+          {/* document uploads */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
+            <div className="flex items-center mb-4">
+              <FileText className="w-6 h-6 mr-2 text-[#C5AD59]" />
+              <h2 className="text-2xl font-semibold text-gray-800">Required Documents
+              </h2>
+            </div>
+
+            {/* company register detail */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company Registration Certificate (PDF)
+              </label>
+
+              <div
+                className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition"
+              >
+                <input
+                  type="file"
+                  accept=".pdf"
+                  {...register("companyRegistrationCertificate", {
+                    required: "Company Registration Certificate is required",
+                    validate: (fileList: any) => {
+
+                      if (!fileList || fileList.length === 0) return "File is required";
+                      const file = fileList[0];
+                      if (file.type !== "application/pdf") return "Only PDF files are allowed";
+                      if (file.size > 20 * 1024 * 1024) {
+                        return "File size must be under 20MB"; // This only shows during form submission
+                      }
+                      return true;
+                    },
+                  })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 20 * 1024 * 1024) {
+                        toast.error("File size must be under 20MB"); // Now shows immediately
+                        setCompanyPreview(null); // Reset preview if invalid
+                        setValue("companyRegistrationCertificate", null); // Reset form value
+                        return;
+                      }
+
+                      if (file.type === "application/pdf") {
+                        setCompanyPreview(file);
+                      } else {
+                        setCompanyPreview(null);
+                        setValue("companyRegistrationCertificate", null);
+                      }
+                    }
+                  }}
+                />
+
+                <span className="text-gray-600">Click to upload or drag & drop</span>
+              </div>
+
+              {/* PDF Preview */}
+              {CompanyPreview && (
+                <div className="mt-3 flex items-center space-x-3">
+                  <span className="text-gray-700">{CompanyPreview.name}</span>
+
+                  <a
+                    href={URL.createObjectURL(CompanyPreview)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 text-sm hover:underline"
+                  >
+                    View PDF
+                  </a>
+
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    className="text-red-500 text-sm hover:underline"
+                    onClick={() => {
+                      setCompanyPreview(null); // Remove preview
+                      setValue("companyRegistrationCertificate", null); // Clear from React Hook Form
+                      // Reset the file input value
+                      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+                      if (fileInput) fileInput.value = '';
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errors.companyRegistrationCertificate && (
+                <p className="text-red-500 text-sm mt-1">{errors.companyRegistrationCertificate.message}</p>
+              )}
+            </div>
+
+
+            {/* Partner ID Upload */}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Partner Id (PDF)</label>
+
+              {/* Upload Box */}
+              <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  {...register("vendorId", {
+                    required: "Partner Id is required",
+                    validate: (fileList: any) => {
+                      if (!fileList || fileList.length === 0) return "File is required";
+                      const file = fileList[0];
+                      if (file.type !== "application/pdf") return "Only PDF files are allowed";
+                      if (file.size > 20 * 1024 * 1024) return "File size must be under 20MB";
+                      return true;
+                    },
+                  })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 20 * 1024 * 1024) {
+                        toast.error("File size must be under 20MB"); // Now shows immediately
+                        setVendorIdPreview(null); // Reset preview if invalid
+                        setValue("vendorId", null); // Reset form value
+                        return;
+                      }
+                      if (file && file.type === "application/pdf" && file.size <= 20 * 1024 * 1024) {
+                        setVendorIdPreview(file);
+                      } else {
+                        setVendorIdPreview(null); // Reset preview if invalid file
+                        setValue("vendorId", null); // Reset value if invalid file
+                      }
+                    }
+
+                  }}
+                />
+                <span className="text-gray-600">Click to upload or drag & drop</span>
+              </div>
+
+              {/* PDF Preview */}
+              {vendorIdPreview && (
+                <div className="mt-3 flex items-center space-x-3">
+                  <span className="text-gray-700">{vendorIdPreview.name}</span>
+
+                  <a
+                    href={URL.createObjectURL(vendorIdPreview)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 text-sm hover:underline"
+                  >
+                    View PDF
+                  </a>
+
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    className="text-red-500 text-sm hover:underline"
+                    onClick={() => {
+                      setVendorIdPreview(null); // Remove preview
+                      setValue("vendorId", null); // Clear from React Hook Form
+                      // Reset the file input value
+                      const fileInput = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+                      if (fileInput) fileInput.value = '';
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errors.vendorId && <p className="text-red-500 text-sm mt-1">{errors.vendorId.message}</p>}
+            </div>
+
+            {/* Address Proof */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address Proof (PDF)</label>
+              <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  {...register("addressProof", {
+                    required: "Address Proof is required",
+                    validate: (fileList: any) => {
+                      if (!fileList || fileList.length === 0) return "File is required";
+                      const file = fileList[0];
+                      if (file.type !== "application/pdf") return "Only PDF files are allowed";
+                      if (file.size > 20 * 1024 * 1024) return "File size must be under 20MB";
+                      return true;
+                    },
+                  })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 20 * 1024 * 1024) {
+                        toast.error("File size must be under 20MB"); // Now shows immediately
+                        setAddressProofPreview(null); // Reset preview if invalid
+                        setValue("addressProof", null); // Reset form value
+                        return;
+                      }
+                      if (file && file.type === "application/pdf" && file.size <= 20 * 1024 * 1024) {
+                        setAddressProofPreview(file);
+                      } else {
+                        setAddressProofPreview(null); // Reset preview if invalid file
+                        setValue("addressProof", null); // Reset value if invalid file
+                      }
+                    }
+
+                  }}
+                />
+                <span className="text-gray-600">Click to upload or drag & drop</span>
+              </div>
+
+              {/* PDF Preview */}
+              {addressProofPreview && (
+                <div className="mt-3 flex items-center space-x-3">
+                  <span className="text-gray-700">{addressProofPreview.name}</span>
+
+                  <a
+                    href={URL.createObjectURL(addressProofPreview)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 text-sm hover:underline"
+                  >
+                    View PDF
+                  </a>
+
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    className="text-red-500 text-sm hover:underline"
+                    onClick={() => {
+                      setAddressProofPreview(null); // Remove preview
+                      setValue("addressProof", null); // Clear from React Hook Form
+                      // Reset the file input value
+                      const fileInput = document.querySelectorAll('input[type="file"]')[2] as HTMLInputElement;
+                      if (fileInput) fileInput.value = '';
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errors.addressProof && <p className="text-red-500 text-sm mt-1">{errors.addressProof.message}</p>}
+            </div>
+
+            {/* Confirmation Letter */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bank Confirmation Letter (PDF)</label>
+              <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  {...register("confirmationLetter", {
+                    validate: (fileList: any) => {
+                      if (!fileList || fileList.length === 0) return true; // Allow empty as it seems optional based on original code
+                      const file = fileList[0];
+                      if (file.type !== "application/pdf") return "Only PDF files are allowed";
+                      if (file.size > 20 * 1024 * 1024) return "File size must be under 20MB";
+                      return true;
+                    },
+                  })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 20 * 1024 * 1024) {
+                        toast.error("File size must be under 20MB"); // Now shows immediately
+                        setConfirmationLetterPreview(null); // Reset preview if invalid
+                        setValue("confirmationLetter", null); // Reset form value
+                        return;
+                      }
+                      if (file && file.type === "application/pdf" && file.size <= 20 * 1024 * 1024) {
+                        setConfirmationLetterPreview(file);
+                      } else {
+                        setConfirmationLetterPreview(null); // Reset preview if invalid file
+                        setValue("confirmationLetter", null); // Reset value if invalid file
+                      }
+                    }
+                  }}
+                />
+                <span className="text-gray-600">Click to upload or drag & drop</span>
+              </div>
+
+              {/* PDF Preview */}
+              {confirmationLetterPreview && (
+                <div className="mt-3 flex items-center space-x-3">
+                  <span className="text-gray-700">{confirmationLetterPreview.name}</span>
+
+                  <a
+                    href={URL.createObjectURL(confirmationLetterPreview)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 text-sm hover:underline"
+                  >
+                    View PDF
+                  </a>
+
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    className="text-red-500 text-sm hover:underline"
+                    onClick={() => {
+                      setConfirmationLetterPreview(null); // Remove preview
+                      setValue("confirmationLetter", null); // Clear from React Hook Form
+                      // Reset the file input value
+                      const fileInput = document.querySelectorAll('input[type="file"]')[3] as HTMLInputElement;
+                      if (fileInput) fileInput.value = '';
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errors.confirmationLetter && <p className="text-red-500 text-sm mt-1">{errors.confirmationLetter.message}</p>}
+            </div>
+
+            {/* Business Promotional Material */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Business Promotional Material</label>
+              <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
+                <input
+                  type="file"
+                  accept="image/*"
+                  {...register("businessPromotionalMaterial", { required: "Business Promotional Material is required" })}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setBusinessPromotionalMaterialPreview(file);
+                    }
+                  }}
+                />
+                <span className="text-gray-600">Click to upload or drag & drop</span>
+              </div>
+              {businessPromotionalMaterialPreview && (
+                <div className="mt-3 flex items-center space-x-3">
+                  <img src={URL.createObjectURL(businessPromotionalMaterialPreview)} alt="Preview" className="w-16 h-16 object-cover rounded-md border" />
+                  <Button
+                    type="button"
+                    className="text-red-500 text-sm hover:underline"
+                    onClick={() => {
+                      setBusinessPromotionalMaterialPreview(null);
+                      setValue("businessPromotionalMaterial", null);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+              {errors.businessPromotionalMaterial && <p className="text-red-500 text-sm mt-1">{errors.businessPromotionalMaterial.message}</p>}
+            </div>
+
+          </motion.div>
+
 
           {/* Vendor Tier Selection Section */}
           <motion.div
@@ -528,13 +1153,15 @@ function VendorOnboarding() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
             type="submit"
-            className="w-full bg-[#C5AD59] text-white py-3 px-6 rounded-md hover:bg-[#b39b47] transition-colors duration-200 font-semibold text-lg shadow-md"
+            disabled={Loading}
+            className={`w-full py-3 px-6 rounded-md transition-colors duration-200 font-semibold text-lg shadow-md
+    ${Loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#C5AD59] hover:bg-[#b39b47] text-white"}`}
           >
-            Submit Registration
+            {Loading ? "Submitting..." : "Submit Registration"}
           </motion.button>
         </form>
       </div>
-    </div>
+    </div >
   );
 }
 

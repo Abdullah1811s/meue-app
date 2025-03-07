@@ -32,29 +32,40 @@ function AffiliateLogin() {
             const response = await axios.post(`${API_BASE_URL}/affiliated/login`, data, {
                 headers: { "Content-Type": "application/json" },
             });
-            const id = response.data.affiliate._id;
-            console.log("The id is ", id);
 
             if (response.status === 200) {
-                const status = response.data.affiliate.status;
+                const { affiliate, token } = response.data;
+                const { _id, status } = affiliate;
 
-                if (status === "Pending") {
-                    toast.success("Please wait 48-72 hours to get verified");
-                } else if (status === "Rejected") {
-                    toast.error("Your request has been rejected by the admin");
-                } else {
-                    toast.success("Login successful!");
-                    localStorage.setItem("affiliatedToken", response?.data?.token);
-                    window.open(`/affiliated/dashboard/${id}`, '_blank');
+                console.log("The id is ", _id);
+
+                if (status === "pending") {
+
+                    toast(
+                        "    Your application is under review. Please wait 48-72 hours for verification.",
+                        {
+                            duration: 6000,
+                        }
+                    );
+                    return;
                 }
-            } else {
-                toast.error("Invalid credentials");
+
+                if (status === "rejected") {
+                    toast.error("Your request has been rejected by the admin. You cannot log in.");
+                    return;
+                }
+
+                // If approved, proceed with login
+                toast.success("Login successful!");
+                localStorage.setItem("affiliatedToken", token);
+                window.open(`/affiliated/dashboard/${_id}`, '_blank');
             }
         } catch (error: any) {
             console.error("Login error:", error);
             toast.error(error.response?.data?.message || "Login failed. Please try again.");
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">

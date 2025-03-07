@@ -1,41 +1,39 @@
-"use client";
-import TitleCard from "./TitleCard";
-import { Hourglass } from "lucide-react";
 
 const RankCard = () => {
   const players = [
     {
       rank: "#1",
       region: "Asia",
-      name: "Saymi",
+      name: "Liam Hayes",
       rp: "2131 RP",
       rankName: "Platinum",
-      img: "/profile1.png",
+      img: "https://randomuser.me/api/portraits/men/45.jpg",
       bg: "bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900",
     },
     {
       rank: "#2",
       region: "Europe",
-      name: "Nodror",
+      name: "Emma Collins",
       rp: "2331 RP",
       rankName: "Gold",
-      img: "/profile2.png",
+      img: "https://randomuser.me/api/portraits/women/50.jpg",
       bg: "bg-gradient-to-b from-yellow-400 via-yellow-600 to-yellow-800",
     },
     {
       rank: "#3",
       region: "America",
-      name: "Smiley",
+      name: "Noah Bennett",
       rp: "1131 RP",
       rankName: "Silver",
-      img: "/profile3.png",
+      img: "https://randomuser.me/api/portraits/men/33.jpg",
       bg: "bg-gradient-to-b from-gray-300 via-gray-500 to-gray-800",
     },
   ];
 
+
   return (
     <div className="flex flex-col items-center space-y-10">
-      <TitleCard title="Countdown Timers for Ongoing Raffles and Games" IconComponent={Hourglass} />
+
       <p className="text-2xl font-semibold">
         League will end in <span className="text-yellow-500 font-extrabold">03:12:59</span>
       </p>
