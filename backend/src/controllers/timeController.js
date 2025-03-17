@@ -1,43 +1,54 @@
 import TimeModel from "../models/timer.model.js";
+
+// Get mainWebTime (with elapsed time adjustment)
 export const getMainWebTime = async (req, res) => {
   try {
-    const timeData = await TimeModel.findOne(); // Fetch first document
+    const timeData = await TimeModel.findOne();
     if (!timeData) return res.status(404).json({ message: "No data found" });
 
-    res.json({ mainWebTime: timeData.mainWebTime });
+    const { mainWebTime, updatedAt } = timeData;
+    const elapsedSeconds = Math.floor((Date.now() - new Date(updatedAt)) / 1000);
+    const remainingTime = Math.max(0, mainWebTime - elapsedSeconds);
+
+    res.json({ mainWebTime: remainingTime });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-// Get appTime
+// Get appTime (same logic applied)
 export const getAppTime = async (req, res) => {
   try {
-    const timeData = await TimeModel.findOne(); // Fetch first document
+    const timeData = await TimeModel.findOne();
     if (!timeData) return res.status(404).json({ message: "No data found" });
 
-    res.json({ appTime: timeData.appTime });
+    const { appTime, updatedAt } = timeData;
+    const elapsedSeconds = Math.floor((Date.now() - new Date(updatedAt)) / 1000);
+    const remainingTime = Math.max(0, appTime - elapsedSeconds);
+
+    res.json({ appTime: remainingTime });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-
+// Set mainWebTime and appTime (reset the timer)
 export const setTimeData = async (req, res) => {
   try {
     const { mainWebTime, appTime } = req.body;
-
-    // Check if there's an existing document (assuming only one document exists)
     let timeData = await TimeModel.findOne();
 
     if (timeData) {
-      // Update existing document
       timeData.mainWebTime = mainWebTime ?? timeData.mainWebTime;
       timeData.appTime = appTime ?? timeData.appTime;
+      timeData.updatedAt = new Date(); // Reset start time
       await timeData.save();
     } else {
-      // Create new document
-      timeData = await TimeModel.create({ mainWebTime, appTime });
+      timeData = await TimeModel.create({
+        mainWebTime,
+        appTime,
+        updatedAt: new Date(),
+      });
     }
 
     res.status(200).json({ message: "Time data saved successfully", timeData });
