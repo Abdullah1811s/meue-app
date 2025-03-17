@@ -6,11 +6,9 @@ import { motion } from "framer-motion";
 import { CalendarIcon, Gift, Trophy, User, MapPin, Mail } from "lucide-react";
 
 
-const socket = io("http://localhost:8000");
-if (socket)
-  console.log("This is socket")
-else
-  console.log("no")
+const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
+
+
 interface Participant {
   name: string;
   email: string;
