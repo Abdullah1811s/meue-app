@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { CheckCircle } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 const offers = [
   "Discount Vouchers",
@@ -100,6 +101,8 @@ type VendorFormData = {
 function VendorOnboarding() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [Loading, setLoading] = useState<boolean>(false);
   const [CompanyPreview, setCompanyPreview] = useState<File | null>(null);
   const [vendorIdPreview, setVendorIdPreview] = useState<File | null>(null);
@@ -338,6 +341,7 @@ function VendorOnboarding() {
       console.log(response);
       setLoading(false);
       toast.success("Registration completed successfully! Please wait for approval.");
+      navigate('/');
       reset();
     }
     catch (error: any) {
@@ -625,38 +629,58 @@ function VendorOnboarding() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                       <input
-                        {...register("representativePhone", { required: "Representative phone number is required" })}
+                        type="tel"
+                   
+                        {...register("representativePhone", {
+                          required: "Representative phone number is required",
+                          pattern: {
+                            value: /^(\+27|0)[6-8][0-9]{8}$/,
+                            message: "Enter a valid South African phone number"
+                          }
+                        })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                       />
+
                       {errors.representativePhone && <p className="text-red-500 text-sm mt-1">{errors.representativePhone.message}</p>}
                     </div>
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Password
                     </label>
-                    <input
-                      type="password"
-                      {...register("password", {
-                        required: "Password is required",
-                        minLength: {
-                          value: 8,
-                          message: "Password must be at least 8 characters long",
-                        },
-                        validate: {
-                          hasUppercase: (value) =>
-                            /[A-Z]/.test(value) ||
-                            "Password must contain at least one uppercase letter",
-                          hasLowercase: (value) =>
-                            /[a-z]/.test(value) ||
-                            "Password must contain at least one lowercase letter",
-                          hasNumber: (value) =>
-                            /\d/.test(value) ||
-                            "Password must contain at least one number",
-                        },
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        {...register("password", {
+                          required: "Password is required",
+                          minLength: {
+                            value: 8,
+                            message: "Password must be at least 8 characters long",
+                          },
+                          validate: {
+                            hasUppercase: (value) =>
+                              /[A-Z]/.test(value) ||
+                              "Password must contain at least one uppercase letter",
+                            hasLowercase: (value) =>
+                              /[a-z]/.test(value) ||
+                              "Password must contain at least one lowercase letter",
+                            hasNumber: (value) =>
+                              /\d/.test(value) ||
+                              "Password must contain at least one number",
+                          },
+                        })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent pr-10"
+                      />
+                      {/* Show/Hide Password Button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
                     {errors.password && (
                       <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
                     )}
@@ -666,15 +690,25 @@ function VendorOnboarding() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Confirm Password
                     </label>
-                    <input
-                      type="password"
-                      {...register("confirmPassword", {
-                        required: "Please confirm your password",
-                        validate: (value) =>
-                          value === watch("password") || "Passwords do not match",
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        {...register("confirmPassword", {
+                          required: "Please confirm your password",
+                          validate: (value) =>
+                            value === watch("password") || "Passwords do not match",
+                        })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent pr-10"
+                      />
+                      {/* Show/Hide Password Button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+                      >
+                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
                     {errors.confirmPassword && (
                       <p className="text-red-500 text-sm mt-1">
                         {errors.confirmPassword.message}

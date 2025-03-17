@@ -16,12 +16,11 @@ const RaffSchema = new mongoose.Schema(
           name: { type: String, required: true },
           id: { type: String, required: true },
           quantity: { type: Number },
-          endDate: { type: Date }
-        }
+          endDate: { type: Date },
+        },
       ],
       required: [true, 'List of prizes is required'],
     },
-
     participants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -29,20 +28,23 @@ const RaffSchema = new mongoose.Schema(
         required: true,
       },
     ],
-
     winner: [
       {
         user: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
+          ref: 'User',
           default: null,
         },
         prize: {
           type: String,
           default: null,
         },
-      }
-    ],    
+        isEmailSent: {
+          type: Boolean,
+          default: false, // Default to false, indicating email has not been sent
+        },
+      },
+    ],
     scheduledAt: {
       type: Date,
       required: false,
@@ -54,9 +56,8 @@ const RaffSchema = new mongoose.Schema(
     },
     isVisible: {
       type: Boolean,
-      default: false
-    }
-
+      default: false,
+    },
   },
   { timestamps: { createdAt: true, updatedAt: true } }
 );

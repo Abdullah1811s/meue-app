@@ -3,22 +3,52 @@ import { useState, useEffect } from "react";
 const AnalogTimer = () => {
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
   const totalSeconds = 60 * 24 * 60 * 60; // 60 days in seconds
   
-  // Fetch mainWebTime from API
+  // Fetch mainWebTime from API or use cached value
   useEffect(() => {
     const fetchTime = async () => {
       try {
-        // Using fetch instead of axios to reduce dependencies
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/mainWebTime`);
-        const data = await response.json();
-        setTimeLeft(data.mainWebTime);
+        // Check if we have a stored time and when it was last fetched
+        const storedTimeData = localStorage.getItem('mainWebTimeData');
+        const currentTime = Date.now();
+        
+        if (storedTimeData) {
+          const { timeValue, fetchTimestamp } = JSON.parse(storedTimeData);
+          const elapsedSeconds = Math.floor((currentTime - fetchTimestamp) / 1000);
+          
+          // Use the stored value but adjust for elapsed time
+          setTimeLeft(Math.max(0, timeValue - elapsedSeconds));
+          setLastFetchTime(fetchTimestamp);
+          setLoading(false);
+        }
+        
+        // Only fetch from API if we don't have data or it's been more than 5 minutes
+        const shouldFetchFromAPI = !storedTimeData || 
+          (lastFetchTime && (currentTime - lastFetchTime) > 5 * 60 * 1000);
+        
+        if (shouldFetchFromAPI) {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/mainWebTime`);
+          const data = await response.json();
+          
+          // Store the new time value and current timestamp
+          const newTimeData = {
+            timeValue: data.mainWebTime,
+            fetchTimestamp: currentTime
+          };
+          
+          localStorage.setItem('mainWebTimeData', JSON.stringify(newTimeData));
+          setTimeLeft(data.mainWebTime);
+          setLastFetchTime(currentTime);
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error fetching mainWebTime:", error);
-      } finally {
         setLoading(false);
       }
     };
+    
     fetchTime();
   }, []);
   
@@ -26,7 +56,10 @@ const AnalogTimer = () => {
   useEffect(() => {
     if (!timeLeft || timeLeft <= 0) return;
     const interval = setInterval(() => {
-      setTimeLeft((prev:any) => (prev ? prev - 1 : 0));
+      setTimeLeft((prev:any) => {
+        const newValue = prev ? prev - 1 : 0;
+        return newValue;
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, [timeLeft]);

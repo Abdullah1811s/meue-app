@@ -199,6 +199,7 @@ const AdminDashboard = () => {
   const [isManageWeeklyReferral, setManageWeeklyReferral] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   // const [onRaff, setOnRaff] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [isCreateAdminModalOpen, setCreateAdminModalOpen] = useState(false);
@@ -552,7 +553,7 @@ const AdminDashboard = () => {
   };
 
   const updatePartnerStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
-
+    setIsApproving(true);
     setLoadingStates(prev => ({ ...prev, [id]: true }));
 
     try {
@@ -596,10 +597,7 @@ const AdminDashboard = () => {
         }
       }
 
-      else if (raffleOffers.includes(res.data.vendor.exclusiveOffer.type)) {
-        console.log(res.data.vendor._id);
-        console.log(res.data.vendor.exclusiveOffer.offerings);
-      }
+
       toast.success("Partner status updated successfully");
     } catch (error: any) {
       console.error("Error updating partner status:", error.message);
@@ -607,6 +605,7 @@ const AdminDashboard = () => {
     } finally {
       setLoadingStates(prev => ({ ...prev, [id]: false })); // Stop loading
     }
+    setIsApproving(false);
   };
 
   const updateTier = async (id: string, vendorTier: any) => {
@@ -1021,12 +1020,27 @@ const AdminDashboard = () => {
                                           <DialogContent>
                                             <DialogHeader>
                                               <DialogTitle>Enter Schedule Date</DialogTitle>
-                                              <DialogDescription>Ensure the date is before {maxOfferDate?.toDateString()}.</DialogDescription>
+                                              <DialogDescription>
+                                                Ensure the date is before {maxOfferDate?.toDateString()} and not in the past.
+                                              </DialogDescription>
                                             </DialogHeader>
 
-                                            <Input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+                                            <Input
+                                              type="date"
+                                              value={scheduleDate}
+                                              onChange={(e) => setScheduleDate(e.target.value)}
+                                              min={new Date().toISOString().split('T')[0]} // This sets minimum date to today
+                                              max={maxOfferDate?.toISOString().split('T')[0]} // This sets maximum date
+                                            />
 
-                                            <Button onClick={() => handleConfirmSchedule(vendor.exclusiveOffer.type, offering, vendor._id)}>Confirm</Button>
+                                            <DialogFooter>
+                                              <Button
+                                                onClick={() => handleConfirmSchedule(vendor.exclusiveOffer.type, offering, vendor._id)}
+                                                disabled={!scheduleDate || new Date(scheduleDate) < new Date() || (maxOfferDate && new Date(scheduleDate) > maxOfferDate)}
+                                              >
+                                                Confirm
+                                              </Button>
+                                            </DialogFooter>
                                           </DialogContent>
                                         </Dialog>
                                       </>
@@ -1146,7 +1160,7 @@ const AdminDashboard = () => {
                       <div className="mt-4 md:mt-6 flex flex-wrap gap-2">
                         <Button
                           onClick={() => updatePartnerStatus(vendor._id, "approved")}
-                          disabled={vendor.status === "approved" || vendor.status === "rejected"}
+                          disabled={isApproving || vendor.status === "approved" || vendor.status === "rejected"}
                           className={`${vendor.status === "approved"
                             ? "bg-green-400 cursor-not-allowed"
                             : vendor.status === "rejected"
@@ -1155,7 +1169,7 @@ const AdminDashboard = () => {
                             } text-white px-4 py-2 rounded-lg shadow-md transition-transform transform ${vendor.status !== "approved" && vendor.status !== "rejected" ? "hover:scale-105" : ""
                             } text-sm`}
                         >
-                          {vendor.status === "approved" ? "Approved" : "Approve"}
+                          {isApproving ? "Approving..." : vendor.status === "approved" ? "Approved" : "Approve"}
                         </Button>
 
                         {vendor.status !== "approved" && (

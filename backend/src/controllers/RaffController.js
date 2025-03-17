@@ -245,16 +245,17 @@ export const updateRaffleOfferings = async (req, res) => {
 export const updateRaffWithWinner = async (req, res) => {
     try {
         const { refId, winnerEmail, prizeId } = req.body;
-
+        let isWinner = false;
+        
         if (!refId || !winnerEmail || !prizeId) {
             return res.status(400).json({ error: "Raffle ID, winner email, and prize ID are required." });
         }
 
-
-
         const winner = await usersModel.findOne({ email: winnerEmail });
         if (!winner) {
             return res.status(404).json({ error: "Winner not found." });
+        } else {
+            isWinner = true;
         }
 
         const raffle = await raffModel.findById(refId);
@@ -262,14 +263,13 @@ export const updateRaffWithWinner = async (req, res) => {
             return res.status(404).json({ error: "Raffle not found." });
         }
 
-
         const prizeIndex = raffle.prizes.findIndex((prize) => prize.id === prizeId);
         if (prizeIndex === -1) {
             return res.status(404).json({ error: "Prize not found in the raffle." });
         }
 
         const prize = raffle.prizes[prizeIndex];
-
+        
         // Check if the endDate is today
         const today = new Date();
         if (prize.endDate && prize.endDate.toDateString() === today.toDateString()) {
@@ -302,8 +302,20 @@ export const updateRaffWithWinner = async (req, res) => {
             raffle.status = "completed";
         }
 
-        // Push the winner to the winner array
-        raffle.winner.push({ user: winner._id, prize: prize.name });
+        // Check if this winner already exists for this prize
+        const existingWinnerIndex = raffle.winner.findIndex(
+            w => w.user.toString() === winner._id.toString() && w.prize === prize.name
+        );
+
+        // Only add the winner if they don't already exist for this prize
+        if (existingWinnerIndex === -1) {
+            // Push the winner to the winner array
+            raffle.winner.push({ 
+                user: winner._id, 
+                prize: prize.name, 
+                isEmailSent: false 
+            });
+        }
 
         const updatedRaff = await raffModel.findByIdAndUpdate(
             refId,
@@ -354,50 +366,61 @@ export const updateRaffWithWinner = async (req, res) => {
         }
 
         console.log("Vendor updated successfully:", updatedVendor);
-        // TODO: Send email to the winner
 
+        // Handle email sending with a more robust approach
+        if (isWinner) {
+            // Use atomic update to ensure email is only sent once
+            const winnerUpdateResult = await raffModel.updateOne(
+                { 
+                    _id: refId,
+                    "winner.user": winner._id,
+                    "winner.prize": prize.name,
+                    "winner.isEmailSent": false // Only update if email hasn't been sent
+                },
+                { 
+                    $set: { "winner.$.isEmailSent": true }
+                }
+            );
 
-        const smtpConfig = {
-            host: "mail.themenuportal.co.za",
-            port: 465,
-            user: "support@themenuportal.co.za",
-        };
+            // Only send email if we successfully updated the flag
+            if (winnerUpdateResult.modifiedCount > 0) {
+                const smtpConfig = {
+                    host: "mail.themenuportal.co.za",
+                    port: 465,
+                    user: "support@themenuportal.co.za",
+                };
 
-
-        const winners = updatedRaff.winner;
-
-        winners.forEach(async (winner) => {
-            if (winner.user?.email) {
-                console.log(`📩 Sending email to: ${winner.user.email}`);
-
+                console.log(`📩 Sending email to: ${winnerEmail}`);
                 await sendEmail(
                     smtpConfig,
-                    winner.user.email,
+                    winnerEmail,
                     "🎉 Congratulations! You're a Winner!",
-                    `Dear ${winner.user.name},
-                
-                We are excited to inform you that you have won **${winner.prize}!** 🎁  
-                
-                To claim your prize, please check your email for further details.  
-                
-                If you don’t see our email in your inbox, kindly check your spam or promotions folder.  
-                
-                Once again, congratulations! 🎉  
-                
-                Best regards,  
-                The Menu Portal Team`,
+                    `Dear ${winnerEmail.split('@')[0]},
+                    
+                    We are excited to inform you that you have won **${prize.name}!** 🎁  
+                    
+                    To claim your prize, please check your email for further details.  
+                    
+                    If you don't see our email in your inbox, kindly check your spam or promotions folder.  
+                    
+                    Once again, congratulations! 🎉  
+                    
+                    Best regards,  
+                    The Menu Portal Team`,
 
-                    `<p>Dear <b>${winner.user.name}</b>,</p>
-                    <p>We are excited to inform you that you have won <b>${winner.prize}!</b> 🎁</p>
+                    `<p>Dear <b>${winnerEmail.split('@')[0]}</b>,</p>
+                    <p>We are excited to inform you that you have won <b>${prize.name}!</b> 🎁</p>
                     <p>To claim your prize, please check your email for further details.</p>
-                    <p>If you don’t see our email in your inbox, kindly check your <b>spam</b> or <b>promotions</b> folder.</p>
+                    <p>If you don't see our email in your inbox, kindly check your <b>spam</b> or <b>promotions</b> folder.</p>
                     <p>🎉 Congratulations once again!</p>
                     <p>Best regards,</p>
                     <p><b>The Menu Team</b></p>`
                 );
-
+                console.log("Email sent successfully");
+            } else {
+                console.log(`Email already sent to ${winnerEmail} for prize ${prize.name}`);
             }
-        });
+        }
 
         res.status(200).json({
             message: "Winner updated successfully",

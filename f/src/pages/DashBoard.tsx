@@ -186,6 +186,7 @@ const Dashboard = () => {
       const res = await axios.get(`${API_BASE_URL}/vendor/${id}`);
       setVendor(res.data);
       setFormData(res.data);
+      console.log(res.data);
       if (res.data.province) {
         const selectedProvince = southAfricanProvinces.find((p) => p.name === res.data.province);
         if (selectedProvince) {
@@ -271,14 +272,14 @@ const Dashboard = () => {
 
       }
       else if (raffleOffers.includes(exclusiveOffer.type)) {
-       
+
 
         // console.log("updating raff ....." , id);
         // const response = await axios.put(`${API_BASE_URL}/Raff/updateOfferings/${id}`, {
         //   offerings
         // });
       }
-      console.log("The date ", formData);
+
       await axios.put(`${API_BASE_URL}/vendor/update/${id}`, formData);
       setUpdateSuccess(true);
       setTimeout(() => setUpdateSuccess(false), 3000);
@@ -936,9 +937,10 @@ const Dashboard = () => {
                                       <label className="block text-sm font-medium text-gray-700 mb-3">
                                         Offerings
                                       </label>
+
                                       {formData.exclusiveOffer.offerings.map((offering: Offering, index: number) => (
                                         <div key={index} className="space-y-2 mb-4">
-                                          {/* Name Input (Always Shown) */}
+                                          {/* Name Input */}
                                           <input
                                             type="text"
                                             placeholder="Name"
@@ -951,27 +953,27 @@ const Dashboard = () => {
                                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                           />
 
-                                          {/* Conditionally Render Quantity Input (Only if greater than 0) */}
-                                          {(offering.quantity ?? 0) > 0 && (
+                                          {/* Quantity Input (Rendered only if offering.endDate is null or empty) */}
+                                          {!offering.endDate && (
                                             <input
                                               type="number"
                                               placeholder="Quantity"
-                                              value={offering.quantity}
+                                              value={offering.quantity === 0 ? "" : offering.quantity} // Preserve empty input
                                               onChange={(e) =>
                                                 handleInputChange({
-                                                  target: { name: `offering.${index}.quantity`, value: parseInt(e.target.value, 10) || 0 },
+                                                  target: { name: `offering.${index}.quantity`, value: e.target.value === "" ? "" : parseInt(e.target.value, 10) || 0 },
                                                 } as unknown as React.ChangeEvent<HTMLInputElement>)
                                               }
                                               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                             />
                                           )}
 
-                                          {/* Conditionally Render End Date Input (Only if not null or empty) */}
+                                          {/* End Date Input (Rendered only if offering.endDate is not null or empty) */}
                                           {offering.endDate && (
                                             <input
                                               type="date"
                                               placeholder="End Date"
-                                              value={offering.endDate} // ✅ Uses offering.endDate as the value
+                                              value={offering.endDate} // Uses offering.endDate as the value
                                               onChange={(e) =>
                                                 handleInputChange({
                                                   target: { name: `offering.${index}.endDate`, value: e.target.value },
@@ -991,7 +993,6 @@ const Dashboard = () => {
                                           </button>
                                         </div>
                                       ))}
-
 
                                     </div>
                                   </div>
@@ -1014,6 +1015,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </form>
+
                         <div className="bg-white rounded-xl shadow-md p-4 mb-4 border border-gray-200">
                           <h3 className="text-lg font-semibold text-gray-800 mb-3">partner Documents</h3>
                           <ul className="list-none space-y-3">

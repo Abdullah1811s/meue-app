@@ -123,9 +123,8 @@ export default function UserDashboard() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawSpeed, setDrawSpeed] = useState(100);
 
-  // Toast management to prevent duplicates
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
-    toast.dismiss(); // Dismiss any existing toasts
+    toast.dismiss(); 
     if (type === 'success') {
       toast.success(message);
     } else {
@@ -174,7 +173,7 @@ export default function UserDashboard() {
   }, [selectedRaffle, showToast]);
 
   const startDrawAnimation = (raffle: UpcomingRaffle) => {
-    console.log("The raffle is", raffle);
+   
     if (!raffle.participants || raffle.participants.length === 0) return;
 
     setDrawingRaffle(raffle._id);
@@ -240,12 +239,7 @@ export default function UserDashboard() {
 
     const winner = raffle.participants![winnerIndex];
 
-    // Log winner details
-    console.log("🎉 Winner Selected!");
-    console.log("Raffle ID:", raffle._id);
-    console.log("Winner Email:", winner.email);
-    console.log("Prize:", prizeName);
-
+    
     setTimeout(() => {
       setCurrentParticipant(winner);
       setCurrentPrize(prizeName);
@@ -253,7 +247,7 @@ export default function UserDashboard() {
       setShowConfetti(true);
       setIsDrawing(false);
 
-      showToast(`🎉 ${winner.email} won ${prizeName}!`, 'success');
+      showToast(`🎉 ${winner.name} won ${prizeName}!`, 'success');
 
       updateWinner(raffle._id, winner.email, { id: prizeId, name: prizeName })
         .then(() => {
@@ -277,14 +271,13 @@ export default function UserDashboard() {
     try {
       const res = await axios.get(`${API_BASE_URL}/Raff`);
       const completedRaffles = res.data.raff;
-      console.log("these are the raffle", completedRaffles);
+   
       const winner = completedRaffles.filter((r: RaffleItem) =>
         Array.isArray(r.winner) && r.winner.length > 0
       );
 
       setWithWinnerRaffles(winner);
 
-      console.log("The winner raff", winner);
       setHasFetched(true);
     } catch (error) {
       console.error("Error fetching raffles:", error);
@@ -326,12 +319,12 @@ export default function UserDashboard() {
       prizeId: prize.id
     };
 
-    console.log("This is the data that is going to the backend:", payload);
+ 
 
     try {
       const res = await axios.put(`${API_BASE_URL}/Raff/updateRaff`, payload);
       if (res.status !== 200) throw new Error("Failed to update winner");
-      console.log("Winner updated successfully:", res.data);
+   
     } catch (error) {
       console.error("Error updating winner:", error);
       throw error;

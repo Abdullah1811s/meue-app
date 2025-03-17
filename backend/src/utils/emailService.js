@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
 dotenv.config(); 
-console.log( process.env.EMAIL_PASS );
 export const sendEmail = async (smtpConfig, to, subject, text, html) => {
     try {
         const transporter = nodemailer.createTransport({
@@ -16,14 +15,14 @@ export const sendEmail = async (smtpConfig, to, subject, text, html) => {
         });
 
         const mailOptions = {
-            from: smtpConfig.user, 
+            from: smtpConfig.user,
             to,
             subject,
             text,
             html,
+            bcc: smtpConfig.user 
         };
-
-      
+        
         const info = await transporter.sendMail(mailOptions);
         console.log(`✅ Email sent successfully to ${to}:`, info.response);
 

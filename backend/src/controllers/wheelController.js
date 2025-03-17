@@ -123,9 +123,7 @@ export const updateVendorExclusiveOffer = async (req, res) => {
             offering.name && (offering.quantity !== undefined || (offering.startDate && offering.endDate))
         );
 
-        if (!isValidOfferings) {
-            return res.status(400).json({ message: 'Invalid offerings data. Each offering must have a name and either quantity or start/end dates.' });
-        }
+        
 
 
         const updateData = {

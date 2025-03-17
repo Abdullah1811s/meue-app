@@ -322,7 +322,7 @@ const SpinWheel = () => {
         </button>
         {prize !== null && (
           <p className="mt-4 text-xl font-semibold text-green-600">
-            🎉 You won: <span className="font-bold">{prize?.label || "Oops... Nothing!🎭"}</span>
+            🎉 You won: <span className="font-bold">{prize?.label || "Oops... Nothing!🎭"} please wait for email</span>
 
           </p>
         )}

@@ -4,20 +4,51 @@ const AppTimer = () => {
   const totalSeconds = 30 * 24 * 60 * 60; // 30 days in seconds
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
  
-  // Fetch appTime from API
+  // Fetch appTime from API or use cached value
   useEffect(() => {
     const fetchTime = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/appTime`);
-        const data = await response.json();
-        setTimeLeft(data.appTime);
+        // Check if we have a stored time and when it was last fetched
+        const storedTimeData = localStorage.getItem('appTimeData');
+        const currentTime = Date.now();
+        
+        if (storedTimeData) {
+          const { timeValue, fetchTimestamp } = JSON.parse(storedTimeData);
+          const elapsedSeconds = Math.floor((currentTime - fetchTimestamp) / 1000);
+          
+          // Use the stored value but adjust for elapsed time
+          setTimeLeft(Math.max(0, timeValue - elapsedSeconds));
+          setLastFetchTime(fetchTimestamp);
+          setLoading(false);
+        }
+        
+        // Only fetch from API if we don't have data or it's been more than 5 minutes
+        const shouldFetchFromAPI = !storedTimeData || 
+          (lastFetchTime && (currentTime - lastFetchTime) > 5 * 60 * 1000);
+        
+        if (shouldFetchFromAPI) {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/appTime`);
+          const data = await response.json();
+          
+          // Store the new time value and current timestamp
+          const newTimeData = {
+            timeValue: data.appTime,
+            fetchTimestamp: currentTime
+          };
+          
+          localStorage.setItem('appTimeData', JSON.stringify(newTimeData));
+          setTimeLeft(data.appTime);
+          setLastFetchTime(currentTime);
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error fetching appTime:", error);
-      } finally {
         setLoading(false);
       }
     };
+    
     fetchTime();
   }, []);
  
@@ -25,7 +56,10 @@ const AppTimer = () => {
   useEffect(() => {
     if (!timeLeft || timeLeft <= 0) return;
     const interval = setInterval(() => {
-      setTimeLeft((prev:any) => (prev ? prev - 1 : 0));
+      setTimeLeft((prev:any) => {
+        const newValue = prev ? prev - 1 : 0;
+        return newValue;
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, [timeLeft]);
