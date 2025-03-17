@@ -7,13 +7,13 @@ import Footer from './components/customComponents/Footer';
 function App() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-
+  const isVendorDashboard = location.pathname.includes('/dashboard');
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
-      {!isAdminRoute && <NavbarComponent />}
+      {!isAdminRoute && !isVendorDashboard && <NavbarComponent />}
       <Outlet />
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && !isVendorDashboard && <Footer />}
     </>
   );
 }

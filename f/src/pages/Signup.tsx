@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
-import { login } from '../store/authSlice';
+import { userLogin } from '../store/authSlice';
+import ReCAPTCHA from "react-google-recaptcha";
 const signUpSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Please enter a valid email'),
@@ -31,15 +32,32 @@ const signUpSchema = z.object({
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 function SignUp() {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const SITE_KEY = import.meta.env.VITE_RECAP;
+  const provinceCities = {
+    "Eastern Cape": ["Gqeberha (Port Elizabeth)", "East London", "Mthatha", "Queenstown", "Grahamstown", "King William’s Town"],
+    "Free State": ["Bloemfontein", "Welkom", "Bethlehem", "Sasolburg", "Parys", "Kroonstad"],
+    "Gauteng": ["Johannesburg", "Pretoria", "Sandton", "Midrand", "Centurion", "Soweto", "Benoni", "Boksburg", "Kempton Park", "Alberton", "Vanderbijlpark"],
+    "KwaZulu-Natal": ["Durban", "Pietermaritzburg", "Richards Bay", "Newcastle", "Pinetown", "Umhlanga", "Ballito", "Margate"],
+    "Limpopo": ["Polokwane", "Tzaneen", "Mokopane", "Thohoyandou", "Bela-Bela", "Lephalale"],
+    "Mpumalanga": ["Mbombela (Nelspruit)", "Witbank (eMalahleni)", "Middelburg", "Secunda", "Barberton", "Sabie"],
+    "Northern Cape": ["Kimberley", "Upington", "Springbok", "De Aar", "Kuruman", "Colesberg"],
+    "North West": ["Mahikeng", "Rustenburg", "Klerksdorp", "Potchefstroom", "Brits", "Lichtenburg"],
+    "Western Cape": ["Cape Town", "Stellenbosch", "George", "Paarl", "Worcester", "Mossel Bay", "Knysna"]
+  };
+
   const navigate = useNavigate();
+  const [selectedProvince, setSelectedProvince] = useState<keyof typeof provinceCities | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const dispatch = useDispatch();
-
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const handleCaptcha = (token: any) => {
+    setCaptchaToken(token);
+  };
   const {
     register,
     handleSubmit,
@@ -50,25 +68,16 @@ function SignUp() {
 
   const onSubmit = async (data: SignUpForm) => {
 
-    console.log("The form data is ", data);
-    // const payLoad = {confirm}
-    const { confirmPassword, ...filterData } = data;
-    console.log("The filter data is", filterData);
-    // TODO:send the paylaod to backend
-
-
-
-
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/signUp`, data, {
+      const response = await axios.post(`${API_BASE_URL}/auth/signUp`, { ...data, captchaToken }, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      console.log("The server send ", response.data);
+
       localStorage.setItem("UserToken", response?.data.token);
       setSignupSuccess(true);
-      dispatch(login());
+      dispatch(userLogin());
       navigate(`/users/${response?.data.user._id}`);
     } catch (error: any) {
       console.error('Signup Error:', error?.response?.data?.message || error?.message);
@@ -248,29 +257,30 @@ function SignUp() {
               </motion.div>
 
               {/* City */}
-              <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                <input {...register("city")} type="text" placeholder="Enter city" className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]" />
-                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>}
-              </motion.div>
-
-              {/* Province */}
               <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
-                <select {...register("province")} className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]">
+                <select {...register("province")} className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]" onChange={(e: any) => setSelectedProvince(e.target.value)}>
                   <option value="">Select Province</option>
-                  <option value="Gauteng">Gauteng</option>
-                  <option value="Western Cape">Western Cape</option>
-                  <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-                  <option value="Eastern Cape">Eastern Cape</option>
-                  <option value="Free State">Free State</option>
-                  <option value="Limpopo">Limpopo</option>
-                  <option value="Mpumalanga">Mpumalanga</option>
-                  <option value="North West">North West</option>
-                  <option value="Northern Cape">Northern Cape</option>
+                  {Object.keys(provinceCities).map((province) => (
+                    <option key={province} value={province}>{province}</option>
+                  ))}
                 </select>
                 {errors.province && <p className="mt-1 text-sm text-red-600">{errors.province.message}</p>}
               </motion.div>
+
+              {/* City */}
+              <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <select {...register("city")} className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]" disabled={!selectedProvince}>
+                  <option value="">{selectedProvince ? "Select City" : "Select a Province First"}</option>
+                  {selectedProvince && provinceCities[selectedProvince].map((city: string) => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>}
+              </motion.div>
+
+
 
               {/* Postal Code */}
               <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.8 }}>
@@ -307,7 +317,7 @@ function SignUp() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-9 text-sm text-gray-600"
                 >
-                  {showPassword ? <Eye/> : <EyeOff/>}
+                  {showPassword ? <Eye /> : <EyeOff />}
                 </button>
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
               </motion.div>
@@ -331,7 +341,7 @@ function SignUp() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-9 text-sm text-gray-600"
                 >
-                  {showConfirmPassword ? <Eye/> : <EyeOff/>}
+                  {showConfirmPassword ? <Eye /> : <EyeOff />}
                 </button>
                 {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>}
               </motion.div>
@@ -344,6 +354,10 @@ function SignUp() {
                 {errors.referralCode && <p className="mt-1 text-sm text-red-600">{errors.referralCode.message}</p>}
               </motion.div>
             </div>
+            <ReCAPTCHA
+              sitekey={SITE_KEY}
+              onChange={handleCaptcha}
+            />
 
             {/* Submit Button */}
             <motion.div

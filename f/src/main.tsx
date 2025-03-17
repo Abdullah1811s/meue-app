@@ -10,23 +10,22 @@ import Home from './pages/waitingPage.tsx'
 import VendorOnboarding from './pages/VendorOnBoard.tsx'
 import store from './store/store.ts'
 import Dashboard from './pages/DashBoard.tsx'
-
-
 import VendorProfile from './pages/VendorProfile.tsx'
-
-import PayFastRedirect from './pages/PayFast.tsx'
 import AffiliateRegistration from './pages/AffiliateRegistration.tsx'
-
 import AdminDashboard from './pages/AdminDashboard.tsx'
 import AffiliateLogin from './pages/AffiliateLogin.tsx'
-
 import AffiliatedDashboard from './pages/AffiliatedDashboad.tsx'
 import VendorLogin from './pages/VendorLogin.tsx'
-
 //components
 import { VendorProtectedRoute, PrivateRoute, AdminProtectedRoute, AffiliatedProtectedRoute } from "@/components/customComponents/index.tsx"
 import AllPartners from './pages/AllPartners.tsx'
 import ManagePartner from './components/customComponents/ManagePartner.tsx'
+import CompletedRafflesPage from './pages/CompletedRafflesPage.tsx'
+import PaymentSuccess from './pages/PaymentSucces.tsx'
+import PaymentCancel from './pages/PaymentCancel.tsx'
+import PaymentFailure from './pages/PaymentFailed.tsx'
+
+import UserDash from './pages/userDashboard.tsx'
 
 
 const router = createBrowserRouter(
@@ -36,29 +35,40 @@ const router = createBrowserRouter(
       <Route index element={<Home />} />
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
+
       <Route path="vendorOnBoarding" element={<VendorOnboarding />} />
       <Route path="allPartners" element={<AllPartners />} />
       <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/affiliated/register" element={<AffiliateRegistration />} />
       <Route path="/affiliated/login" element={<AffiliateLogin />} />
 
-      {/* Vendor Protected Routes */}
-      <Route path="vendor" element={<VendorProtectedRoute />}>
-        <Route path="dashboard/:id" element={<Dashboard />} />
-        <Route path="profile/setting/:id" element={<VendorProfile />} />
-        <Route path=":id" element={<Home />} />
+
+      {/* Vendor Protectnaved Routes */}
+      <Route path="vendor/:id" element={<VendorProtectedRoute />}>
+        <Route index element={<Home />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="setting" element={<VendorProfile />} />
       </Route>
 
+
       {/* User Protected Routes */}
-      <Route path="users" element={<PrivateRoute />}>
-        <Route path=":id" element={<Home />} />
+      <Route path="users/:id" element={<PrivateRoute />}>
+        <Route path="draw" element={<CompletedRafflesPage />} />
+        <Route path="dashboard" element={<UserDash />} />
+        <Route path="success" element={<PaymentSuccess />} />
+        <Route path="failure" element={<PaymentFailure />} />
+        <Route path="cancel" element={<PaymentCancel />} />
+        <Route path="" element={<Home />} />
       </Route>
+
+
       {/* admin protected route */}
       <Route path="admin" element={<AdminProtectedRoute />}>
         <Route path="dashboard/:id" element={<AdminDashboard />} />
         <Route path="manageAffiliated" element={<AdminDashboard />} />
         <Route path="managePartner" element={<ManagePartner />} />
       </Route>
+      
       {/* affiliated protected route */}
       <Route path="affiliated" element={<AffiliatedProtectedRoute />}>
         <Route path="dashboard/:id" element={<AffiliatedDashboard />} />

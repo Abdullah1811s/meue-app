@@ -1,4 +1,31 @@
 const Footer = () => {
+  const documents = [
+    {
+      name: "General Terms and Conditions",
+      path: "/docs/The_Menu_General_Terms_and_Conditions.pdf",
+    },
+    {
+      name: "Partner Program Terms and Conditions",
+      path: "/docs/The_Menu_Vendor_Program_Terms.pdf",
+    },
+    {
+      name: "Competition Rules",
+      path: "/docs/The_Menu_Competition_Rules.pdf",
+    },
+    {
+      name: "Frequently Asked Questions",
+      path: "/docs/The_Menu_FAQ.pdf",
+    },
+    {
+      name: "Privacy Policy",
+      path: "/docs/The_Menu_Privacy_Policy.pdf",
+    },
+    {
+      name: "Terms of Service",
+      path: "/docs/The_Menu_Terms_of_Service.pdf",
+    },
+  ];
+
   return (
     <footer className="bg-black text-white py-10 px-6 md:px-20 w-full">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -9,48 +36,34 @@ const Footer = () => {
           <p className="mt-4 text-sm">
             Email: <a href="mailto:xyz@gmail.com" className="underline">xyz@gmail.com</a>
           </p>
-
-          {/* Newsletter */}
-          <div className="mt-6">
-            <p className="text-sm">Sign up for the newsletter</p>
-            <div className="flex items-center border-b border-white py-2">
-              <input 
-                type="email" 
-                placeholder="Email" 
-                className="bg-transparent border-none text-white placeholder-gray-400 focus:outline-none w-full"
-              />
-              <button className="text-white text-lg">→</button>
-            </div>
-          </div>
         </div>
 
         {/* Center Section */}
         <div className="flex flex-col space-y-2 text-sm">
           <a href="#" className="hover:underline">Home</a>
-          <a href="#" className="hover:underline">Meet the founder</a>
-          <a href="#" className="hover:underline">About us</a>
-          <a href="#" className="hover:underline">Contact us</a>
+          <a href="#" className="hover:underline">Meet the Founder</a>
+          <a href="#" className="hover:underline">About Us</a>
+          <a href="#" className="hover:underline">Contact Us</a>
         </div>
 
-        {/* Right Section */}
+        {/* Right Section - Documents */}
         <div className="flex flex-col space-y-2 text-sm">
-         
-          <a 
-            href="https://www.instagram.com/the.menu.portal?igsh=eXdxOXJ1NGtqZ21y&utm_source=qr" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="hover:underline flex items-center"
-          >
-            ↗ Instagram
-          </a>
-          <a 
-            href="https://www.tiktok.com/@themenu.sa?_t=ZM-8u2dEW0XbIT&_r=1" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="hover:underline flex items-center"
-          >
-            ↗ TikTok
-          </a>
+          <h3 className="font-semibold">Legal Documents</h3>
+          {documents.map((doc, index) => (
+            <a
+              key={index}
+              href={`${window.location.origin}${doc.path}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline unselectable"
+              onCopy={(e) => {
+                e.preventDefault(); // Prevent copying
+                alert("Copying is disabled for this content.");
+              }}
+            >
+              {doc.name}
+            </a>
+          ))}
         </div>
       </div>
     </footer>

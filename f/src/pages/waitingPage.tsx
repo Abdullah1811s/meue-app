@@ -15,6 +15,8 @@ import CampaignPerformance from "../components/customComponents/CampaignPerforma
 import SpinWheel from "../components/customComponents/SpinWheel";
 import InfiniteScroll from '@/components/customComponents/InfinteScroll';
 import { Button } from '@/components/ui/button';
+import AnalogTimer from '@/components/customComponents/AnalogTimer';
+import AppTimer from '@/components/customComponents/apptimer';
 
 // Enhanced animation variants
 const fadeInUp = {
@@ -78,17 +80,18 @@ const scaleUp = {
 
 
 const images = [
-  "/s1.jpg",
-  "/s2.jpg",
-  "/s3.jpg",
-  "/LaptopCart.jpg"
+  "/s111.png",
+  "/s2.png",
+  "/s3.png",
+ 
 ];
+
 export default function Home() {
   // Beta Version Expiration Time (Set a target date/time)
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const sectionRef = useRef(null);
-  const [timeLeft, setTimeLeft] = useState("");
+  const [, setTimeLeft] = useState("");
   const [isDisabled, setIsDisabled] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
@@ -96,7 +99,7 @@ export default function Home() {
   const [vendors, setVendors] = useState<any[]>([]);
 
   const betaEndTime = new Date("2024-08-30T23:59:59").getTime(); // Example: Ends on August 30, 2024
-  const isAuth = useSelector((state: any) => state.auth.isAuthenticated);
+  const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
 
@@ -193,7 +196,7 @@ export default function Home() {
     right-4 sm:right-6 lg:right-10 
     p-2 sm:p-3 lg:p-4 bg-[#DBC166] text-black font-bold 
     hover:bg-[#d4cbab] rounded-full shadow-md 
-    transition-all duration-500 ease-in-out 
+    transition-all duration-500 ease-in-out z-10
     ${showScroll ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" strokeWidth={4} />
@@ -203,20 +206,22 @@ export default function Home() {
         initial="hidden"
         animate="visible"
         className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-2 w-full max-w-7xl mx-auto"
-      > <div className="fixed top-30 right-4 bg-[#DBC166] text-black px-3 py-1 rounded-full font-semibold text-sm md:text-base shadow-md z-10">
-          Timer: {timeLeft}s
-        </div>
+      >
+          <AnalogTimer />
+       
+
+        <AppTimer />
 
         {/* hero section */}
         <motion.section
           initial="hidden"
           animate="visible"
-          className="relative w-full  max-w-[1400px] mx-auto h-[350px] sm:h-[450px] md:h-[500px] lg:h-[550px] xl:h-[600px] overflow-hidden"
+          className="relative w-full max-w-[1400px] rounded-lg mx-auto h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[80vh] overflow-hidden"
         >
           {/* Image Slider Background */}
-          <motion.div className="absolute inset-0 w-full rounded-lg h-full z-0">
+          <motion.div className="absolute inset-0 rounded-lg w-full h-full z-0">
             <motion.div
-              className="flex w-full h-full rounded-lg"
+              className="flex w-full h-full"
               animate={{ x: `-${currentIndex * 100}%` }}
               transition={{ type: "spring", stiffness: 100, damping: 15 }}
             >
@@ -232,27 +237,25 @@ export default function Home() {
           </motion.div>
 
           {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-black/50 lg:bg-black/40 rounded-lg z-10"></div>
+          <div className="absolute inset-0 bg-black/65 lg:bg-black/65"></div>
 
           {/* Content */}
-          <div className="relative z-20 flex flex-col justify-center items-center text-center px-6 sm:px-12 md:px-16 lg:px-20 h-full">
+          <div className="relative  flex flex-col justify-center items-center text-center px-4 sm:px-8 md:px-12 lg:px-16 h-full">
             {/* Title */}
             <motion.h1
               variants={fadeInUp}
-              className="text-white text-lg sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight max-w-3xl"
+              className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight max-w-3xl"
             >
-              90% OFF Beta Access!{" "}
-              <span className="text-[#DBC166]">Get R500+ Worth</span>
-              <br /> of Savings for Just R50!
+              PAY ONLY R50, GET R500+ IN BENEFITS!{" "}
+              <span className="text-[#DBC166]">BETA ACCESS OPEN!</span>
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p
               variants={fadeInUp}
-              className="text-xs sm:text-sm md:text-base text-gray-300 mt-3 sm:mt-4 max-w-2xl"
+              className="text-xs sm:text-sm md:text-base text-white mt-3 sm:mt-4 max-w-2xl"
             >
-              Join South Africa's first interactive rewards platform – where you win,
-              Partner win, and everyone benefits.
+              Get in early! Join The Menu and unlock insane vendor perks, premium discounts & bonus giveaway entries
             </motion.p>
 
             {/* Features List */}
@@ -271,7 +274,7 @@ export default function Home() {
                   variants={fadeInUp}
                   className="flex items-center gap-2 sm:gap-3 md:gap-4 text-white"
                 >
-                  <img src={feature.image} alt="" className="w-5 sm:w-7 md:w-8 h-5 sm:h-7 md:h-8" />
+                  <img src={feature.image} alt="" className="w-5 sm:w-6 md:w-7 h-5 sm:h-6 md:h-7" />
                   <span className="text-xs sm:text-sm md:text-base">{feature.text}</span>
                 </motion.li>
               ))}
@@ -280,22 +283,21 @@ export default function Home() {
             {/* CTA Button */}
             <motion.button
               animate={{
-
                 rotate: [0, 2, -2, 0],
                 boxShadow: [
                   '0 0 0 0 rgba(219, 193, 102, 0.4)',
                   '0 0 0 15px rgba(219, 193, 102, 0)',
-                ]
+                ],
               }}
               transition={{
                 repeat: Infinity,
                 duration: 1.2,
                 ease: "easeInOut",
-                repeatType: "loop"
+                repeatType: "loop",
               }}
               whileHover={{
                 scale: 1.15,
-                boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)'
+                boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)',
               }}
               whileTap={{ scale: 0.95 }}
               onClick={handleClick}
@@ -303,36 +305,30 @@ export default function Home() {
               className={`
         bg-gradient-to-r from-[#DBC166] via-[#E5C478] to-[#EFD18A]
         text-black 
-       mt-4 px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5
+        mt-4 px-6 sm:px-8 md:px-10 py-2 sm:py-3 md:py-4
         rounded-full 
         text-xs sm:text-sm md:text-base 
         font-medium 
         shadow-lg
         transition-all 
         duration-300 
-        animate-flicker
         ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
       `}
-              style={{
-                animation: 'flicker 2s infinite',
-                color: 'var(--battlefy-white)'
-              }}
             >
               💰 Get 90% Off – Join for Just R50!
             </motion.button>
-
           </div>
 
           {/* Navigation Buttons */}
           <button
             onClick={prevSlide}
-            className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 bg-white/80 p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
           >
             ◀
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 bg-white/80 p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
           >
             ▶
           </button>
@@ -718,16 +714,16 @@ export default function Home() {
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
-            className="mt-18 text-center p-6"
+            className="mt-18 text-center p-4 sm:p-6"
           >
             {/* Heading */}
             <motion.h2
-              className="  text-gray-900 bg-[#DBC166] 
-    px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 
-    text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
-    font-extrabold text-center 
-    rounded-lg shadow-md mb-6 sm:mb-8 md:mb-10 
-    flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4"
+              className="text-gray-900 bg-[#DBC166] 
+      px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 
+      text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
+      font-extrabold text-center 
+      rounded-lg shadow-md mb-6 sm:mb-8 md:mb-10 
+      flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4"
             >
               Social Impact
             </motion.h2>
@@ -737,8 +733,7 @@ export default function Home() {
               variants={staggerChildren}
               initial="hidden"
               animate="visible"
-              className="flex items-center justify-between gap-12 mt-12 p-3 mr-3 ml-3"
-
+              className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 p-3 mx-auto max-w-4xl"
             >
               {[
                 { title: "Maximizing Value", desc: "Helping South Africans get more for their money." },
@@ -747,11 +742,9 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeInUp}
-                  className="mt-12 flex w-fit p-3 flex-col items-center shadow-lg shadow-[#dbc2666a] rounded-lg border-0 outline-0 hover:scale-105 transition-transform duration-300"
-
+                  className="flex flex-col items-center shadow-lg shadow-[#dbc2666a] rounded-lg border-0 outline-0 hover:scale-105 transition-transform duration-300 p-4"
                 >
-
-                  <h3 className="font-bold text-lg mt-3 ">{title}</h3>
+                  <h3 className="font-bold text-lg mt-3">{title}</h3>
                   <p className="text-gray-600 text-sm md:text-base max-w-xs">{desc}</p>
                 </motion.div>
               ))}
@@ -762,7 +755,7 @@ export default function Home() {
               <motion.p
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-black px-6 py-4 md:px-10 italic md:py-6 rounded-lg text-base md:text-lg font-semibold  transition-all duration-300 max-w-xl"
+                className="text-black px-6 py-4 md:px-10 italic md:py-6 rounded-lg text-base md:text-lg font-semibold transition-all duration-300 max-w-xl bg-gray-100"
               >
                 "The Menu isn’t just about deals – it’s about making every rand go further. By joining, you’re boosting local businesses and shaping a fairer economy."
               </motion.p>
@@ -773,7 +766,7 @@ export default function Home() {
               variants={staggerChildren}
               initial="hidden"
               animate="visible"
-              className="flex items-center justify-between gap-12 mt-12 p-3 mr-3 ml-3"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 p-3 mx-auto max-w-4xl"
             >
               {[
                 { Icon: '/p7.jpg', title: "Stronger Communities", desc: "Redirecting spending to benefit local economies." },
@@ -782,10 +775,8 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeInUp}
-                  className="flex flex-col items-center shadow-lg shadow-[#dbc2666a] rounded-lg border-0 outline-0 hover:scale-105 transition-transform duration-300"
-
+                  className="flex flex-col items-center shadow-lg shadow-[#dbc2666a] rounded-lg border-0 outline-0 hover:scale-105 transition-transform duration-300 p-4"
                 >
-
                   <h3 className="font-bold text-lg mt-3">{title}</h3>
                   <p className="text-gray-600 text-sm md:text-base max-w-xs">{desc}</p>
                 </motion.div>

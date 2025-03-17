@@ -1,5 +1,6 @@
 import referralModel from "../models/referral.model.js";
 import affiliateModel from "../models/affiliate.model.js";
+
 export const getCurrentUserReferral = async (req, res) => {
     try {
         const { userId } = req.params;

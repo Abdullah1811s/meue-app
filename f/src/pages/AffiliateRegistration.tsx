@@ -156,7 +156,7 @@ function AffiliateRegistration() {
                     className="mb-4 flex justify-between items-center"
                 >
                     <button
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate(-1)}
                         className="px-4 py-2 text-[#C5AD59] border border-[#C5AD59] rounded-md hover:bg-[#C5AD59] hover:text-white transition-all duration-200"
                     >
                         Back
@@ -381,7 +381,7 @@ function AffiliateRegistration() {
                             Read Terms & Conditions
                         </button>
                         <br />
-                        <a href="/affiliadtedTerms.docx" download className="text-blue-500 underline">
+                        <a href="/affiliadtedTerms.pdf" download="affiliadtedTerms.pdf" className="text-blue-500 underline">
                             Download
                         </a>
                         {/* Checkbox */}

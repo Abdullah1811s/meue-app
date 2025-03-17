@@ -13,7 +13,7 @@ const VendorDetails = ({ vendor }: { vendor: any }) => {
           <div className="md:w-1/3">
             <div className="h-48 w-48 mx-auto rounded-full overflow-hidden border-4 border-[#DBC166] mb-6">
               <img
-                src={vendor.businessPromotionalMaterialURl}
+                src={vendor.businessPromotionalMaterialURl.secure_url}
                 alt={`${vendor.businessName}`}
                 className="h-full w-full object-cover"
                 onError={(e) => {

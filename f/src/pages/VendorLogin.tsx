@@ -1,9 +1,12 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Store, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { vendorLogin } from '@/store/authSlice';
+import toast from 'react-hot-toast';
 
 type LoginFormData = {
     email: string;
@@ -13,6 +16,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 function VendorLogin() {
     const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState('');
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
 
@@ -20,10 +24,20 @@ function VendorLogin() {
         try {
             setLoginError('');
             const response = await axios.post(`${API_BASE_URL}/vendor/login`, data);
-            console.log('Login Successful:', response.data);
+            if (response.data.vendor.status === "pending") {
+                toast.error("Please wait for approval")
+                return;
+            }
+            else if (response.data.vendor.status === "rejected") {
+                toast.error("The application has been rejected");
+                return;
+            }   
+            console.log("the response is " , response);
             localStorage.setItem('VendorToken', response.data?.token);
-            const vendorId = response.data.vendor._id;
-            navigate(`/vendor/dashboard/${vendorId}`);
+            const vendorId = response.data.vendor.id;
+            dispatch(vendorLogin());
+            localStorage.setItem('id', vendorId);
+            navigate(`/vendor/${vendorId}`);
         } catch (error: any) {
             console.error('Login Error:', error.response?.data || error.message);
             setLoginError(error.response?.data?.message || 'Login failed. Please try again.');
@@ -40,7 +54,7 @@ function VendorLogin() {
                     className="text-center"
                 >
                     <Store className="w-16 h-16 mx-auto mb-4 text-[#C5AD59]" />
-                    <h2 className="text-3xl font-bold text-gray-800">Vendor Login</h2>
+                    <h2 className="text-3xl font-bold text-gray-800">Partner Login</h2>
                     <p className="mt-2 text-gray-600">Welcome back! Please sign in to your account</p>
                 </motion.div>
                 <motion.div
@@ -125,7 +139,7 @@ function VendorLogin() {
                             type="submit"
                             className="w-full bg-[#C5AD59] text-white py-2 px-4 rounded-md hover:bg-[#b39b47] transition-colors duration-200 font-semibold"
                         >
-                            Sign In
+                            LOG IN
                         </button>
                     </div>
 

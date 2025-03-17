@@ -1,9 +1,9 @@
 import affiliateModel from "../models/affiliate.model.js";
-import { CheckEmailAndPh } from "../utils/checkEmailandPhone.js";
 import jwt from "jsonwebtoken";
 import { generateReferralCode } from "../utils/generateReferralCode.js";
-import { sendEmail } from "../utils/emailService.js"; // Import email function
-import referralModel from "../models/referral.model.js";
+import { sendEmail } from "../utils/emailService.js";
+import dotenv from 'dotenv';
+
 
 export const getAffiliateById = async (req, res) => {
     try {
@@ -33,6 +33,7 @@ export const registerAffiliate = async (req, res) => {
         if (existingAffiliate) {
             return res.status(400).json({ message: "Affiliate with this email already exists" });
         }
+        console.log("yesssssssssssssssssssssss ")
         const referralCode = generateReferralCode();
         const newAffiliate = await affiliateModel.create({
             fullName,
@@ -54,9 +55,9 @@ export const registerAffiliate = async (req, res) => {
             targetAudience,
             referralCode
         });
-       
-        
-        res.status(201).json({ message: "Affiliate registered successfully" });
+
+
+        res.status(201).json({ message: "Affiliate registered successfully", newAffiliate });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
@@ -84,7 +85,7 @@ export const loginAffiliate = async (req, res) => {
         }
 
         const isMatch = await affiliate.comparePassword(password);
-        console.log("Password match:", isMatch);
+
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -112,20 +113,17 @@ export const getAllAffiliates = async (req, res) => {
 
 export const removeAffiliateById = async (req, res) => {
     try {
-        const { id } = req.body;
+        const { affId } = req.body;
 
-        if (!id) {
+        if (!affId) {
             return res.status(400).json({ message: "id is required" });
         }
 
-        const affiliate = await affiliateModel.findOne({ _id: id });
+        const affiliate = await affiliateModel.findOne({ _id: affId });
         if (!affiliate) {
             return res.status(404).json({ message: "Affiliate with this id not found" });
         }
-
-
-        await affiliateModel.findOneAndDelete({ _id: id });
-
+        await affiliateModel.findOneAndDelete({ _id: affId });
         res.status(200).json({ message: "Affiliate removed successfully" });
     } catch (error) {
         console.error("[AFFILIATE SERVER ERROR]", error);
@@ -151,39 +149,51 @@ export const updateStatus = async (req, res) => {
         if (!affiliate) {
             return res.status(404).json({ message: "Affiliate not found" });
         }
-
         if (status === "approved") {
             const subject = "Your Affiliate Status is Approved 🎉";
             const message = `
                 <p>Dear ${affiliate.fullName},</p>
                 <p>We are pleased to inform you that your affiliate application has been <strong>approved</strong>.</p>
                 <p>Welcome aboard! You can now start earning commissions through our program.</p>
-                <p>The referral code is ${affiliate.referralCode}</p>
+                <p>Your referral code is <strong>${affiliate.referralCode}</strong></p>
                 <p>Best regards, <br> The Menu Team</p>
             `;
 
-            const emailSent = await sendEmail(affiliate.email, subject, "Your affiliate status has been approved.", message);
 
-            if (!emailSent.success) {
-                return res.status(500).json({ message: "Status updated, but email failed to send." });
-            }
+            const smtpConfig = {
+                host: "mail.themenuportal.co.za",
+                port: 465,
+                user: "affiliates@themenuportal.co.za",
+
+            };
+
+
+            const emailSent = await sendEmail(smtpConfig, affiliate.email, subject, "Your affiliate status has been approved.", message);
         }
 
         if (status === "rejected") {
+            console.log("rejected");
             const subject = "Your Affiliate Application Status";
             const message = `
-                <p>Dear ${affiliate.fullname},</p>
+                <p>Dear ${affiliate.fullName},</p>
                 <p>We appreciate your interest in our affiliate program. Unfortunately, after careful review, we regret to inform you that your application has been <strong>rejected</strong>.</p>
                 <p>We encourage you to apply again in the future or reach out if you have any questions.</p>
                 <p>Best regards, <br> The Menu Team</p>
             `;
 
-            const emailSent = await sendEmail(affiliate.email, subject, "Your affiliate application was not approved.", message);
+            const smtpConfig = {
+                host: "mail.themenuportal.co.za",
+                port: 465,
+                user: "affiliates@themenuportal.co.za",
+            };
+
+            const emailSent = await sendEmail(smtpConfig, affiliate.email, subject, "Your affiliate application was not approved.", message);
 
             if (!emailSent.success) {
                 return res.status(500).json({ message: "Status updated, but email failed to send." });
             }
         }
+
 
         res.status(200).json({ message: "Status updated successfully", affiliate });
     } catch (error) {

@@ -7,8 +7,9 @@ const VendorSchema = new mongoose.Schema({
   companyRegNumber: { type: String, required: true },
   vatNumber: { type: String },
   tradingAddress: { type: String, required: true },
-  province: { type: String },
-  city: { type: String },
+  province: { type: String, required: true },
+  city: { type: String, required: true },
+
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
@@ -23,14 +24,30 @@ const VendorSchema = new mongoose.Schema({
   representativeEmail: { type: String, required: true },
   representativePhone: { type: String, required: true },
   businessDescription: { type: String },
-  offerings: { type: [String] },
+
   exclusiveOffer: {
     type: {
       type: String,
-      required: true,
+      required: true
     },
-    details: { type: String },
-    terms: { type: String },
+    terms: {
+      type: String
+    },
+    offerings: [
+      {
+        name: {
+          type: String,
+          required: true
+        },
+        quantity: {
+          type: Number
+        },
+
+        endDate: {
+          type: Date
+        }
+      }
+    ]
   },
   password: {
     type: String,
@@ -47,11 +64,30 @@ const VendorSchema = new mongoose.Schema({
   },
   vendorTier: { type: String, default: "bronze" },
   agreedToTerms: { type: Boolean, required: true },
-  companyRegistrationCertificateURl: { type: String },
-  vendorIdURl: { type: String },
-  addressProofURl: { type: String },
-  confirmationLetterURl: { type: String },
-  businessPromotionalMaterialURl: { type: String },
+  companyRegistrationCertificateURl: {
+    public_id: { type: String, required: true },
+    secure_url: { type: String, required: true }
+  },
+  vendorIdURl: {
+    public_id: { type: String, required: true },
+    secure_url: { type: String, required: true }
+  },
+  addressProofURl: {
+    public_id: { type: String, required: true },
+    secure_url: { type: String, required: true }
+  },
+  confirmationLetterURl: {
+    public_id: { type: String, required: true },
+    secure_url: { type: String, required: true }
+  },
+  businessPromotionalMaterialURl: {
+    public_id: { type: String },
+    secure_url: { type: String }
+  },
+  referralCodeUsed:
+  {
+    type: String
+  }
 });
 
 

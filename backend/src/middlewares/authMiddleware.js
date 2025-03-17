@@ -21,6 +21,8 @@ export const authenticate = async (req, res, next) => {
 export const authorization = (roles) => {
     return (req, res, next) => {
         if (!req.user || !roles.includes(req.user.role)) {
+            req.userDetail = req.user;
+            console.log(req.user);
             return res.status(403).json({ error: "Forbidden: You are not allowed to do this operation" });
         }
         next();
