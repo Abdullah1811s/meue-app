@@ -129,11 +129,11 @@ const Login = () => {
             transition={{ duration: 0.5 }}
           >
             <div className="text-center md:text-left max-w-md mx-auto w-full">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#DBC166] mb-2">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#DBC166] ml-4 mb-2">
                 Welcome Back!
               </h2>
 
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-6 ml-4">
                 Let's pick up where you left off
               </p>
 
