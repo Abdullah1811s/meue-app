@@ -34,16 +34,25 @@ const Footer = () => {
           <h2 className="text-lg font-bold text-amber-500">THE MENU</h2>
           <p className="mt-2 text-sm">YOUR WORLD, YOUR WAY</p>
           <p className="mt-4 text-sm">
-            Email: <a href="mailto:xyz@gmail.com" className="underline">xyz@gmail.com</a>
+            Email: <a href="mailto:xyz@gmail.com" className="underline">support@themenuportal.co.za</a>
           </p>
         </div>
 
         {/* Center Section */}
         <div className="flex flex-col space-y-2 text-sm">
           <a href="#" className="hover:underline">Home</a>
-          <a href="#" className="hover:underline">Meet the Founder</a>
-          <a href="#" className="hover:underline">About Us</a>
-          <a href="#" className="hover:underline">Contact Us</a>
+
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("social")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="hover:underline"
+          >
+            About Us
+          </a>
+
         </div>
 
         {/* Right Section - Documents */}

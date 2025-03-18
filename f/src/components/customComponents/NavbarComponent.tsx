@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import axios from "axios";
 
 const NavbarComponent = () => {
-   
+
     const { id } = useParams();
     const [mobileDrop, setMobileDrop] = useState(false);
     const navigate = useNavigate();
@@ -19,8 +19,7 @@ const NavbarComponent = () => {
     const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
     const isVendorAuthenticated = useSelector((state: any) => state.auth.isVendorAuthenticated);
     const handleHomeClick = () => {
-        if (isAuthenticated) 
-        {
+        if (isAuthenticated) {
             const id = localStorage.getItem("id");
             navigate(`/users/${id}`)
         }
@@ -36,7 +35,7 @@ const NavbarComponent = () => {
     const handleClickPayNow = async () => {
         try {
             const UserToken = localStorage.getItem('UserToken');
-    
+
             const response = await axios.post(
                 `${API_BASE_URL}/payment/checkout`,
                 {
@@ -56,7 +55,7 @@ const NavbarComponent = () => {
             console.log("Payment error", error);
         }
     };
-    
+
 
     const handleLogout = () => {
         localStorage.removeItem("UserToken");
@@ -68,7 +67,7 @@ const NavbarComponent = () => {
         navigate(route);
         setIsOpen(false);
     }
-   
+
     return (
         <nav className="bg-black sticky text-white flex items-center justify-between rounded-full w-[95%] lg:w-[90%] h-16 md:h-18 lg:h-20 mt-4 sm:mt-6 md:mt-8 px-4 sm:px-6 py-3 mx-auto mb-6 z-50">
             <div className="flex items-center">
@@ -90,15 +89,18 @@ const NavbarComponent = () => {
                     </li>
 
                     <li>
-                        <Link to="/about" className="text-gray-400 opacity-50 pointer-events-none">
+                        <Link
+                            to="#"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById("social")?.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className=""
+                        >
                             About Us
                         </Link>
                     </li>
-                    <li>
-                        <Link to="/contact" className="text-gray-400 opacity-50 pointer-events-none">
-                            Contact
-                        </Link>
-                    </li>
+
                     <li>
                         <Link to="/affiliated/register" className={`hover:text-[#DBC166] ${location.pathname === "/affiliated/register" ? "text-[#DBC166] font-bold" : "text-white"} transition-colors duration-300 cursor-pointer`}>
                             Affiliate Registration

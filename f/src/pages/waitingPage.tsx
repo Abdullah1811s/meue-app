@@ -733,6 +733,7 @@ export default function Home() {
               variants={staggerChildren}
               initial="hidden"
               animate="visible"
+               id='social'
               className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 p-3 mx-auto max-w-4xl"
             >
               {[
