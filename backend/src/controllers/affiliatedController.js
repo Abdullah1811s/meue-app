@@ -2,7 +2,6 @@ import affiliateModel from "../models/affiliate.model.js";
 import jwt from "jsonwebtoken";
 import { generateReferralCode } from "../utils/generateReferralCode.js";
 import { sendEmail } from "../utils/emailService.js";
-import dotenv from 'dotenv';
 
 
 export const getAffiliateById = async (req, res) => {

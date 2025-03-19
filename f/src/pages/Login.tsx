@@ -39,10 +39,11 @@ const Login = () => {
   const handleCaptcha = (token: any) => {
     setCaptchaToken(token);
   };
+
   const onSubmit = async (data: LoginFormInputs) => {
     setLoading(true);
     setErrorMessage("");
-
+  console.log(captchaToken);
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/Login`, {
         ...data,

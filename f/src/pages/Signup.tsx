@@ -66,6 +66,7 @@ function SignUp() {
     resolver: zodResolver(signUpSchema),
   });
 
+
   const onSubmit = async (data: SignUpForm) => {
 
     try {

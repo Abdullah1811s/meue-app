@@ -83,7 +83,7 @@ const images = [
   "/s111.png",
   "/s2.png",
   "/s3.png",
- 
+
 ];
 
 export default function Home() {
@@ -207,8 +207,8 @@ export default function Home() {
         animate="visible"
         className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-2 w-full max-w-7xl mx-auto"
       >
-          <AnalogTimer />
-       
+        <AnalogTimer />
+
 
         <AppTimer />
 
@@ -366,7 +366,7 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center"
             >
               {[
-                { Icon: '/p3.jpg', title: "List for Free During Beta", desc: "0% Commission, High Exposure!" },
+                { Icon: '/p3.png', title: "List for Free During Beta", desc: "0% Commission, High Exposure!" },
                 { Icon: '/v2.jpg', title: "Drive Traffic & Sales", desc: "Without Paying a Cent!" },
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
@@ -374,7 +374,8 @@ export default function Home() {
                   variants={fadeInUp}
                   className="flex flex-col items-center hover:scale-105 transition-transform duration-300"
                 >
-                  <img src={Icon} alt="a" className="w-12 h-12 md:w-16 md:h-16 rounded" />
+                  <img src={Icon} alt="a" className={`object-contain rounded ${Icon === "/v2.jpg" ? "w-20 h-20 md:w-24 md:h-24" : "w-12 h-12 md:w-16 md:h-16"
+                    }`} />
                   <h3 className="font-bold mt-3">{title}</h3>
                   <p className="text-gray-600">{desc}</p>
                 </motion.div>
@@ -436,8 +437,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mt-8"
             >
               {[
-                { Icon: '/p4.jpg', title: "Unlock Trade Promotions", desc: "& Featured Listings!" },
-                { Icon: '/p2.jpg', title: "FREE Beta Listing & Geolocation Exposure", desc: "Get found by paying customers." }
+                { Icon: '/p4.png', title: "Unlock Trade Promotions", desc: "& Featured Listings!" },
+                { Icon: '/p2.png', title: "FREE Beta Listing & Geolocation Exposure", desc: "Get found by paying customers." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -482,8 +483,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center"
             >
               {[
-                { Icon: '/p5.jpg', title: "Earn 30% Commission", desc: "Get rewarded for every member you bring in!" },
-                { Icon: '/p6.jpg', title: "Passive Income Made Easy", desc: "Promote & earn effortlessly." }
+                { Icon: '/p5.png', title: "Earn 30% Commission", desc: "Get rewarded for every member you bring in!" },
+                { Icon: '/p6.png', title: "Passive Income Made Easy", desc: "Promote & earn effortlessly." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -558,8 +559,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mt-8"
             >
               {[
-                { Icon: '/p7.jpg', title: "Top Affiliates Get VIP Perks", desc: "Enjoy exclusive access & rewards." },
-                { Icon: '/p8.jpg', title: "Live Performance Tracking", desc: "Monitor your earnings in real-time." }
+                { Icon: '/p7.png', title: "Top Affiliates Get VIP Perks", desc: "Enjoy exclusive access & rewards." },
+                { Icon: '/p8.png', title: "Live Performance Tracking", desc: "Monitor your earnings in real-time." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -733,7 +734,7 @@ export default function Home() {
               variants={staggerChildren}
               initial="hidden"
               animate="visible"
-               id='social'
+              id='social'
               className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 p-3 mx-auto max-w-4xl"
             >
               {[
