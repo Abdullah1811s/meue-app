@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { motion, useInView } from 'framer-motion';
 import { Gift, ShoppingBag, ArrowUp, Users, Lock } from "lucide-react";
-
+import { useMediaQuery } from "react-responsive";
 
 import { StatCard } from "../components/customComponents/StatCard";
 import Lapboard from "../components/customComponents/Lapboard";
@@ -185,7 +185,18 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [betaEndTime]);
 
+  const isMobile = useMediaQuery({ maxWidth: 768 }); // Adjust breakpoint if needed
+  const [showTimer, setShowTimer] = useState(true);
 
+  useEffect(() => {
+    if (isMobile) {
+      const timer = setTimeout(() => {
+        setShowTimer(false);
+      }, 3000); // Hides after 5 seconds
+
+      return () => clearTimeout(timer); // Cleanup on unmount
+    }
+  }, [isMobile]);
 
 
   return (
@@ -207,10 +218,12 @@ export default function Home() {
         animate="visible"
         className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-2 w-full max-w-7xl mx-auto"
       >
-        <AnalogTimer />
-
-
-        <AppTimer />
+        {(!isMobile || showTimer) && (
+          <>
+            <AnalogTimer />
+            <AppTimer />
+          </>
+        )}
 
         {/* hero section */}
         <motion.section
