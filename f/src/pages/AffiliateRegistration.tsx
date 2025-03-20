@@ -56,13 +56,18 @@ const AffiliateSchema = z
 // Infer TypeScript types from Zod schema
 type AffiliateFormData = z.infer<typeof AffiliateSchema>;
 
-// Sample data for provinces and cities
 const provinces = [
-    { name: "Gauteng", cities: ["Johannesburg", "Pretoria", "Sandton"] },
-    { name: "Western Cape", cities: ["Cape Town", "Stellenbosch", "Paarl"] },
-    { name: "KwaZulu-Natal", cities: ["Durban", "Pietermaritzburg", "Ballito"] },
-    { name: "Eastern Cape", cities: ["Port Elizabeth", "East London", "Grahamstown"] },
+    { name: "Eastern Cape", cities: ["Gqeberha (Port Elizabeth)", "East London", "Mthatha", "Queenstown", "Grahamstown", "King William’s Town"] },
+    { name: "Free State", cities: ["Bloemfontein", "Welkom", "Bethlehem", "Sasolburg", "Parys", "Kroonstad"] },
+    { name: "Gauteng", cities: ["Johannesburg", "Pretoria", "Sandton", "Midrand", "Centurion", "Soweto", "Benoni", "Boksburg", "Kempton Park", "Alberton", "Vanderbijlpark"] },
+    { name: "KwaZulu-Natal", cities: ["Durban", "Pietermaritzburg", "Richards Bay", "Newcastle", "Pinetown", "Umhlanga", "Ballito", "Margate"] },
+    { name: "Limpopo", cities: ["Polokwane", "Tzaneen", "Mokopane", "Thohoyandou", "Bela-Bela", "Lephalale"] },
+    { name: "Mpumalanga", cities: ["Mbombela (Nelspruit)", "Witbank (eMalahleni)", "Middelburg", "Secunda", "Barberton", "Sabie"] },
+    { name: "Northern Cape", cities: ["Kimberley", "Upington", "Springbok", "De Aar", "Kuruman", "Colesberg"] },
+    { name: "North West", cities: ["Mahikeng", "Rustenburg", "Klerksdorp", "Potchefstroom", "Brits", "Lichtenburg"] },
+    { name: "Western Cape", cities: ["Cape Town", "Stellenbosch", "George", "Paarl", "Worcester", "Mossel Bay", "Knysna"] },
 ];
+
 
 function AffiliateRegistration() {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
