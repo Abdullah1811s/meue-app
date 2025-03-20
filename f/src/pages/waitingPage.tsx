@@ -192,7 +192,7 @@ export default function Home() {
     if (isMobile) {
       const timer = setTimeout(() => {
         setShowTimer(false);
-      }, 3000); // Hides after 5 seconds
+      }, 2500); 
 
       return () => clearTimeout(timer); // Cleanup on unmount
     }

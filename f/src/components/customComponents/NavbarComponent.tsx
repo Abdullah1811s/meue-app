@@ -244,7 +244,7 @@ const NavbarComponent = () => {
                                     <button onClick={() => { navigate("Login"); setIsOpen(false); }} className="bg-[#DBC166] text-black py-2 text-sm font-bold rounded-md transition hover:bg-[#C8A13A] ">
                                         LOGIN
                                     </button>
-                                    <button onClick={() => { navigate("Signup"); setIsOpen(false); }} className="bg-[#DBC166] text-black py-2 text-sm font-medium rounded-md transition hover:bg-[#C8A13A]">
+                                    <button onClick={() => { navigate("Signup"); setIsOpen(false); }} className="bg-[#DBC166] text-black py-2 text-sm font-bold rounded-md transition hover:bg-[#C8A13A]">
                                         SIGN UP
                                     </button>
                                 </>
