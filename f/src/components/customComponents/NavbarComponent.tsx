@@ -73,7 +73,7 @@ const NavbarComponent = () => {
             <div className="flex items-center">
                 <img
                     onClick={handleHomeClick}
-                    src="/Logo.png"
+                    src="/Logo.webp"
                     alt="Logo"
                     className="h-10 sm:h-12 md:h-14 w-auto object-contain transition-transform duration-300 "
                 />

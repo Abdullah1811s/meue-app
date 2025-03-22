@@ -386,7 +386,7 @@ function AffiliateRegistration() {
                             Read Terms & Conditions
                         </button>
                         <br />
-                        <a href="/affiliadtedTerms.pdf" download="affiliadtedTerms.pdf" className="text-blue-500 underline">
+                        <a href="/docs/affiliadtedTerms.pdf" download="affiliadtedTerms.pdf" className="text-blue-500 underline">
                             Download
                         </a>
                         {/* Checkbox */}

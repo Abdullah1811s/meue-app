@@ -43,7 +43,7 @@ const CampaignPerformance = () => {
         <section className="p-6 flex flex-col md:flex-row gap-8 items-center">
             <div className="w-full md:w-1/2">
                 <img
-                    src="/sale.png" 
+                    src="/sale.webp" 
                     alt="New Year Sale"
                     width={200}
                     height={200}

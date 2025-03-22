@@ -3,10 +3,10 @@
 
 const WeeklyRaffles = () => {
     const prizes = [
-        { id: 1, img: "/glasses.png", alt: "Luxury Dining Experience" },
-        { id: 2, img: "/robot.png", alt: "Futuristic Tech Gadgets" },
-        { id: 3, img: "/mobile.png", alt: "Wireless Charging Station" },
-        { id: 4, img: "/books.png", alt: "Gourmet Gift Basket" },
+        { id: 1, img: "/glasses.webp", alt: "Luxury Dining Experience" },
+        { id: 2, img: "/robot.webp", alt: "Futuristic Tech Gadgets" },
+        { id: 3, img: "/mobile.webp", alt: "Wireless Charging Station" },
+        { id: 4, img: "/books.webp", alt: "Gourmet Gift Basket" },
     ];
 
     return (

@@ -355,7 +355,7 @@ const SpinWheel = () => {
 
           {/* Center image */}
           <img
-            src="/centerWheel.png"
+            src="/centerWheel.webp"
             alt="Center Logo"
             className="absolute w-full h-full rounded-full object-cover"
           />

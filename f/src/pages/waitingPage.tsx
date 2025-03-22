@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
-import { useSelector } from "react-redux";
+
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { motion, useInView } from 'framer-motion';
@@ -17,6 +17,7 @@ import InfiniteScroll from '@/components/customComponents/InfinteScroll';
 import { Button } from '@/components/ui/button';
 import AnalogTimer from '@/components/customComponents/AnalogTimer';
 import AppTimer from '@/components/customComponents/apptimer';
+import { useSelector } from 'react-redux';
 
 // Enhanced animation variants
 const fadeInUp = {
@@ -80,9 +81,9 @@ const scaleUp = {
 
 
 const images = [
-  "/s111.png",
-  "/s2.png",
-  "/s3.png",
+  "/s2.avif",
+  "/s3.avif",
+  "/s111.avif",
 
 ];
 
@@ -90,14 +91,12 @@ export default function Home() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const sectionRef = useRef(null);
-  const [, setTimeLeft] = useState("");
   const [isDisabled, setIsDisabled] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [vendors, setVendors] = useState<any[]>([]);
 
-  const betaEndTime = new Date("2024-08-30T23:59:59").getTime(); // Example: Ends on August 30, 2024
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
@@ -122,7 +121,6 @@ export default function Home() {
   const fetchData = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/vendor`);
-      console.log(response.data);
 
       setVendors(response.data);
       setHasFetched(true);
@@ -160,29 +158,7 @@ export default function Home() {
     }, 1000);
   };
 
-  useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const timeRemaining = Math.abs(betaEndTime - now); // Take absolute value
 
-      if (timeRemaining <= 0) {
-        setTimeLeft("Beta Expired");
-        return;
-      }
-
-      const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
-      const seconds = Math.floor((timeRemaining / 1000) % 60);
-
-      setTimeLeft(
-        `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-      );
-    };
-
-
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [betaEndTime]);
 
   const isMobile = useMediaQuery({ maxWidth: 768 }); // Adjust breakpoint if needed
   const [showTimer, setShowTimer] = useState(true);
@@ -191,7 +167,7 @@ export default function Home() {
     if (isMobile) {
       const timer = setTimeout(() => {
         setShowTimer(false);
-      }, 2500); 
+      }, 2500);
 
       return () => clearTimeout(timer); // Cleanup on unmount
     }
@@ -243,8 +219,13 @@ export default function Home() {
                   src={img}
                   alt={`Slide ${index}`}
                   className="w-full h-full rounded-lg object-cover flex-shrink-0"
+                  loading={index === 0 ? "eager" : "lazy"} // Load the first image eagerly
+                  fetchPriority={index === 0 ? "high" : "auto"} // Prioritize LCP image
+                  decoding="async"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                 />
               ))}
+
             </motion.div>
           </motion.div>
 
@@ -276,10 +257,10 @@ export default function Home() {
               className="mt-4 space-y-2 sm:space-y-3 text-left max-w-sm sm:max-w-md md:max-w-lg"
             >
               {[
-                { text: "Exclusive Partner deals", image: "/vendor.png" },
-                { text: "Gamified rewards", image: "/game.png" },
-                { text: "Cash prize giveaways", image: "/cash-prize.png" },
-                { text: "Leaderboard & user rankings", image: "/trophy.png" },
+                { text: "Exclusive Partner deals", image: "/vendor.avif" },
+                { text: "Gamified rewards", image: "/game.avif" },
+                { text: "Cash prize giveaways", image: "/cash-prize.avif" },
+                { text: "Leaderboard & user rankings", image: "/trophy.avif" },
               ].map((feature, index) => (
                 <motion.li
                   key={index}
@@ -369,7 +350,7 @@ export default function Home() {
             >
               Why join as a partner?
             </motion.h2>
-
+            {/* //jk */}
 
             <motion.div
               variants={staggerChildren}
@@ -378,15 +359,15 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center"
             >
               {[
-                { Icon: '/p3.png', title: "List for Free During Beta", desc: "0% Commission, High Exposure!" },
-                { Icon: '/v2.jpg', title: "Drive Traffic & Sales", desc: "Without Paying a Cent!" },
+                { Icon: '/p3.avif', title: "List for Free During Beta", desc: "0% Commission, High Exposure!" },
+                { Icon: '/v2.avif', title: "Drive Traffic & Sales", desc: "Without Paying a Cent!" },
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
                   variants={fadeInUp}
                   className="flex flex-col items-center hover:scale-105 transition-transform duration-300"
                 >
-                  <img src={Icon} alt="a" className={`object-contain rounded ${Icon === "/v2.jpg" ? "w-20 h-20 md:w-24 md:h-24" : "w-12 h-12 md:w-16 md:h-16"
+                  <img src={Icon} alt="a" className={`object-contain rounded ${Icon === "/v2.avif" ? "w-20 h-20 md:w-24 md:h-24" : "w-12 h-12 md:w-16 md:h-16"
                     }`} />
                   <h3 className="font-bold mt-3">{title}</h3>
                   <p className="text-gray-600">{desc}</p>
@@ -449,8 +430,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mt-8"
             >
               {[
-                { Icon: '/p4.png', title: "Unlock Trade Promotions", desc: "& Featured Listings!" },
-                { Icon: '/p2.png', title: "FREE Beta Listing & Geolocation Exposure", desc: "Get found by paying customers." }
+                { Icon: '/p4.avif', title: "Unlock Trade Promotions", desc: "& Featured Listings!" },
+                { Icon: '/p2.avif', title: "FREE Beta Listing & Geolocation Exposure", desc: "Get found by paying customers." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -495,8 +476,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center"
             >
               {[
-                { Icon: '/p5.png', title: "Earn 30% Commission", desc: "Get rewarded for every member you bring in!" },
-                { Icon: '/p6.png', title: "Passive Income Made Easy", desc: "Promote & earn effortlessly." }
+                { Icon: '/p5.avif', title: "Earn 30% Commission", desc: "Get rewarded for every member you bring in!" },
+                { Icon: '/p6.avif', title: "Passive Income Made Easy", desc: "Promote & earn effortlessly." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -571,8 +552,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mt-8"
             >
               {[
-                { Icon: '/p7.png', title: "Top Affiliates Get VIP Perks", desc: "Enjoy exclusive access & rewards." },
-                { Icon: '/p8.png', title: "Live Performance Tracking", desc: "Monitor your earnings in real-time." }
+                { Icon: '/p7.avif', title: "Top Affiliates Get VIP Perks", desc: "Enjoy exclusive access & rewards." },
+                { Icon: '/p8.avif', title: "Live Performance Tracking", desc: "Monitor your earnings in real-time." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -783,8 +764,8 @@ export default function Home() {
               className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 p-3 mx-auto max-w-4xl"
             >
               {[
-                { Icon: '/p7.jpg', title: "Stronger Communities", desc: "Redirecting spending to benefit local economies." },
-                { Icon: '/p8.jpg', title: "Fair & Inclusive Rewards", desc: "Ensuring users, businesses, and affiliates all win." }
+                { Icon: '/p7.avif', title: "Stronger Communities", desc: "Redirecting spending to benefit local economies." },
+                { Icon: '/p8.avif', title: "Fair & Inclusive Rewards", desc: "Ensuring users, businesses, and affiliates all win." }
               ].map(({ title, desc }, index) => (
                 <motion.div
                   key={index}
@@ -831,7 +812,7 @@ export default function Home() {
                       </p>
                     </div>
                     <motion.img
-                      src="/RefLink.jpg"
+                      src="/RefLink.webp"
                       alt="Dynamic Leaderboards"
                       width={300}
                       height={150}
@@ -849,7 +830,7 @@ export default function Home() {
                       </p>
                     </div>
                     <motion.img
-                      src="/milestone.png"
+                      src="/milestone.avif"
                       alt="Milestone Tracking"
                       width={300}
                       height={150}
@@ -867,7 +848,7 @@ export default function Home() {
                       </p>
                     </div>
                     <motion.img
-                      src="/dynamicLead.jpg"
+                      src="/dynamicLead.avif"
                       alt="Dynamic Leaderboards"
                       width={300}
                       height={150}
@@ -1033,7 +1014,7 @@ export default function Home() {
                     <div className="flex flex-col items-center text-center w-full md:w-1/2 bg-gray-50 rounded-xl p-6 shadow-md">
                       <h2 className="text-lg font-semibold">Automatic Referral Code Generation</h2>
                       <img
-                        src="/referral.png"
+                        src="/referral.webp"
                         alt="Referral"
                         width={160}
                         height={160}
@@ -1049,7 +1030,7 @@ export default function Home() {
                     <div className="flex flex-col items-center text-center w-full md:w-1/2 bg-gray-50 rounded-xl p-6 shadow-md">
                       <h2 className="text-lg font-semibold">Affiliate Dashboard</h2>
                       <img
-                        src="/clock.png"
+                        src="/clock.webp"
                         alt="Affiliate Dashboard"
                         width={160}
                         height={160}
@@ -1064,51 +1045,60 @@ export default function Home() {
               </motion.section>
 
               {/* Additional Update Section */}
-              <motion.section className="mt-12 w-full bg-white rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.1)] p-8" variants={fadeInUp} initial="hidden" animate="visible">
+              <motion.section
+                className="mt-12 w-full bg-white rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.1)] p-6 sm:p-8"
+                variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+              >
                 <motion.h2
-                  className="  text-gray-900 bg-[#DBC166] 
-    px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 
-    text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
-    font-extrabold text-center 
-    rounded-lg shadow-md mb-6 sm:mb-8 md:mb-10 
-    flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4"
+                  className="text-gray-900 bg-[#DBC166] px-4 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 
+               text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-center 
+               rounded-lg shadow-md mb-6 sm:mb-8 md:mb-10 flex flex-col sm:flex-row 
+               items-center justify-center gap-2 sm:gap-4"
                 >
                   Additional Update
                 </motion.h2>
+
                 <div className="mt-6">
-                  <div className="flex flex-col md:flex-row justify-center gap-10 py-12">
-                    <div className="border border-gray-300 rounded-2xl p-8 w-96 shadow-xl bg-white hover:shadow-2xl transition-shadow duration-300">
+                  <div className="flex flex-col md:flex-row justify-center gap-6 md:gap-10 py-6 sm:py-12">
+
+                    {/* Competition Entries Card */}
+                    <div className="border border-gray-300 rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-xl bg-white hover:shadow-2xl transition-shadow duration-300">
                       <img
-                        src="/trophy.png"
+                        src="/trophy.avif"
                         alt="Competition Icon"
                         width={80}
                         height={80}
-                        className="w-20 mx-auto mb-6"
+                        className="w-16 sm:w-20 mx-auto mb-4 sm:mb-6"
                       />
-
-                      <h2 className="text-2xl font-bold text-center">Competition Entries</h2>
-                      <ul className="mt-4 text-gray-700 text-lg space-y-3">
+                      <h2 className="text-xl sm:text-2xl font-bold text-center">Competition Entries</h2>
+                      <ul className="mt-4 text-gray-700 text-sm sm:text-lg space-y-3">
                         <li>▪️ <strong>Subscriptions:</strong> Entries per competition are based on the tier (e.g., Lion Plan = 10 entries/competition).</li>
                         <li>▪️ <strong>Day Passes:</strong> Allocate entries according to the once-off pass type and entries allocated per type.</li>
                         <li>▪️ User dashboards must display competition names, earned entries, and usage history.</li>
                       </ul>
                     </div>
-                    <div className="border border-gray-300 rounded-2xl p-8 w-96 shadow-xl bg-white hover:shadow-2xl transition-shadow duration-300">
+
+                    {/* Membership Offer Card */}
+                    <div className="border border-gray-300 rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-xl bg-white hover:shadow-2xl transition-shadow duration-300">
                       <img
-                        src="/exclusive.png"
+                        src="/exclusive.avif"
                         alt="Membership Icon"
                         width={200}
                         height={200}
-                        className="w-20 mx-auto mb-6"
+                        className="w-16 sm:w-20 mx-auto mb-4 sm:mb-6"
                       />
-                      <h2 className="text-2xl font-bold text-center">Free Membership Offer</h2>
+                      <h2 className="text-xl sm:text-2xl font-bold text-center">Free Membership Offer</h2>
                       <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-600">
                         Users who pay the R50 access fee during the Waiting Page period will automatically receive one free month of the Lion Plan when the full platform launches. This process will be automated, with clear communication to users.
                       </p>
                     </div>
+
                   </div>
                 </div>
               </motion.section>
+
             </motion.div>
           ) : (
             <motion.div
