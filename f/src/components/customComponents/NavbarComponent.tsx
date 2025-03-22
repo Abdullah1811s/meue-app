@@ -39,7 +39,7 @@ const NavbarComponent = () => {
             const response = await axios.post(
                 `${API_BASE_URL}/payment/checkout`,
                 {
-                    amount: 1000, // 10.00 ZAR
+                    amount: 1000, 
                     currency: "ZAR",
                     id
                 },
@@ -73,7 +73,7 @@ const NavbarComponent = () => {
             <div className="flex items-center">
                 <img
                     onClick={handleHomeClick}
-                    src="/Logo.webp"
+                    src="/Logo.avif"
                     alt="Logo"
                     className="h-10 sm:h-12 md:h-14 w-auto object-contain transition-transform duration-300 "
                 />

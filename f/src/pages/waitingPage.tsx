@@ -17,7 +17,7 @@ import InfiniteScroll from '@/components/customComponents/InfinteScroll';
 import { Button } from '@/components/ui/button';
 import AnalogTimer from '@/components/customComponents/AnalogTimer';
 import AppTimer from '@/components/customComponents/apptimer';
-import { useSelector } from 'react-redux';
+// import { useSelector } from 'react-redux';
 
 // Enhanced animation variants
 const fadeInUp = {
@@ -96,8 +96,10 @@ export default function Home() {
   const [showScroll, setShowScroll] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [vendors, setVendors] = useState<any[]>([]);
+  const [currentSlide,] = useState(0);
 
-  const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated);
+  const isAuth = true;
+  //useSelector((state: any) => state.auth.isUserAuthenticated);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
 
@@ -219,9 +221,11 @@ export default function Home() {
                   src={img}
                   alt={`Slide ${index}`}
                   className="w-full h-full rounded-lg object-cover flex-shrink-0"
-                  loading={index === 0 ? "eager" : "lazy"} // Load the first image eagerly
-                  fetchPriority={index === 0 ? "high" : "auto"} // Prioritize LCP image
+                  loading={index === currentSlide ? "eager" : "lazy"} 
+                  fetchPriority={index === currentSlide ? "high" : "auto"} 
                   decoding="async"
+                  width="800"
+                  height="600" 
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               ))}
@@ -237,7 +241,8 @@ export default function Home() {
             {/* Title */}
             <motion.h1
               variants={fadeInUp}
-              className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight max-w-3xl"
+              className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+
             >
               PAY ONLY R50, GET R500+ IN BENEFITS!{" "}
               <span className="text-[#DBC166]">BETA ACCESS OPEN!</span>
@@ -812,7 +817,7 @@ export default function Home() {
                       </p>
                     </div>
                     <motion.img
-                      src="/RefLink.webp"
+                      src="/RefLink.avif"
                       alt="Dynamic Leaderboards"
                       width={300}
                       height={150}

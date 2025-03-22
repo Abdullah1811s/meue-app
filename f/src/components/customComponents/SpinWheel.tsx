@@ -100,7 +100,7 @@ const SpinWheel = () => {
 
     const details = segmentData.filter((s) => s.labelId == p.labelId);
     const payload = { ...details[0], id };
-  
+
     if (details.length > 0) {
       try {
         const res = await axios.put(`${API_BASE_URL}/wheel/update`, payload);
@@ -130,7 +130,7 @@ const SpinWheel = () => {
     const centerY = 250;
     const radius = 200; // Reduced radius to make the wheel smaller
     const wheelSegments = [];
-  
+
     // Check if there are no segments or no text to show
     if (segments === 0 || !segmentData.some(segment => segment.label)) {
       return (
@@ -147,7 +147,7 @@ const SpinWheel = () => {
         </text>
       );
     }
-  
+
     // Generate wheel segments if there are segments with text
     segmentData.forEach((segment, index) => {
       const startAngle = index * segmentAngle - 90;
@@ -166,7 +166,7 @@ const SpinWheel = () => {
         "Z"
       ].join(" ");
       const isEven = index % 2 === 0;
-  
+
       // Create the segment path
       wheelSegments.push(
         <path
@@ -177,7 +177,7 @@ const SpinWheel = () => {
           strokeWidth="1"
         />
       );
-  
+
       // Add the text label
       const textAngle = startAngle + segmentAngle / 2;
       const textRad = (textAngle * Math.PI) / 180;
@@ -187,17 +187,17 @@ const SpinWheel = () => {
       if (textAngle > 90 && textAngle < 270) {
         textRotation += 180;
       }
-  
+
       // Split the label into lines
       const words = segment.label.split(' ');
       const line1 = words.slice(0, Math.ceil(words.length / 3)).join(' ');
       const line2 = words.slice(Math.ceil(words.length / 3), Math.ceil((2 * words.length) / 3)).join(' ');
       const line3 = words.slice(Math.ceil((2 * words.length) / 3)).join(' ');
-  
+
       // Calculate dynamic font size based on text length
       const maxLength = Math.max(line1.length, line2.length, line3.length);
       const fontSize = Math.max(10, 16 - (maxLength * 0.5)); // Adjust font size dynamically
-  
+
       // Render the text lines
       wheelSegments.push(
         <text
@@ -215,7 +215,7 @@ const SpinWheel = () => {
           {line1}
         </text>
       );
-  
+
       wheelSegments.push(
         <text
           className="text-wrap"
@@ -232,7 +232,7 @@ const SpinWheel = () => {
           {line2}
         </text>
       );
-  
+
       if (line3) {
         wheelSegments.push(
           <text
@@ -252,7 +252,7 @@ const SpinWheel = () => {
         );
       }
     });
-  
+
     // Add outer ring
     wheelSegments.push(
       <circle
@@ -265,7 +265,7 @@ const SpinWheel = () => {
         strokeWidth="20"
       />
     );
-  
+
     return wheelSegments;
   };
 
@@ -323,20 +323,26 @@ const SpinWheel = () => {
         {prize !== null && (
           <p className="mt-4 text-xl font-semibold text-green-600">
             🎉 You won: <span className="font-bold">{prize?.label || "Oops... Nothing!🎭"} please wait for email</span>
-
           </p>
         )}
       </div>
-      <div className="relative w-80 h-80 md:w-96 md:h-96 shadow-none">
+
+      {/* Wheel Container */}
+      <div className="relative w-80 h-80 md:w-96 md:h-96 shadow-none" role="img" aria-label="Spinning wheel game">
         {/* Pointer */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-8.6 -translate-y-1/2 w-0 h-0 z-10">
-          <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[30px] border-l-transparent border-r-transparent border-t-bla-600"></div>
+        <div
+          className="absolute top-0 left-1/2 transform -translate-x-8.6 -translate-y-1/2 w-0 h-0 z-10"
+          aria-hidden="true"
+        >
+          <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[30px] border-l-transparent border-r-transparent border-t-black-600"></div>
         </div>
 
+        {/* Rotating Wheel */}
         <motion.div
           animate={{ rotate: rotation }}
           transition={{ duration: 3, ease: "easeOut" }}
           className="w-full h-full shadow-none"
+          aria-hidden="true" // The spinning wheel itself doesn't need to be read by screen readers
         >
           <svg
             viewBox="0 0 500 500"
@@ -348,20 +354,25 @@ const SpinWheel = () => {
           </svg>
         </motion.div>
 
-        {/* Fixed center image that doesn't rotate */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 z-10">
+        {/* Fixed center image (non-interactive, so aria-hidden) */}
+        <div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 z-10"
+          aria-hidden="true"
+        >
           {/* Black background circle */}
           <div className="absolute w-full h-full rounded-full bg-black"></div>
 
           {/* Center image */}
           <img
             src="/centerWheel.webp"
-            alt="Center Logo"
+            alt=""
             className="absolute w-full h-full rounded-full object-cover"
+            aria-hidden="true"
           />
         </div>
       </div>
     </div>
+
   );
 };
 
