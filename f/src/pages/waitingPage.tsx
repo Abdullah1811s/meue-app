@@ -96,10 +96,9 @@ export default function Home() {
   const [showScroll, setShowScroll] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [vendors, setVendors] = useState<any[]>([]);
-  // const [currentSlide,] = useState(0);
+  const [currentSlide,] = useState(0);
 
-  const isAuth = true;
-  //useSelector((state: any) => state.auth.isUserAuthenticated);
+  const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
 
@@ -162,7 +161,7 @@ export default function Home() {
 
 
 
-  const isMobile = useMediaQuery({ maxWidth: 768 }); // Adjust breakpoint if needed
+  const isMobile = useMediaQuery({ maxWidth: 768 }); 
   const [showTimer, setShowTimer] = useState(true);
 
   useEffect(() => {
@@ -178,8 +177,7 @@ export default function Home() {
 
   return (
     <>
-      
-      <button
+      <Button
         onClick={scrollToTop}
         className={`fixed bottom-4 sm:bottom-6 lg:bottom-10 
     right-4 sm:right-6 lg:right-10 
@@ -189,7 +187,8 @@ export default function Home() {
     ${showScroll ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" strokeWidth={4} />
-      </button>
+      </Button>
+
       <motion.main
         initial="hidden"
         animate="visible"
@@ -219,18 +218,16 @@ export default function Home() {
                 <img
                   key={index}
                   src={img}
-                  srcSet={`${img}?w=400 400w, ${img}?w=800 800w, ${img}?w=1200 1200w`}
-                  sizes="(max-width: 768px) 100vw, 50vw"
                   alt={`Slide ${index}`}
                   className="w-full h-full rounded-lg object-cover flex-shrink-0"
-                  loading={index === 0 ? "eager" : "lazy"}
-                  fetchPriority={index === 0 ? "high" : "auto"}
+                  loading={index === currentSlide ? "eager" : "lazy"} 
+                  fetchPriority={index === currentSlide ? "high" : "auto"} 
                   decoding="async"
                   width="800"
-                  height="600"
+                  height="600" 
+                  sizes="(max-width: 768px) 100vw, 50vw"
                 />
               ))}
-
 
             </motion.div>
           </motion.div>
@@ -243,8 +240,7 @@ export default function Home() {
             {/* Title */}
             <motion.h1
               variants={fadeInUp}
-              className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
-
+              className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight max-w-3xl"
             >
               PAY ONLY R50, GET R500+ IN BENEFITS!{" "}
               <span className="text-[#DBC166]">BETA ACCESS OPEN!</span>
@@ -819,7 +815,7 @@ export default function Home() {
                       </p>
                     </div>
                     <motion.img
-                      src="/RefLink.avif"
+                      src="/RefLink.webp"
                       alt="Dynamic Leaderboards"
                       width={300}
                       height={150}

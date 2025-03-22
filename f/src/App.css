@@ -17,9 +17,9 @@
 
 /* 🔹 Global Styles */
 html, body {
-  height: 100vh;
+  min-height: 100vh; /* Allows content to expand beyond viewport */
   width: 100vw;
-  font-family: var(--font-body); /* ✅ No need to repeat in <body> */
+  font-family: var(--font-body);
   overflow-x: hidden;
   margin: 0;
   padding: 0;
