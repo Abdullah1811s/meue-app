@@ -96,7 +96,7 @@ export default function Home() {
   const [showScroll, setShowScroll] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [vendors, setVendors] = useState<any[]>([]);
-  const [currentSlide,] = useState(0);
+  // const [currentSlide,] = useState(0);
 
   const isAuth = true;
   //useSelector((state: any) => state.auth.isUserAuthenticated);
@@ -178,7 +178,8 @@ export default function Home() {
 
   return (
     <>
-      <Button
+      
+      <button
         onClick={scrollToTop}
         className={`fixed bottom-4 sm:bottom-6 lg:bottom-10 
     right-4 sm:right-6 lg:right-10 
@@ -188,8 +189,7 @@ export default function Home() {
     ${showScroll ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" strokeWidth={4} />
-      </Button>
-
+      </button>
       <motion.main
         initial="hidden"
         animate="visible"
@@ -219,16 +219,18 @@ export default function Home() {
                 <img
                   key={index}
                   src={img}
+                  srcSet={`${img}?w=400 400w, ${img}?w=800 800w, ${img}?w=1200 1200w`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   alt={`Slide ${index}`}
                   className="w-full h-full rounded-lg object-cover flex-shrink-0"
-                  loading={index === currentSlide ? "eager" : "lazy"} 
-                  fetchPriority={index === currentSlide ? "high" : "auto"} 
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
                   decoding="async"
                   width="800"
-                  height="600" 
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  height="600"
                 />
               ))}
+
 
             </motion.div>
           </motion.div>

@@ -342,7 +342,7 @@ const SpinWheel = () => {
           animate={{ rotate: rotation }}
           transition={{ duration: 3, ease: "easeOut" }}
           className="w-full h-full shadow-none"
-          aria-hidden="true" // The spinning wheel itself doesn't need to be read by screen readers
+          aria-hidden="true" 
         >
           <svg
             viewBox="0 0 500 500"
