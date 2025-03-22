@@ -99,7 +99,7 @@ export default function Home() {
   const [vendors, setVendors] = useState<any[]>([]);
   const [currentSlide,] = useState(0);
 
-  const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated);
+  const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
 

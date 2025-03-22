@@ -26,7 +26,7 @@ export const getAllRaff = async (req, res) => {
 export const makeNewRaff = async (req, res) => {
     try {
         const { name, scheduleAt, prizes, vendorId } = req.body;
-        console.log(" the data to store", req.body)
+     
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }
@@ -36,7 +36,7 @@ export const makeNewRaff = async (req, res) => {
         }
         let scheduledDate = null
         if (scheduleAt) {
-            console.log(" the data to store", scheduleAt)
+          
             scheduledDate = new Date(scheduleAt);
             if (isNaN(scheduledDate.getTime())) {
                 return res.status(400).json({ message: "Invalid scheduled date format. Please provide a valid date." });
@@ -63,6 +63,7 @@ export const makeNewRaff = async (req, res) => {
         if (!paidUsers || paidUsers.length === 0) {
             return res.status(400).json({ message: "No paid users found to participate in the raffle." });
         }
+        console.log("The prize is" , prizes);
         const newRaff = await raffModel.create({
             name,
             prizes,
@@ -112,7 +113,7 @@ export const getScheduledRaff = async (req, res) => {
         const scheduledReferrals = await raffModel.find({ status: "scheduled" })
             .populate('participants')
             .populate('winner'); // Also populate winner (will be null for scheduled)
-
+            console.log("the raff" , scheduledReferrals[2]);
         res.status(200).json({
             message: "Scheduled weekly referrals fetched successfully",
             scheduled: scheduledReferrals
