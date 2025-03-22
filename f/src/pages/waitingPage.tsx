@@ -17,6 +17,7 @@ import InfiniteScroll from '@/components/customComponents/InfinteScroll';
 import { Button } from '@/components/ui/button';
 import AnalogTimer from '@/components/customComponents/AnalogTimer';
 import AppTimer from '@/components/customComponents/apptimer';
+import { useSelector } from 'react-redux';
 // import { useSelector } from 'react-redux';
 
 // Enhanced animation variants
