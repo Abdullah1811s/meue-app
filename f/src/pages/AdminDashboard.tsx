@@ -180,7 +180,7 @@ interface RaffFormData {
   scheduledAt: string;
   prizes: string[];
 }
-const socket = io("http://localhost:8000");
+const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
 
 const AdminDashboard = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
