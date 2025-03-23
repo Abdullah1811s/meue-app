@@ -39,7 +39,7 @@ const NavbarComponent = () => {
             const response = await axios.post(
                 `${API_BASE_URL}/payment/checkout`,
                 {
-                    amount: 50, 
+                    amount: 5000, 
                     currency: "ZAR",
                     id
                 },
