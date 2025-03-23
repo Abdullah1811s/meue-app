@@ -26,6 +26,12 @@ import PaymentCancel from './pages/PaymentCancel.tsx'
 import PaymentFailure from './pages/PaymentFailed.tsx'
 
 import UserDash from './pages/userDashboard.tsx'
+import ComRule from './pages/ComRule.tsx'
+import FAQPage from './pages/FAQ.tsx'
+import PrivacyPolicy from './pages/PrivacyPolicy.tsx'
+import TermsOfService from './pages/TOS.tsx'
+import GeneralTermPdf from './pages/GeneralTerms.tsx'
+import PartnerProgramTerms from './pages/PartnerProgramTerms .tsx'
 
 
 const router = createBrowserRouter(
@@ -35,12 +41,19 @@ const router = createBrowserRouter(
       <Route index element={<Home />} />
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
-
       <Route path="vendorOnBoarding" element={<VendorOnboarding />} />
       <Route path="allPartners" element={<AllPartners />} />
       <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/affiliated/register" element={<AffiliateRegistration />} />
       <Route path="/affiliated/login" element={<AffiliateLogin />} />
+     
+      <Route path="/doc/generalTerm" element={<GeneralTermPdf />} />
+      <Route path="/doc/PartnerProgram" element={<PartnerProgramTerms />} />
+      <Route path="/doc/ComRule" element={<ComRule />} />
+      <Route path="/doc/FAQ" element={<FAQPage />} />
+      <Route path="/doc/Privacy" element={<PrivacyPolicy />} />
+      <Route path="/doc/TOS" element={<TermsOfService />} />
+
 
 
       {/* Vendor Protectnaved Routes */}

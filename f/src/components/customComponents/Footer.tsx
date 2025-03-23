@@ -1,28 +1,30 @@
+import { FaInstagram, FaTiktok, FaTwitter, FaFacebook } from "react-icons/fa";
+
 const Footer = () => {
   const documents = [
     {
       name: "General Terms and Conditions",
-      path: "/docs/The_Menu_General_Terms_and_Conditions.pdf",
+      path: "/doc/generalTerm",
     },
     {
       name: "Partner Program Terms and Conditions",
-      path: "/docs/The_Menu_Vendor_Program_Terms.pdf",
+      path: "/doc/PartnerProgram",
     },
     {
       name: "Competition Rules",
-      path: "/docs/The_Menu_Competition_Rules.pdf",
+      path: "/doc/ComRule",
     },
     {
       name: "Frequently Asked Questions",
-      path: "/docs/The_Menu_FAQ.pdf",
+      path: "/doc/FAQ",
     },
     {
       name: "Privacy Policy",
-      path: "/docs/The_Menu_Privacy_Policy.pdf",
+      path: "/doc/Privacy",
     },
     {
       name: "Terms of Service",
-      path: "/docs/The_Menu_Terms_of_Service.pdf",
+      path: "/doc/TOS",
     },
   ];
 
@@ -34,25 +36,33 @@ const Footer = () => {
           <h2 className="text-lg font-bold text-amber-500">THE MENU</h2>
           <p className="mt-2 text-sm">YOUR WORLD, YOUR WAY</p>
           <p className="mt-4 text-sm">
-            Email: <a href="mailto:xyz@gmail.com" className="underline">support@themenuportal.co.za</a>
+            Email:{" "}
+            <a
+              href="mailto:support@themenuportal.co.za"
+              className="underline"
+            >
+              support@themenuportal.co.za
+            </a>
           </p>
         </div>
 
         {/* Center Section */}
         <div className="flex flex-col space-y-2 text-sm">
-          <a href="#" className="hover:underline">Home</a>
-
+          <a href="#" className="hover:underline">
+            Home
+          </a>
           <a
             href="#"
             onClick={(e) => {
               e.preventDefault();
-              document.getElementById("social")?.scrollIntoView({ behavior: "smooth" });
+              document
+                .getElementById("social")
+                ?.scrollIntoView({ behavior: "smooth" });
             }}
             className="hover:underline"
           >
             About Us
           </a>
-
         </div>
 
         {/* Right Section - Documents */}
@@ -74,6 +84,42 @@ const Footer = () => {
             </a>
           ))}
         </div>
+      </div>
+
+      {/* Social Media Links */}
+      <div className="mt-8 flex justify-center space-x-6">
+        <a
+          href="https://www.instagram.com/the.menu.portal?igsh=eXdxOXJ1NGtqZ21y&utm_source=qr"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-amber-500 text-xl"
+        >
+          <FaInstagram />
+        </a>
+        <a
+          href="https://www.tiktok.com/@themenu.sa?_t=ZM-8uviPKlCEZ4&_r=1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-amber-500 text-xl"
+        >
+          <FaTiktok />
+        </a>
+        <a
+          href="https://x.com/themenu_sa?s=21"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-amber-500 text-xl"
+        >
+          <FaTwitter />
+        </a>
+        <a
+          href="https://www.facebook.com/share/1AGK8NsgzY/?mibextid=wwXIfr"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-amber-500 text-xl"
+        >
+          <FaFacebook />
+        </a>
       </div>
     </footer>
   );
