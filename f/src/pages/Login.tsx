@@ -49,7 +49,7 @@ const Login = () => {
         ...data,
         captchaToken, 
       });
-      console.log(response.data)
+    
       const { token, admin, user } = response.data;
       if (token) {
         if (admin) {

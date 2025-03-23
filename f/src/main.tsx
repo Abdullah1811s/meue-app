@@ -54,10 +54,10 @@ const router = createBrowserRouter(
       {/* User Protected Routes */}
       <Route path="users/:id" element={<PrivateRoute />}>
         <Route path="draw" element={<CompletedRafflesPage />} />
-        <Route path="dashboard" element={<UserDash />} />
         <Route path="success" element={<PaymentSuccess />} />
         <Route path="failure" element={<PaymentFailure />} />
         <Route path="cancel" element={<PaymentCancel />} />
+        <Route path="dashboard" element={<UserDash />} />
         <Route path="" element={<Home />} />
       </Route>
 

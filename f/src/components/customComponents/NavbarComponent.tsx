@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { ChevronDown, ChevronUp, Menu, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,7 @@ import { logout } from "@/store/authSlice";
 import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import axios from "axios";
+
 
 const NavbarComponent = () => {
 
@@ -15,6 +16,7 @@ const NavbarComponent = () => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const dispatch = useDispatch();
+    const [isPaid , setIsPaid] = useState<boolean>(false)
     const [openDrop, setOpenDrop] = useState<boolean>(false);
     const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
     const isVendorAuthenticated = useSelector((state: any) => state.auth.isVendorAuthenticated);
@@ -39,7 +41,7 @@ const NavbarComponent = () => {
             const response = await axios.post(
                 `${API_BASE_URL}/payment/checkout`,
                 {
-                    amount: 5000, 
+                    amount: 5000,
                     currency: "ZAR",
                     id
                 },
@@ -67,6 +69,31 @@ const NavbarComponent = () => {
         navigate(route);
         setIsOpen(false);
     }
+    useEffect(() => {
+        const fetchUserPaymentStatus = async () => {
+            try {
+                // Make a GET request to fetch the user by ID
+                const response = await axios.get(`${API_BASE_URL}/users/${id}`);
+
+                if (response.data.success) {
+                    const user = response.data.user;
+                   
+
+                    if (user.isPaid) {
+                        setIsPaid(true);
+                    } else {
+                        setIsPaid(false);   
+                    }
+                } else {
+                    console.error("Failed to fetch user:", response.data.message);
+                }
+            } catch (error: any) {
+                console.error("Error fetching user:", error.message);
+            }
+        };
+
+        fetchUserPaymentStatus();
+    }, [id, dispatch]);
 
     return (
         <nav className="bg-black sticky text-white flex items-center justify-between rounded-full w-[95%] lg:w-[90%] h-16 md:h-18 lg:h-20 mt-4 sm:mt-6 md:mt-8 px-4 sm:px-6 py-3 mx-auto mb-6 z-50">
@@ -167,12 +194,14 @@ const NavbarComponent = () => {
                             >
                                 Dashboard
                             </Button>
-                            <Button
-                                onClick={handleClickPayNow}
-                                className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
-                            >
-                                Pay Now
-                            </Button>
+                            {!isPaid && (
+                                <Button
+                                    onClick={handleClickPayNow}
+                                    className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
+                                >
+                                    Pay Now
+                                </Button>
+                            )}
                             <Button
                                 onClick={() => navigate(`/users/${id}/draw`)}
                                 className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
@@ -256,11 +285,16 @@ const NavbarComponent = () => {
                                     >
                                         Dashboard
                                     </Button>
-                                    <button onClick={handleClickPayNow} className="text-white py-2 border border-[#DBC166] rounded-md transition hover:bg-[#DBC166] hover:text-black">
-                                        Pay Now
-                                    </button>
+                                    {!isPaid && (
+                                        <Button
+                                            onClick={handleClickPayNow}
+                                            className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
+                                        >
+                                            Pay Now
+                                        </Button>
+                                    )}
                                     <Button
-                                        onClick={() => navigate('/draw')}
+                                        onClick={() => navigate(`/users/${id}/draw`)}
                                         className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
                                     >
                                         Draws

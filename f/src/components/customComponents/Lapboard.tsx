@@ -11,9 +11,7 @@ const Lapboard = () => {
   const fetchUser = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/users`);
-      console.log(response.data);
-
-      // Sort users by TotalPoints in descending order
+    
       const sortedUsers = response.data.users.sort(
         (a: any, b: any) => b.TotalPoints - a.TotalPoints
       );

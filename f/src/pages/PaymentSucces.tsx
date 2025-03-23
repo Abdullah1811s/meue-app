@@ -1,22 +1,11 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get id from URL
-  useEffect(() => {
-    const paymentFlag = localStorage.getItem("paymentInProgress");
+  const { id } = useParams();
 
-    if (!paymentFlag) {
-      // If no flag exists, user accessed manually -> redirect
-      navigate(`/users/${id}/dashboard`);
-    } else {
-      // Remove the flag to prevent manual revisits
-      localStorage.removeItem("paymentInProgress");
-    }
-  }, [navigate, id]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-white text-black">
