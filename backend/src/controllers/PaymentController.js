@@ -4,26 +4,7 @@ import usersModel from '../models/users.model.js';
 const YOCO_API_URL = process.env.YOCO_API_URL;
 const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL;
-async function verifyTransaction(checkoutId) {
-    try {
-        const response = await axios.get(
-            `https://api.yoco.com/v1/checkouts/${checkoutId}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${YOCO_SECRET_KEY}`,
-                },
-            }
-        );
 
-        const transaction = response.data;
-        console.log("Transaction Response:", transaction);
-
-        return transaction.status === "successful";
-    } catch (error) {
-        console.error("Error checking transaction status:", error.response?.data || error.message);
-        return false;
-    }
-}
 
 export const Payment = async (req, res) => {
     try {
@@ -39,7 +20,10 @@ export const Payment = async (req, res) => {
                 cancelUrl: `${FRONTEND_URL}/users/${id}/cancel`,
                 successUrl: `${FRONTEND_URL}/users/${id}/success`,
                 failureUrl: `${FRONTEND_URL}/users/failure`,
-                metadata: { orderId: id }, // Need to add user ID too
+                metadata: {
+                    orderId: "12345",
+                    userId:id //added the user ID
+                }, // Need to add user ID too
             },
             {
                 headers: {
@@ -80,9 +64,9 @@ export const handleWebhook = async (req, res) => {
             const userId = event.data.metadata.userId;
             const paymentId = event.data.id;
             const updatedUserStatus = await usersModel.findOneAndUpdate(
-                { _id: userId },  
-                { $set: { isPaid: true } }, 
-                { new: true }  
+                { _id: userId },
+                { $set: { isPaid: true } },
+                { new: true }
             );
 
             console.log(`Payment ${paymentId} succeeded for user ${userId} and the updated user is ${updatedUserStatus}`);
