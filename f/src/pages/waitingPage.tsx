@@ -105,16 +105,19 @@ export default function Home() {
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
-  if (isAuthenticated) {
-    const id = localStorage.getItem("id");
-    if (id)
-      navigate(`/users/${id}`)
-  }
-  else if (isVendorAuthenticated) {
-    const id = localStorage.getItem("id");
-    if (id)
-      navigate(`/vendor/${id}`)
-  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const id = localStorage.getItem("id");
+      if (id)
+        navigate(`/users/${id}`)
+    }
+    else if (isVendorAuthenticated) {
+      const id = localStorage.getItem("id");
+      if (id)
+        navigate(`/vendor/${id}`)
+    }
+  }, [])
 
 
   useEffect(() => {
