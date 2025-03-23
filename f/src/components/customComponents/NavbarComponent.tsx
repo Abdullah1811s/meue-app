@@ -72,13 +72,12 @@ const NavbarComponent = () => {
     useEffect(() => {
         const fetchUserPaymentStatus = async () => {
             try {
-                // Make a GET request to fetch the user by ID
+             
                 const response = await axios.get(`${API_BASE_URL}/users/${id}`);
 
                 if (response.data.success) {
                     const user = response.data.user;
-                   
-
+    
                     if (user.isPaid) {
                         setIsPaid(true);
                     } else {
