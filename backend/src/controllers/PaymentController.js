@@ -1,4 +1,5 @@
 import axios from 'axios'
+import crypto from 'crypto';
 
 const YOCO_API_URL = process.env.YOCO_API_URL;
 const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
@@ -24,7 +25,7 @@ async function verifyTransaction(checkoutId) {
     }
 }
 
-const Payment = async (req, res) => {
+export const Payment = async (req, res) => {
     try {
 
 
@@ -38,7 +39,7 @@ const Payment = async (req, res) => {
                 cancelUrl: `${FRONTEND_URL}/users/${id}/cancel`,
                 successUrl: `${FRONTEND_URL}/users/${id}/success`,
                 failureUrl: `${FRONTEND_URL}/users/failure`,
-                metadata: { orderId: "12345" },
+                metadata: { orderId: "12345" }, // Need to add user ID too
             },
             {
                 headers: {
@@ -58,7 +59,36 @@ const Payment = async (req, res) => {
     }
 }
 
+export const handleWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-webhook-signature'];
+    const rawBody = req.body.toString();
+    const secret = process.env.YOCO_WEBHOOK_SECRET;
 
+    const computedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(rawBody)
+      .digest('hex');
 
+    if (signature !== computedSignature) {
+      console.error('Invalid webhook signature');
+      return res.status(401).send('Invalid signature');
+    }
+    console.log('Webhook verified');
+    
+    const event = JSON.parse(rawBody);
+    
+    if (event.type === 'payment.succeeded') {
+      const userId = event.data.metadata.userId;
+      const paymentId = event.data.id;
 
-export default Payment
+      // Need to update user status here
+      console.log(`Payment ${paymentId} succeeded for user ${userId}`);
+    }
+
+    res.status(200).send('Webhook processed');
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(400).send('Webhook error');
+  }
+};
