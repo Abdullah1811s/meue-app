@@ -622,7 +622,7 @@ export default function Home() {
             >
               {[
                 { Icon: Users, title: "For Users", desc: "Exclusive savings, giveaways, and interactive rewards." },
-                { Icon: ShoppingBag, title: "For Partner", desc: "More customers, more exposure, 0% commission." },
+                { Icon: ShoppingBag, title: "For Partners", desc: "More customers, more exposure, 0% commission." },
                 { Icon: Gift, title: "For Affiliates", desc: "Earn up to 30% commission promoting The Menu." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
