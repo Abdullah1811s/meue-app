@@ -89,6 +89,9 @@ const images = [
 ];
 
 export default function Home() {
+  const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
+  const isVendorAuthenticated = useSelector((state: any) => state.auth.isVendorAuthenticated);
+
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const sectionRef = useRef(null);
@@ -102,6 +105,16 @@ export default function Home() {
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
+  if (isAuthenticated) {
+    const id = localStorage.getItem("id");
+    navigate(`/users/${id}`)
+  }
+  else if (isVendorAuthenticated) {
+    const id = localStorage.getItem("id");
+    navigate(`/vendor/${id}`)
+  }
+  else
+    navigate('/')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -162,7 +175,7 @@ export default function Home() {
 
 
 
-  const isMobile = useMediaQuery({ maxWidth: 768 }); 
+  const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showTimer, setShowTimer] = useState(true);
 
   useEffect(() => {
@@ -221,11 +234,11 @@ export default function Home() {
                   src={img}
                   alt={`Slide ${index}`}
                   className="w-full h-full rounded-lg object-cover flex-shrink-0"
-                  loading={index === currentSlide ? "eager" : "lazy"} 
-                  fetchPriority={index === currentSlide ? "high" : "auto"} 
+                  loading={index === currentSlide ? "eager" : "lazy"}
+                  fetchPriority={index === currentSlide ? "high" : "auto"}
                   decoding="async"
                   width="800"
-                  height="600" 
+                  height="600"
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               ))}
