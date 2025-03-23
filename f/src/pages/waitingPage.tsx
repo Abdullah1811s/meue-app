@@ -107,14 +107,15 @@ export default function Home() {
 
   if (isAuthenticated) {
     const id = localStorage.getItem("id");
-    navigate(`/users/${id}`)
+    if (id)
+      navigate(`/users/${id}`)
   }
   else if (isVendorAuthenticated) {
     const id = localStorage.getItem("id");
-    navigate(`/vendor/${id}`)
+    if (id)
+      navigate(`/vendor/${id}`)
   }
-  else
-    navigate('/')
+
 
   useEffect(() => {
     const handleScroll = () => {
