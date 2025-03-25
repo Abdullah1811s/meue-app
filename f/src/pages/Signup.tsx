@@ -68,9 +68,8 @@ function SignUp() {
 
 
   const onSubmit = async (data: SignUpForm) => {
-
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/signUp`, { ...data, captchaToken }, {
+      const response = await axios.post(`${API_BASE_URL}/auth/signUp`, { ...data, captchaToken ,  }, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -98,7 +97,7 @@ function SignUp() {
     }
   };
 
-
+  console.log(captchaToken);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">

@@ -22,8 +22,8 @@ export const Payment = async (req, res) => {
                 failureUrl: `${FRONTEND_URL}/users/failure`,
                 metadata: {
                     orderId: "12345",
-                    userId:id //added the user ID
-                }, // Need to add user ID too
+                    userId: id
+                },
             },
             {
                 headers: {
@@ -63,14 +63,17 @@ export const handleWebhook = async (req, res) => {
         if (event.type === 'payment.succeeded') {
             const userId = event.data.metadata.userId;
             const paymentId = event.data.id;
+            const userType = event.data.amount === 5000 ? "R50" : "R10";
+
             const updatedUserStatus = await usersModel.findOneAndUpdate(
                 { _id: userId },
-                { $set: { isPaid: true } },
+                { $set: { isPaid: true, userType } }, 
                 { new: true }
             );
 
             console.log(`Payment ${paymentId} succeeded for user ${userId} and the updated user is ${updatedUserStatus}`);
         }
+
 
         res.status(200).send('Webhook processed');
     } catch (error) {

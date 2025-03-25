@@ -3,11 +3,12 @@ import usersModel from "../models/users.model.js";
 import { io } from '../app.js'
 import vendorModel from "../models/vendor.model.js";
 import { sendEmail } from "../utils/emailService.js";
+
 export const getAllRaff = async (req, res) => {
     try {
         // Populate both participants and winner
         const allRaffles = await raffModel.find()
-            .populate('participants')
+            .populate('participants.user')
             .populate('winner.user');
 
         res.status(200).json({
@@ -26,7 +27,7 @@ export const getAllRaff = async (req, res) => {
 export const makeNewRaff = async (req, res) => {
     try {
         const { name, scheduleAt, prizes, vendorId } = req.body;
-     
+
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }
@@ -36,7 +37,7 @@ export const makeNewRaff = async (req, res) => {
         }
         let scheduledDate = null
         if (scheduleAt) {
-          
+
             scheduledDate = new Date(scheduleAt);
             if (isNaN(scheduledDate.getTime())) {
                 return res.status(400).json({ message: "Invalid scheduled date format. Please provide a valid date." });
@@ -60,26 +61,64 @@ export const makeNewRaff = async (req, res) => {
         }
 
         const paidUsers = await usersModel.find({ isPaid: true });
+
+        //here we have to get the paid user based on the amount they have paid
+        /*
+            if they have paid the R50 we make there entries 10
+            if they have paid the R10 we make there entries 1
+        */
         if (!paidUsers || paidUsers.length === 0) {
             return res.status(400).json({ message: "No paid users found to participate in the raffle." });
         }
-        console.log("The prize is" , prizes);
-        const newRaff = await raffModel.create({
-            name,
-            prizes,
-            scheduleAt: scheduledDate,
-            participants: paidUsers,
-            vendorId
-        });
+        const R50Users = await usersModel.find({ userType: "R50" });
+        const R10Users = await usersModel.find({ userType: "R10" }, { signupDate: 1 });
 
-        const completeRaff = await raffModel.findById(newRaff._id)
-            .populate('participants')
-            .populate('winner.user');
+        console.log("R50 Users:", R50Users, "R10 Users:", R10Users);
 
-        return res.status(201).json({
-            message: "Raffle successfully created and scheduled. Please reload.",
-            raffle: completeRaff,
-        });
+        const participants = [];
+
+       
+        if (R50Users && R50Users.length > 0) {
+            participants.push(...R50Users.map(user => ({ user: user._id, entries: 10 })));
+        }
+
+        const scheduledDateOnly = new Date(scheduledDate).toISOString().split("T")[0];
+
+        if (R10Users && R10Users.length > 0) {
+            R10Users.forEach(user => {
+                const userSignupDateOnly = new Date(user.signupDate).toISOString().split("T")[0];
+                if (userSignupDateOnly === scheduledDateOnly) {
+                    participants.push({ user: user._id, entries: 1 });
+                }
+            });
+        }
+
+        if (participants.length > 0) {
+            const newRaff = await raffModel.create({
+                name,
+                prizes,
+                scheduledAt: scheduledDate,
+                participants,
+                vendorId
+            });
+
+            const completeRaff = await raffModel.findById(newRaff._id)
+                .populate('participants')
+                .populate('winner.user');
+
+            console.log("Raffle created successfully:", newRaff);
+
+            return res.status(201).json({
+                message: "Raffle successfully created and scheduled. Please reload.",
+                raffle: completeRaff,
+            });
+        } else {
+            console.log("No eligible participants to create a raffle.");
+            return res.status(400).json({ message: "No eligible participants for the raffle." });
+        }
+
+
+
     } catch (error) {
         console.error("Error creating raffle:", error);
         return res.status(500).json({
@@ -113,7 +152,7 @@ export const getScheduledRaff = async (req, res) => {
         const scheduledReferrals = await raffModel.find({ status: "scheduled" })
             .populate('participants')
             .populate('winner'); // Also populate winner (will be null for scheduled)
-            console.log("the raff" , scheduledReferrals[2]);
+        console.log("the raff", scheduledReferrals[2]);
         res.status(200).json({
             message: "Scheduled weekly referrals fetched successfully",
             scheduled: scheduledReferrals
@@ -247,7 +286,7 @@ export const updateRaffWithWinner = async (req, res) => {
     try {
         const { refId, winnerEmail, prizeId } = req.body;
         let isWinner = false;
-        
+
         if (!refId || !winnerEmail || !prizeId) {
             return res.status(400).json({ error: "Raffle ID, winner email, and prize ID are required." });
         }
@@ -270,7 +309,7 @@ export const updateRaffWithWinner = async (req, res) => {
         }
 
         const prize = raffle.prizes[prizeIndex];
-        
+
         // Check if the endDate is today
         const today = new Date();
         if (prize.endDate && prize.endDate.toDateString() === today.toDateString()) {
@@ -311,10 +350,10 @@ export const updateRaffWithWinner = async (req, res) => {
         // Only add the winner if they don't already exist for this prize
         if (existingWinnerIndex === -1) {
             // Push the winner to the winner array
-            raffle.winner.push({ 
-                user: winner._id, 
-                prize: prize.name, 
-                isEmailSent: false 
+            raffle.winner.push({
+                user: winner._id,
+                prize: prize.name,
+                isEmailSent: false
             });
         }
 
@@ -372,13 +411,13 @@ export const updateRaffWithWinner = async (req, res) => {
         if (isWinner) {
             // Use atomic update to ensure email is only sent once
             const winnerUpdateResult = await raffModel.updateOne(
-                { 
+                {
                     _id: refId,
                     "winner.user": winner._id,
                     "winner.prize": prize.name,
                     "winner.isEmailSent": false // Only update if email hasn't been sent
                 },
-                { 
+                {
                     $set: { "winner.$.isEmailSent": true }
                 }
             );

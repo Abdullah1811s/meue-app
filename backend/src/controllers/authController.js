@@ -40,7 +40,7 @@ export const signUp = async (req, res) => {
     try {
         let referrer1;
         let referrer2;
-        const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken } = req.body;
+        const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken , userType  } = req.body;
 
         const isCaptchaValid = await verifyCaptcha(captchaToken);
         if (!isCaptchaValid) {
@@ -97,6 +97,7 @@ export const signUp = async (req, res) => {
             city,
             province,
             street,
+            userType,
             town,
             postalCode,
             referralCodeShare

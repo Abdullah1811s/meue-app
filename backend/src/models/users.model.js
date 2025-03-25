@@ -34,7 +34,17 @@ const userSchema = new mongoose.Schema(
         city: { type: String, required: true, trim: true },
         province: { type: String, required: true, trim: true },
         street: { type: String, required: true, trim: true },
+        signupDate:
+        {
+            type:Date,
+            default:Date.now,
+        },
         town: { type: String, required: true, trim: true },
+        userType:
+        {
+            type: String,
+            enum: ["R50", "R10"],
+        },
         postalCode: { type: String, required: true, trim: true, match: [/^\d+$/, "Postal code must contain only digits"] },
         isPaid: { type: Boolean, default: false },
         prizeWon: { type: String },

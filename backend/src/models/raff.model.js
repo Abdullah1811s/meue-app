@@ -15,7 +15,6 @@ const RaffSchema = new mongoose.Schema(
         {
           name: { type: String, required: true },
           id: { type: String, required: true },
-          quantity: { type: Number },
           endDate: { type: Date },
         },
       ],
@@ -23,9 +22,16 @@ const RaffSchema = new mongoose.Schema(
     },
     participants: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+         
+        },
+        entries: {
+          type: Number,
+          enum: [10, 1], // R50 = 10 entries, R10 = 1 entry
+  
+        },
       },
     ],
     winner: [
@@ -70,3 +76,14 @@ RaffSchema.pre('save', function (next) {
 });
 
 export default mongoose.model('RaffModel', RaffSchema);
+
+
+
+/*
+        if they have paid the R50 we make there entries 10
+        if they have paid the R10 we make there entries 1
+
+
+        so for each particpate we have a additonal field entries that we have to edit based on the amount they have paid
+
+    */

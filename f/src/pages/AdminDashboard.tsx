@@ -151,6 +151,8 @@ interface RaffleItem {
   _id: string;
   prizes: any;
   participants: {
+    entries: number;
+    user: any;
     email: string;
     phone: string;
     city: string;
@@ -1432,13 +1434,24 @@ const AdminDashboard = () => {
                           {Array.isArray(item.participants) && item.participants.length > 0 ? (
                             <ul className="list-disc ml-4 text-sm text-gray-700">
                               {item.participants.map((participant, index) => (
-                                <li key={index} className="mb-2">
-                                  <strong className="break-words">{participant.email}</strong> - {participant.phone}
-                                  <br />
-                                  <span className="break-words">
-                                    {participant.street}, {participant.town}, {participant.city}, {participant.province}, {participant.postalCode}
-                                  </span>
+                                <li key={index} className="mb-4 p-3 border rounded-lg shadow-md bg-white">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-gray-700 font-semibold">Total Entries:</span>
+                                    <span className={`px-3 py-1 text-sm font-bold rounded-md ${participant.entries === 10 ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>
+                                      {participant.entries} {participant.entries > 1 ? 'entries' : 'entry'}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-gray-800 font-semibold">{participant.user.email}</div>
+                                  <div className="text-gray-600">{participant.user.phone}</div>
+
+                                  <div className="mt-2 text-gray-600 text-sm">
+                                    <span className="block">{participant.user.street}</span>
+                                    <span className="block">{participant.user.town}, {participant.user.city}</span>
+                                    <span className="block">{participant.user.province}, {participant.user.postalCode}</span>
+                                  </div>
                                 </li>
+
                               ))}
                             </ul>
                           ) : (
