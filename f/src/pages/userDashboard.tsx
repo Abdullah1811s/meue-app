@@ -51,6 +51,10 @@ const UserDash = () => {
     const [myInfo, setMyInfo] = useState<any>();
     const [error, setError] = useState<string | null>(null);
 
+    const handleHome = () =>
+    {
+        navigate(`/users/${id}`);
+    }
     const handleLogout = () =>
     {
         localStorage.removeItem("UserToken")
@@ -115,9 +119,13 @@ const UserDash = () => {
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
+             <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleHome}>
+                Home
+            </Button>
             <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleLogout}>
                 logout
             </Button>
+           
             <motion.h1
                 className="text-3xl font-bold mb-4"
                 initial={{ opacity: 0 }}
