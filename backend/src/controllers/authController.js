@@ -129,6 +129,13 @@ export const signUp = async (req, res) => {
         newUser.signupPoint += 125;
         newUser.save();
         await addPoints(newUser._id, newUser.signupPoint);
+
+        /*
+        here te user has been added now based 
+        on  the user details like R10 or R50
+        */
+
+
         return res.status(201).json({
             message: "User created successfully",
             user: { ...newUser.toObject(), password: undefined },

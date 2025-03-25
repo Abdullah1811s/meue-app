@@ -47,7 +47,6 @@ const Footer = () => {
               e.preventDefault();
               navigate(homeNavigation);
               window.scrollTo({ top: 0, behavior: "smooth" }); // Smooth scroll to top
-
               if (window.getSelection) {
                 window.getSelection()?.removeAllRanges();
               }
@@ -60,24 +59,40 @@ const Footer = () => {
           >
             Home
           </a>
-
-
           <a
-            href="#"
+            href="#social"
             onClick={(e) => {
               e.preventDefault();
+              navigate("/");
               document.getElementById("social")?.scrollIntoView({ behavior: "smooth" });
+              window.scrollTo({ top: 0, behavior: "smooth" }); // Ensure top scroll
             }}
             className="hover:underline"
           >
             About Us
           </a>
-          <button onClick={() => navigate("/affiliated/register")} className="hover:underline text-left">
+          <a
+            href="/affiliated/register"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/affiliated/register");
+              window.scrollTo({ top: 0, behavior: "smooth" }); // Smooth scroll to top
+            }}
+            className="hover:underline"
+          >
             Join Affiliate
-          </button>
-          <button onClick={() => navigate("/vendorOnBoarding")} className="hover:underline text-left">
+          </a>
+          <a
+            href="/vendorOnBoarding"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/vendorOnBoarding");
+              window.scrollTo({ top: 0, behavior: "smooth" }); // Smooth scroll to top
+            }}
+            className="hover:underline"
+          >
             Join as Partner
-          </button>
+          </a>
         </div>
 
         {/* Right Section - Documents */}

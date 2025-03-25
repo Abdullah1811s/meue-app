@@ -27,7 +27,7 @@ export const getAllRaff = async (req, res) => {
 export const makeNewRaff = async (req, res) => {
     try {
         const { name, scheduleAt, prizes, vendorId } = req.body;
-
+        console.log(req.body);
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }
@@ -39,10 +39,13 @@ export const makeNewRaff = async (req, res) => {
         if (scheduleAt) {
 
             scheduledDate = new Date(scheduleAt);
+            console.log("updated the scheduledDate", scheduledDate);
             if (isNaN(scheduledDate.getTime())) {
                 return res.status(400).json({ message: "Invalid scheduled date format. Please provide a valid date." });
             }
         }
+        console.log(" scheduledDate is  : ", scheduledDate);
+        console.log(" scheduleAt is  : ", scheduleAt);
 
 
         let endDateObj = null;
@@ -62,11 +65,6 @@ export const makeNewRaff = async (req, res) => {
 
         const paidUsers = await usersModel.find({ isPaid: true });
 
-        //here we have to get the paid user based on the amount they have paid
-        /*
-            if they have paid the R50 we make there entries 10
-            if they have paid the R10 we make there entries 1
-        */
         if (!paidUsers || paidUsers.length === 0) {
             return res.status(400).json({ message: "No paid users found to participate in the raffle." });
         }
@@ -77,7 +75,7 @@ export const makeNewRaff = async (req, res) => {
 
         const participants = [];
 
-       
+
         if (R50Users && R50Users.length > 0) {
             participants.push(...R50Users.map(user => ({ user: user._id, entries: 10 })));
         }
@@ -87,7 +85,9 @@ export const makeNewRaff = async (req, res) => {
         if (R10Users && R10Users.length > 0) {
             R10Users.forEach(user => {
                 const userSignupDateOnly = new Date(user.signupDate).toISOString().split("T")[0];
+                console.log("user date : ", userSignupDateOnly, " raff date is : ", scheduledDate);
                 if (userSignupDateOnly === scheduledDateOnly) {
+                    console.log('Raff date : ', scheduledDateOnly, " user signup date : ", userSignupDateOnly , "The dates has been matched adding the user in list")
                     participants.push({ user: user._id, entries: 1 });
                 }
             });
