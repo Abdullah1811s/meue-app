@@ -89,12 +89,12 @@ export const handleWebhook = async (req, res) => {
         const userType = amount === 5000 ? "R50" : "R10";
 
         // Validate required fields
-        if (!userId || !paymentId) {
-          console.error('Missing payment metadata:', { event, userId, paymentId });
+        if (!userId || !paymentId || !amount) {
+          console.error('Missing payment metadata:', { event, userId, amount, paymentId });
           return res.status(400).send('Invalid payment data');
         }
 
-        console.log("Amount:", event.data.amount, "Calculated userType:", userType); 
+        console.log("Amount:", amount, "Calculated userType:", userType); 
         const updatedUser = await usersModel.findOneAndUpdate(
           { _id: userId },
           { $set: { isPaid: true, userType } },
@@ -129,7 +129,7 @@ export const handleWebhook = async (req, res) => {
         }
 
       } catch (processingError) {
-        console.error('Payment processing failed:', processingError);
+        console.error('Payment processing failed:', processingError, event);
         return res.status(500).send('Payment processing error');
       }
     }
