@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from "./database/connectDB.js";
@@ -16,12 +18,25 @@ import paymentRoute from './routes/PaymentRoute.js'
 import raffRoute from './routes/RaffRoutes.js'
 import wheelRoute from './routes/wheelRoutes.js'
 import timeRoutes from "./routes/timeRoute.js"; 
+import { handleWebhook } from "./controllers/PaymentController.js";
 const FRONTEND_URL = process.env.FRONTEND_URL;
-dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy
+
 const server = http.createServer(app);
-app.use(cors());
+
+// Place before express.json() middleware
+app.post(
+  '/api/payment/webhook',
+  express.raw({ type: 'application/json' }),
+  handleWebhook
+);
+
+app.use(cors({
+  origin: [FRONTEND_URL],
+  credentials: true
+}));
 app.use(express.json())
 
 const io = new Server(server, {

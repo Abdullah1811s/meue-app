@@ -44,67 +44,99 @@ export const Payment = async (req, res) => {
 }
 
 export const handleWebhook = async (req, res) => {
-    try {
-        const signature = req.headers['x-webhook-signature'];
-        const rawBody = req.body.toString();
-        const secret = process.env.YOCO_WEBHOOK_SECRET;
+  try {
+    // 1. Get required headers and raw body
+    const signatureHeader = req.headers['webhook-signature'];
+    const webhookId = req.headers['webhook-id'];
+    const timestamp = req.headers['webhook-timestamp'];
+    const rawBody = req.body;
 
-        const computedSignature = crypto
-            .createHmac('sha256', secret)
-            .update(rawBody)
-            .digest('hex');
-
-        if (signature !== computedSignature) {
-            console.error('Invalid webhook signature');
-            return res.status(401).send('Invalid signature');
-        }
-        console.log('Webhook verified');
-
-        const event = JSON.parse(rawBody);
-
-        if (event.type === 'payment.succeeded') {
-            const userId = event.data.metadata.userId;
-            const paymentId = event.data.id;
-            const userType = event.data.amount === 5000 ? "R50" : "R10";
-            const entries = userType === "R50" ? 10 : 1;
-            
-            
-            console.log("Amount:", event.data.amount, "Calculated userType:", userType); //check this cuz on console log is not working on local the webhook is being sent on deployed server
-            const updatedUserStatus = await usersModel.findOneAndUpdate(
-                { _id: userId },
-                {
-                    $set: {
-                        isPaid: true,
-                        userType: userType // the user type is not being updated but the isPaid is being update 
-                    }
-                },
-                { new: true }
-            );
-
-
-            console.log(`Payment ${paymentId} succeeded for user ${userId} and the updated user is ${updatedUserStatus}`);
-            try {
-                const updatedRaffles = await addUserToInvisibleRaffles(userId, entries);
-                console.log(`User added to ${updatedRaffles.length} invisible raffles with ${entries} entries each`); //need to verify this also
-            } catch (error) {
-                console.error('Failed to add user to invisible raffles:', error);
-            }
-
-            if (userType === "R10") { //please take a look at this and verify if it is working (after 1 hour payment status of R10 user is change to false indicating they have to pay again)
-                setTimeout(async () => {
-                    await usersModel.findOneAndUpdate(
-                        { _id: userId },
-                        { $set: { isPaid: false } }
-                    );
-                    console.log(`User ${userId} R10 access expired after 1 hour.`);
-                }, 60 * 60 * 1000);
-            }
-        }
-
-
-        res.status(200).send('Webhook processed');
-    } catch (error) {
-        console.error('Webhook error:', error);
-        res.status(400).send('Webhook error');
+    // 2. Validate timestamp freshness (within 3 minutes)
+    const now = Math.floor(Date.now() / 1000);
+    const timeDifference = Math.abs(now - parseInt(timestamp));
+    if (timeDifference > 180) {
+      return res.status(401).send('Invalid timestamp');
     }
+
+    // 3. Compute expected signature using webhook secret
+    const secret = process.env.YOCO_WEBHOOK_SECRET;
+    const secretKey = Buffer.from(secret.split('_')[1], 'base64');
+    const signedContent = `${webhookId}.${timestamp}.${rawBody.toString()}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', secretKey)
+      .update(signedContent)
+      .digest('base64');
+
+    // 4. Validate received signature against computed signature
+    const signatures = signatureHeader.split(' ');
+    const receivedSignature = signatures[0].split(',')[1];
+    if (!crypto.timingSafeEqual(
+      Buffer.from(expectedSignature),
+      Buffer.from(receivedSignature)
+    )) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    // 5. Parse and process the webhook event
+    const event = JSON.parse(rawBody.toString());
+    
+    if (event.type === 'payment.succeeded') {
+      try {
+        // Extract critical payment data with safe access
+        const userId = event.metadata?.userId;
+        const paymentId = event?.id;
+        const amount = event?.amount; // not inside metadata will have to test
+        const userType = amount === 5000 ? "R50" : "R10";
+
+        // Validate required fields
+        if (!userId || !paymentId) {
+          console.error('Missing payment metadata:', { userId, paymentId });
+          return res.status(400).send('Invalid payment data');
+        }
+
+        // Update user payment status and type
+        const updatedUser = await usersModel.findOneAndUpdate(
+          { _id: userId },
+          { $set: { isPaid: true, userType } },
+          { new: true, runValidators: true }
+        );
+
+        if (!updatedUser) {
+          console.error(`User not found: ${userId}`);
+          return res.status(404).send('User not found');
+        }
+
+        console.log(`Payment processed | User: ${userId} | Type: ${userType}`);
+
+        // Add to invisible raffles based on user type
+        const entries = userType === "R50" ? 10 : 1;
+        try {
+          const updatedRaffles = await addUserToInvisibleRaffles(userId, entries);
+          console.log(`Raffle entries added | Count: ${updatedRaffles.length}`);
+        } catch (raffleError) {
+          console.error('Raffle entry failed:', raffleError);
+        }
+
+        // Schedule payment status reset for R10 users
+        if (userType === "R10") {
+          setTimeout(async () => {
+            await usersModel.findOneAndUpdate(
+              { _id: userId },
+              { $set: { isPaid: false } }
+            );
+            console.log(`R10 access expired | User: ${userId}`);
+          }, 3600000); // 1 hour
+        }
+
+      } catch (processingError) {
+        console.error('Payment processing failed:', processingError);
+        return res.status(500).send('Payment processing error');
+      }
+    }
+
+    res.status(200).send('Webhook processed');
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(400).send('Webhook error');
+  }
 };
