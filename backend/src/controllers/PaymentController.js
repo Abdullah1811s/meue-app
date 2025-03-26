@@ -67,20 +67,25 @@ export const handleWebhook = async (req, res) => {
             const paymentId = event.data.id;
             const userType = event.data.amount === 5000 ? "R50" : "R10";
             const entries = userType === "R50" ? 10 : 1;
-            console.log("Updating user:", userId); //need to verify this the status is being update but not userType
-            console.log("UserType to set:", userType);
-            console.log("Amount received:", event.data.amount);
+            
+            
+            console.log("Amount:", event.data.amount, "Calculated userType:", userType); //check this cuz on console log is not working on local the webhook is being sent on deployed server
             const updatedUserStatus = await usersModel.findOneAndUpdate(
                 { _id: userId },
-                { $set: { isPaid: true, userType } },
+                {
+                    $set: {
+                        isPaid: true,
+                        userType: userType // the user type is not being updated but the isPaid is being update 
+                    }
+                },
                 { new: true }
             );
-          
+
 
             console.log(`Payment ${paymentId} succeeded for user ${userId} and the updated user is ${updatedUserStatus}`);
             try {
-                const updatedRaffles = await addUserToInvisibleRaffles(userId, entries); //need to verify this also cuz the console log is not working on local the webhook is being sent on deployed server
-                console.log(`User added to ${updatedRaffles.length} invisible raffles with ${entries} entries each`);
+                const updatedRaffles = await addUserToInvisibleRaffles(userId, entries);
+                console.log(`User added to ${updatedRaffles.length} invisible raffles with ${entries} entries each`); //need to verify this also
             } catch (error) {
                 console.error('Failed to add user to invisible raffles:', error);
             }

@@ -40,11 +40,11 @@ const userSchema = new mongoose.Schema(
             default:Date.now,
         },
         town: { type: String, required: true, trim: true },
-        userType:
-        {
+        userType: {
             type: String,
-            enum: ["R50", "R10"],
-        },
+            enum: ["R50", "R10" , "null"],  // Only allows "R50" or "R10"
+            default: "null",        
+          },
         postalCode: { type: String, required: true, trim: true, match: [/^\d+$/, "Postal code must contain only digits"] },
         isPaid: { type: Boolean, default: false },
         prizeWon: { type: String },
