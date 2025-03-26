@@ -1,10 +1,13 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 
 // Define a type for the vendor object
 interface Vendor {
-  businessPromotionalMaterialURl: any;
+  businessPromotionalMaterialURl?: {
+    secure_url: string;
+  };
+  status?: string;
 }
 
 interface InfiniteScrollProps {
@@ -13,12 +16,11 @@ interface InfiniteScrollProps {
 
 const InfiniteScroll: React.FC<InfiniteScrollProps> = ({ vendors }) => {
   const navigate = useNavigate();
-  const [width, setWidth] = useState(0);
   const carousel = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
 
   useEffect(() => {
     if (carousel.current) {
-      // Get the total width of all items
       setWidth(carousel.current.scrollWidth - carousel.current.offsetWidth);
     }
   }, [vendors]);
@@ -27,39 +29,35 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({ vendors }) => {
     return null;
   }
 
-  // Duplicate the vendors array to ensure we have enough items for a seamless loop
-  const duplicatedVendors = [...vendors, ...vendors, ...vendors];
+  // Filter only approved vendors
+  const approvedVendors = vendors.filter((vendor) => vendor.status === "approved");
+
+  // Duplicate vendors array to create a seamless infinite scroll effect
+  const duplicatedVendors = useMemo(() => [...approvedVendors, ...approvedVendors, ...approvedVendors], [approvedVendors]);
 
   return (
-    <div className="mt-12 overflow-hidden p-3 relative w-full">
+    <div className="relative w-full overflow-hidden p-3 mt-12">
       <motion.div
         ref={carousel}
-        className="flex space-x-4"
+        className="flex space-x-6"
         initial={{ x: 0 }}
-        animate={{
-          x: [-width, 0],
-        }}
+        animate={{ x: [-width, 0] }}
         transition={{
-          x: {
-            repeat: Infinity,
-            repeatType: "loop",
-            duration: 10,
-            ease: "linear",
-          },
+          x: { repeat: Infinity, repeatType: "loop", duration: 12, ease: "linear" },
         }}
       >
-        {duplicatedVendors
-          .filter((vendor : any) => vendor.status === "approved") // Filter only approved vendors
-          .map((vendor, index) => (
-            <motion.img
-              key={`vendor-${index}`}
-              src={vendor.businessPromotionalMaterialURl?.secure_url}
-              alt={`Promo ${index}`}
-              className="w-64 h-40 object-cover rounded-lg shadow-md cursor-pointer shrink-0"
-              onClick={() => navigate('/allPartners')}
-            />
-          ))}
-
+        {duplicatedVendors.map((vendor, index) => (
+          <motion.img
+            key={`vendor-${index}`}
+            src={vendor.businessPromotionalMaterialURl?.secure_url || ""}
+            alt={`Promo ${index}`}
+            width={40}
+            height={30}
+            className="w-64 h-40 object-contain rounded-lg shadow-lg cursor-pointer shrink-0 hover:scale-105 transition-transform duration-300"
+            onClick={() => navigate("/allPartners")}
+            aria-label="Promotional material"
+          />
+        ))}
       </motion.div>
     </div>
   );

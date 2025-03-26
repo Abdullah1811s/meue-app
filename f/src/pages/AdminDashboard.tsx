@@ -16,7 +16,8 @@ import {
   Box,
   User,
   Tag,
-  ShipWheelIcon
+  ShipWheelIcon,
+  Check
 
 } from 'lucide-react';
 import {
@@ -34,33 +35,11 @@ import { Button } from '@/components/ui/button';
 import CustomDatePicker from '@/components/customComponents/Datepicker';
 import { Input } from '@/components/ui/input';
 import { Mail, Phone, MapPin, Clipboard, CheckCircle } from 'lucide-react';
-const wheelOffers = [
-  "Discount Vouchers",
-  "Buy One, Get One Free",
-  "Cashback Rewards",
-  "Service Discounts",
-  "Exclusive Deals for Members",
-  "Retail Gift Vouchers",
-  "Entertainment Offers",
-  "Food & Beverage Offers",
-  "Limited Stock Offers",
-  "Limited-Time Flash Deals"
-];
 
-const raffleOffers = [
-  "Luxury Experiences",
-  "High-Value Gift Cards",
-  "Exclusive VIP Packages",
-  "Premium Travel Packages",
-  "Electronics & Gadgets",
-  "Large Cashback Offers",
-  "Major Service Packages",
-  "Luxury Fashion & Accessories",
-  "Home & Appliance Giveaways",
-  "Supercar or House Giveaways"
-];
 
 export interface IVendor {
+  wheelOffer: any;
+  raffleOffer: any;
   _id: string;
   businessName: string;
   businessType: string;
@@ -580,23 +559,27 @@ const AdminDashboard = () => {
           return partner;
         })
       );
-      if (wheelOffers.includes(res.data.vendor.exclusiveOffer.type)) {
+      try {
 
-        try {
-          const response = await axios.post(`${API_BASE_URL}/wheel/add`, {
+        const response = await axios.post(
+          `${API_BASE_URL}/wheel/add`,
+          {
             vendorInfo: res.data.vendor._id,
-            offerings: res.data.vendor.exclusiveOffer.offerings
-          }, {
+            offerings: res.data.vendor.wheelOffer.offerings
+          },
+          {
             headers: {
               Authorization: `Bearer ${adminToken}`,
               "Content-Type": "application/json"
             }
-          });
+          }
+        );
 
-          console.log("Response from Wheel API:", response.data);
-        } catch (error) {
-          console.error("Error sending data to the Wheel API:", error);
-        }
+        console.log("Successfully added wheel offers:", response.data);
+      } catch (error) {
+        console.error("Failed to add wheel offers:", error);
+
+        throw error;
       }
 
 
@@ -726,6 +709,7 @@ const AdminDashboard = () => {
       console.log(res.data.data);
       setVendorOnWheel(res.data.data);
 
+
     } catch (error: any) {
       console.error("Error removing vendor:", error);
 
@@ -771,6 +755,7 @@ const AdminDashboard = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
   };
 
+  console.log("vendor on wheel : ", vendorOnWheel);
 
 
   return (
@@ -994,94 +979,97 @@ const AdminDashboard = () => {
                       <p className="break-words">Phone: {vendor.representativePhone}</p>
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Exclusive Offer:</h3>
-                      <p className="break-words mt-2"><strong>Type:</strong> {vendor.exclusiveOffer?.type}</p>
-                      <p className="break-words mb-4"><strong>Terms:</strong> {vendor.exclusiveOffer?.terms}</p>
-                      <div>
-                        {raffleOffers.includes(vendor.exclusiveOffer.type) ? (
-                          <div className='space-y-4'>
-                            {vendor.exclusiveOffer?.offerings?.length > 0 ? (
-                              <div className="space-y-4">
-                                {vendor.exclusiveOffer.offerings.map((offering, index) => (
-                                  <div key={index} className="p-4 border rounded-lg bg-gray-100">
-                                    <p className="font-medium">Name: {offering.name}</p>
-                                    <p>Quantity: {offering.quantity}</p>
+                      {/* Wheel Offer Section */}
+                      <h3 className="mt-3 md:mt-4 font-semibold">Wheel Offer:</h3>
+                      <p className="break-words"><strong>Type:</strong> {vendor.wheelOffer?.type || 'N/A'}</p>
+                      <p className="break-words"><strong>Terms:</strong> {vendor.wheelOffer?.terms || 'N/A'}</p>
+                      <div className="mt-2">
+                        {vendor.wheelOffer?.offerings?.length > 0 ? (
+                          <div className="space-y-2">
+                            {vendor.wheelOffer.offerings.map((offering: any, index: any) => (
+                              <div key={`wheel-${index}`} className="p-3 border rounded-lg bg-gray-50 relative">
+                                {/* Notification badge */}
+                                <span className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md flex items-center">
+                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Auto-shown on wheel
+                                </span>
 
-                                    {offering.endDate && (
-                                      <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
-                                    )}
-                                    {vendor.status === "approved" && (
-                                      <>
-                                        <Button onClick={() => handleShowOnRaff(vendor.exclusiveOffer.type, offering, vendor._id)}
-                                          className="mt-2 px-5 py-2 bg-[#DBC166] text-white font-semibold rounded-lg shadow-md 
-                                        hover:bg-[#C2A857] hover:shadow-lg transition-all duration-300 ease-in-out
-                                        flex items-center gap-2">
-                                          Show on Raff
-                                        </Button>
-
-                                        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                                          <DialogContent>
-                                            <DialogHeader>
-                                              <DialogTitle>Enter Schedule Date</DialogTitle>
-                                              <DialogDescription>
-                                                Ensure the date is before {maxOfferDate?.toDateString()} and not in the past.
-                                              </DialogDescription>
-                                            </DialogHeader>
-
-                                            <Input
-                                              type="date"
-                                              value={scheduleDate}
-                                              onChange={(e) => setScheduleDate(e.target.value)}
-                                              min={new Date().toISOString().split('T')[0]} // This sets minimum date to today
-                                              max={maxOfferDate?.toISOString().split('T')[0]} // This sets maximum date
-                                            />
-
-                                            <DialogFooter>
-                                              <Button
-                                                onClick={() => handleConfirmSchedule(vendor.exclusiveOffer.type, offering, vendor._id)}
-                                                disabled={!scheduleDate || new Date(scheduleDate) < new Date() || (maxOfferDate && new Date(scheduleDate) > maxOfferDate)}
-                                              >
-                                                Confirm
-                                              </Button>
-                                            </DialogFooter>
-                                          </DialogContent>
-                                        </Dialog>
-                                      </>
-                                    )}
-                                  </div>
-                                ))}
+                                <p className="font-medium mt-6">Name: {offering.name}</p>
+                                <p>Quantity: {offering.quantity || 'Unlimited'}</p>
+                                {offering.endDate && (
+                                  <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
+                                )}
+                                <p>Show Quantity: {offering.showQuantity ? 'Yes' : 'No'}</p>
                               </div>
-                            ) : (
-                              <p className="text-gray-500">No offerings available</p>
-                            )}
+                            ))}
                           </div>
                         ) : (
-                          <div>
-                            {vendor.exclusiveOffer?.offerings?.length > 0 ? (
-                              <div className="space-y-4">
-                                {vendor.exclusiveOffer.offerings.map((offering, index) => (
-
-                                  <div key={index} className="p-4 border rounded-lg bg-gray-100 relative">
-                                    {/* Admin Message */}
-                                    <span className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-2 py-1 rounded-md shadow-md">
-                                      This will be shown on wheel automatically
-                                    </span>
-
-                                    <p className="font-medium mt-6">Name: {offering.name}</p>
-                                    <p>Quantity: {offering.quantity || "not defined"} </p>
-
-                                    {offering.endDate && (
-                                      <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
-                                    )}
-                                  </div>
-
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-gray-500">No offerings available</p>
-                            )}
-                          </div>
+                          <p className="text-gray-500">No wheel offerings available</p>
                         )}
                       </div>
+
+                      {/* Raffle Offer Section */}
+                      <h3 className="mt-3 md:mt-4 font-semibold">Raffle Offer:</h3>
+                      <p className="break-words"><strong>Type:</strong> {vendor.raffleOffer?.type || 'N/A'}</p>
+                      <p className="break-words"><strong>Terms:</strong> {vendor.raffleOffer?.terms || 'N/A'}</p>
+                      <div className="mt-2">
+                        {vendor.raffleOffer?.offerings?.length > 0 ? (
+                          <div className="space-y-2">
+                            {vendor.raffleOffer.offerings.map((offering: any, index: any) => (
+                              <div key={`raffle-${index}`} className="p-3 border rounded-lg bg-gray-50">
+                                <p className="font-medium">Name: {offering.name}</p>
+                                <p>Quantity: {offering.quantity || 'Unlimited'}</p>
+                                {offering.endDate && (
+                                  <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
+                                )}
+                                <p>Show Quantity: {offering.showQuantity ? 'Yes' : 'No'}</p>
+
+                                {vendor.status === "approved" && (
+                                  <>
+                                    <Button
+                                      onClick={() => handleShowOnRaff('raffle', offering, vendor._id)}
+                                      className="mt-2 px-4 py-1 bg-[#DBC166] text-white font-semibold rounded-lg shadow-md hover:bg-[#C2A857]"
+                                    >
+                                      Show on Raffle
+                                    </Button>
+
+                                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>Enter Schedule Date</DialogTitle>
+                                          <DialogDescription>
+                                            Ensure the date is before {maxOfferDate?.toDateString()} and not in the past.
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <Input
+                                          type="date"
+                                          value={scheduleDate}
+                                          onChange={(e) => setScheduleDate(e.target.value)}
+                                          min={new Date().toISOString().split('T')[0]}
+                                          max={maxOfferDate?.toISOString().split('T')[0]}
+                                        />
+                                        <DialogFooter>
+                                          <Button
+                                            onClick={() => handleConfirmSchedule('raffle', offering, vendor._id)}
+                                            disabled={!scheduleDate || new Date(scheduleDate) < new Date() || (maxOfferDate && new Date(scheduleDate) > maxOfferDate)}
+                                          >
+                                            Confirm
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">No raffle offerings available</p>
+                        )}
+                      </div>
+
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Social Media:</h3>
                       <div className="flex flex-wrap gap-2">
@@ -1513,10 +1501,10 @@ const AdminDashboard = () => {
           )}
 
           {isManageWheel ? (
-            <div className="min-h-screen ">
+            <div className="min-h-screen">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {vendorOnWheel
-                  .filter((vendor) => vendor.vendor.offerings.length > 0) // 🔥 Only vendors with offerings
+                  .filter((vendor) => vendor?.vendor.offerings?.length > 0) // 🔥 Fixed filter condition
                   .map((vendor) => (
                     <div key={vendor._id} className="bg-white shadow-lg rounded-xl p-6">
                       {/* Vendor Details */}
@@ -1524,51 +1512,60 @@ const AdminDashboard = () => {
                       <div className="mb-6 space-y-3">
                         <div className="flex items-center text-gray-700">
                           <User className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Business Name:</strong> {vendor.vendor.vendorInfo.businessName}
+                          <strong className="mr-2">Business Name:</strong> {vendor.vendor.vendorInfo?.businessName || 'N/A'}
                         </div>
                         <div className="flex items-center text-gray-700">
                           <Mail className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Email:</strong> {vendor.vendor.vendorInfo.businessEmail}
+                          <strong className="mr-2">Email:</strong> {vendor.vendor.vendorInfo?.businessEmail || 'N/A'}
                         </div>
                         <div className="flex items-center text-gray-700">
                           <Phone className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Contact:</strong> {vendor.vendor.vendorInfo.businessContactNumber}
+                          <strong className="mr-2">Contact:</strong> {vendor.vendor.vendorInfo?.businessContactNumber || 'N/A'}
                         </div>
                         <div className="flex items-center text-gray-700">
                           <Clipboard className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Description:</strong> {vendor.vendor.vendorInfo.businessDescription}
+                          <strong className="mr-2">Description:</strong> {vendor.vendor.vendorInfo?.businessDescription || 'N/A'}
                         </div>
                         <div className="flex items-center text-gray-700">
                           <MapPin className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Location:</strong> {vendor.vendor.vendorInfo.city}, {vendor.vendor.vendorInfo.province}
+                          <strong className="mr-2">Location:</strong>
+                          {`${vendor.vendorInfo?.city || ''}, ${vendor.vendor.vendorInfo?.province || ''}`.trim() || 'N/A'}
                         </div>
                         <div className="flex items-center text-gray-700">
                           <CheckCircle className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Status:</strong> {vendor.status}
+                          <strong className="mr-2">Status:</strong> {vendor.vendor.status || 'N/A'}
                         </div>
                       </div>
 
                       {/* Offerings */}
                       <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
-                        <Tag className="w-5 h-5 mr-2" /> Offerings
+                        <Tag className="w-5 h-5 mr-2" /> Wheel Offerings
                       </h2>
                       <div className="space-y-4">
-                        {vendor.vendor.offerings.map((offering: any, index: any) => (
-                          <div key={index} className="p-4 border rounded-lg bg-gray-50">
-                            <p><strong>Offer {index + 1}:</strong> {offering.name}</p>
-                            {offering.quantity && <p><strong>Quantity:</strong> {offering.quantity}</p>}
-                            {offering.endDate && (
-                              <p className="flex items-center">
-                                <Calendar className="w-5 h-5 mr-2 text-gray-600" />
-                                <strong>End Date:</strong> {new Date(offering.endDate).toLocaleDateString()}
-                              </p>
-                            )}
-                            <button
-                              className="mt-2 flex items-center px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors"
-                              onClick={() => handleDeleteOffering(offering._id)}
-                            >
-                              <Trash2 className="w-5 h-5 mr-2" /> Delete Offering
-                            </button>
+                        {vendor.vendor.offerings?.map((offering: any) => (
+                          <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
+                            {/* Auto-shown badge */}
+                            <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                              <Check className="w-3 h-3 mr-1" />
+                              Auto-shown
+                            </span>
+
+                            <div className="mt-6 space-y-2">
+                              <p className="font-medium">Name: {offering.name}</p>
+                              {offering.quantity && <p>Quantity: {offering.quantity}</p>}
+                              {offering.endDate && (
+                                <p className="flex items-center">
+                                  <Calendar className="w-5 h-5 mr-2 text-gray-600" />
+                                  <span>End Date: {new Date(offering.endDate).toLocaleDateString()}</span>
+                                </p>
+                              )}
+                              <button
+                                onClick={() => handleDeleteOffering(offering._id)}
+                                className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1.5" /> Remove
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1577,7 +1574,9 @@ const AdminDashboard = () => {
               </div>
             </div>
           ) : (
-            <div> </div>
+            <div className="flex items-center justify-center h-64">
+
+            </div>
           )}
 
 

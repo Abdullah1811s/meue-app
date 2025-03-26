@@ -40,7 +40,7 @@ export const signUp = async (req, res) => {
     try {
         let referrer1;
         let referrer2;
-        const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken , userType  } = req.body;
+        const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken, userType } = req.body;
 
         const isCaptchaValid = await verifyCaptcha(captchaToken);
         if (!isCaptchaValid) {
@@ -122,7 +122,8 @@ export const signUp = async (req, res) => {
         // Generate token for the new user
         const tokenPayload = {
             id: newUser._id,
-            name: newUser.name
+            name: newUser.name,
+            role: newUser.role
         };
         const token = generateToken(tokenPayload);
 

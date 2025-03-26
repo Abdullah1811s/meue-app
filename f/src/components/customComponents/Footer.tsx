@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaInstagram, FaTiktok, FaTwitter, FaFacebook } from "react-icons/fa";
+import { FaInstagram, FaTiktok, FaXTwitter, FaFacebook } from "react-icons/fa6";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -80,7 +80,7 @@ const Footer = () => {
             }}
             className="hover:underline"
           >
-            Join Affiliate
+            Join as Affiliate
           </a>
           <a
             href="/vendorOnBoarding"
@@ -125,17 +125,41 @@ const Footer = () => {
 
       {/* Social Media Links */}
       <div className="mt-8 flex justify-center space-x-6">
-        {[
-          { icon: <FaInstagram />, url: "https://www.instagram.com/the.menu.portal?igsh=eXdxOXJ1NGtqZ21y&utm_source=qr" },
-          { icon: <FaTiktok />, url: "https://www.tiktok.com/@themenu.sa?_t=ZM-8uviPKlCEZ4&_r=1" },
-          { icon: <FaTwitter />, url: "https://x.com/themenu_sa?s=21" },
-          { icon: <FaFacebook />, url: "https://www.facebook.com/share/1AGK8NsgzY/?mibextid=wwXIfr" },
-        ].map((item, index) => (
-          <a key={index} href={item.url} target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 text-xl">
-            {item.icon}
-          </a>
-        ))}
-      </div>
+  {[
+    {
+      icon: <FaInstagram />,
+      url: "https://www.instagram.com/the.menu.portal?igsh=eXdxOXJ1NGtqZ21y&utm_source=qr",
+      label: "Instagram"
+    },
+    {
+      icon: <FaTiktok />,
+      url: "https://www.tiktok.com/@themenu.sa?_t=ZM-8uviPKlCEZ4&_r=1",
+      label: "TikTok"
+    },
+    {
+      icon: <FaXTwitter />, // New X logo
+      url: "https://x.com/themenu_sa?s=21",
+      label: "X (formerly Twitter)"
+    },
+    {
+      icon: <FaFacebook />,
+      url: "https://www.facebook.com/share/1AGK8NsgzY/?mibextid=wwXIfr",
+      label: "Facebook"
+    }
+  ].map((item, index) => (
+    <a
+      key={index}
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={item.label}
+      className="hover:text-amber-500 text-xl"
+    >
+      {item.icon}
+    </a>
+  ))}
+</div>
+
     </footer>
   );
 };

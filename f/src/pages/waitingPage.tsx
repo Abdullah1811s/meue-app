@@ -103,35 +103,49 @@ export default function Home() {
   const [currentSlide,] = useState(0);
 
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
+  const isPaid = useSelector((state: any) => state.auth.isPaid)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [showTimer, setShowTimer] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const id = localStorage.getItem("id");
-      if (id)
-        navigate(`/users/${id}`)
+    // Handle mobile timer
+    if (isMobile) {
+      const timer = setTimeout(() => setShowTimer(false), 2500);
+      return () => clearTimeout(timer);
     }
-    else if (isVendorAuthenticated) {
-      const id = localStorage.getItem("id");
-      if (id)
-        navigate(`/vendor/${id}`)
-    }
-  }, [])
-
+  }, [isMobile]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScroll(true);
-      } else {
-        setShowScroll(false);
+    // Handle authentication redirect
+    if (isAuthenticated || isVendorAuthenticated) {
+      const id = localStorage.getItem("id");
+      if (id) {
+        navigate(isAuthenticated ? `/users/${id}` : `/vendor/${id}`);
       }
-    };
+    }
+  }, [isAuthenticated, isVendorAuthenticated, navigate]);
 
+  useEffect(() => {
+   
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    const handleScroll = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!hasFetched) {
+      console.log("fetching");
+      fetchData();
+    }
+    else
+      console.log("already fetched");
+  }, [hasFetched]); 
+
+
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -148,15 +162,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    if (!hasFetched) {
-      console.log("fetching");
-      fetchData();
-    }
-    else
-      console.log("already fetched");
-  }, [hasFetched]);
-
 
   const nextSlide = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
@@ -168,29 +173,105 @@ export default function Home() {
     );
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isDisabled) return;
+
     setIsDisabled(true);
-    setTimeout(() => {
-      navigate('/signup');
-      setIsDisabled(false);
-    }, 1000);
+
+    // Check if user is authenticated
+    if (!isAuth) {
+      // Navigate to signup if user is not authenticated
+      setTimeout(() => {
+        navigate('/signup');
+        setIsDisabled(false);
+      }, 1000);
+    } else {
+      try {
+        // Get the UserToken and id from localStorage
+        const UserToken = localStorage.getItem('UserToken');
+        const userId = localStorage.getItem('id'); // Assuming 'id' is stored in localStorage
+
+        if (!userId) {
+          // Handle case where 'id' is not available
+          console.error("User ID is missing in localStorage");
+          setIsDisabled(false);
+          return;
+        }
+
+        const response = await axios.post(
+          `${API_BASE_URL}/payment/checkout`,
+          {
+            amount: 5000,
+            currency: "ZAR",
+            id: userId,  // Pass the retrieved id here
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${UserToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        window.location.href = response.data.redirectUrl;
+      } catch (error) {
+        console.error("Payment error:", error);
+      } finally {
+        setIsDisabled(false);
+      }
+    }
+  };
+
+  const handleClickR10 = async () => {
+    if (isDisabled) return;
+
+    setIsDisabled(true);
+
+    // Check if user is authenticated
+    if (!isAuth) {
+      // Navigate to signup if user is not authenticated
+      setTimeout(() => {
+        navigate('/signup');
+        setIsDisabled(false);
+      }, 1000);
+    } else {
+      try {
+        // Get the UserToken and id from localStorage
+        const UserToken = localStorage.getItem('UserToken');
+        const userId = localStorage.getItem('id'); // Assuming 'id' is stored in localStorage
+
+        if (!userId) {
+          // Handle case where 'id' is not available
+          console.error("User ID is missing in localStorage");
+          setIsDisabled(false);
+          return;
+        }
+
+        const response = await axios.post(
+          `${API_BASE_URL}/payment/checkout`,
+          {
+            amount: 1000,
+            currency: "ZAR",
+            id: userId,  // Pass the retrieved id here
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${UserToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        window.location.href = response.data.redirectUrl;
+      } catch (error) {
+        console.error("Payment error:", error);
+      } finally {
+        setIsDisabled(false);
+      }
+    }
   };
 
 
-
-  const isMobile = useMediaQuery({ maxWidth: 768 });
-  const [showTimer, setShowTimer] = useState(true);
-
-  useEffect(() => {
-    if (isMobile) {
-      const timer = setTimeout(() => {
-        setShowTimer(false);
-      }, 2500);
-
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isMobile]);
 
 
   return (
@@ -264,6 +345,7 @@ export default function Home() {
               <span className="text-[#DBC166]">BETA ACCESS OPEN!</span>
             </motion.h1>
 
+
             {/* Subtitle */}
             <motion.p
               variants={fadeInUp}
@@ -295,28 +377,30 @@ export default function Home() {
             </motion.ul>
 
             {/* CTA Button */}
-            <motion.button
-              animate={{
-                rotate: [0, 2, -2, 0],
-                boxShadow: [
-                  '0 0 0 0 rgba(219, 193, 102, 0.4)',
-                  '0 0 0 15px rgba(219, 193, 102, 0)',
-                ],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.2,
-                ease: "easeInOut",
-                repeatType: "loop",
-              }}
-              whileHover={{
-                scale: 1.15,
-                boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)',
-              }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleClick}
-              disabled={isDisabled}
-              className={`
+            {!isPaid && (
+              <>
+                <motion.button
+                  animate={{
+                    rotate: [0, 2, -2, 0],
+                    boxShadow: [
+                      '0 0 0 0 rgba(219, 193, 102, 0.4)',
+                      '0 0 0 15px rgba(219, 193, 102, 0)',
+                    ],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1.2,
+                    ease: "easeInOut",
+                    repeatType: "loop",
+                  }}
+                  whileHover={{
+                    scale: 1.15,
+                    boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)',
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleClick}
+                  disabled={isDisabled}
+                  className={`
         bg-gradient-to-r from-[#DBC166] via-[#E5C478] to-[#EFD18A]
         text-black 
         mt-4 px-6 sm:px-8 md:px-10 py-2 sm:py-3 md:py-4
@@ -328,10 +412,53 @@ export default function Home() {
         duration-300 
         ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
       `}
-            >
-              💰 Get 90% Off – Join for Just R50!
-            </motion.button>
+                >
+                  💰 Get 90% Off – Join for Just R50!
+                </motion.button>
+
+                <p className='font-bold text-white mt-2'>OR</p>
+
+                <motion.button
+                  animate={{
+                    rotate: [0, 2, -2, 0],
+                    boxShadow: [
+                      '0 0 0 0 rgba(219, 193, 102, 0.4)',
+                      '0 0 0 10px rgba(219, 193, 102, 0)',
+                    ],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1.2,
+                    ease: "easeInOut",
+                    repeatType: "loop",
+                  }}
+                  whileHover={{
+                    scale: 1.1,
+                    boxShadow: '0 2px 6px rgba(219, 193, 102, 0.2)',
+                  }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleClickR10}
+                  disabled={isDisabled}
+                  className={`
+        bg-gradient-to-r from-[#EFD18A] via-[#E5C478] to-[#DBC166]
+        text-black 
+        mt-2 px-4 sm:px-6 md:px-8 py-1 sm:py-2 md:py-2.5
+        rounded-full 
+        text-xs sm:text-sm 
+        font-medium 
+        shadow-md
+        transition-all 
+        duration-300 
+        ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+      `}
+                >
+                  💰 1-Hour Access – R10!
+                </motion.button>
+              </>
+            )}
+
           </div>
+
 
           {/* Navigation Buttons */}
           <button
@@ -658,11 +785,13 @@ export default function Home() {
               className="flex flex-col md:flex-row items-center justify-center gap-6 mt-8"
             >
               {[
-                {
+                // Only include the first button if !isPaid
+                ...(!isPaid ? [{
                   text: "🔥 Claim R50 Beta Access – 90% Off Early Access!",
                   path: "/Signup",
                   special: true,
-                },
+                }] : []),
+                // Always include these buttons
                 {
                   text: "🤝 Become a Partner – FREE Beta Onboarding!",
                   path: "/vendorOnBoarding",
@@ -714,8 +843,6 @@ export default function Home() {
                   onClick={() => navigate(btn.path)}
                 >
                   {btn.text}
-
-                  {/* Hover Effect: Subtle Glow */}
                   <span className="absolute inset-0 bg-white opacity-10 rounded-full scale-0 transition-transform duration-300 hover:scale-150"></span>
                 </motion.button>
               ))}

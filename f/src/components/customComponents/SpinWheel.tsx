@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { FaDice } from "react-icons/fa"; // You can replace this with any game-related icon
+
+import { useSelector } from "react-redux";
 interface Offering {
   _id: string;
   name: string;
@@ -35,8 +38,7 @@ const SpinWheel = () => {
   const [hasFetched, setHasFetched] = useState<boolean>(true);
   const [user, setuser] = useState<any>();
   const [prize, setPrize] = useState<any>(null);
-
-
+  const isPaid = useSelector((state: any) => state.auth.isPaid)
   const fetchWheelData = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
@@ -272,11 +274,17 @@ const SpinWheel = () => {
 
 
   const spinWheel = async () => {
+    if (!isPaid) {
+      toast.error("Please complete payment to spin the wheel and win exciting rewards!", {
+        icon: <FaDice color="#facc15" size={24} />, 
+      });
+      return;
+    }
     fetchUser()
     if (spinning) return;
 
     // Check if the user has exceeded the maximum number of spins
-    if (user?.numberOfTimesWheelRotate > 23) {
+    if (user?.numberOfTimesWheelRotate > 2) {
       toast.error("Maximum spin limit reached. Please try again after 24 hours.");
       return;
     }
@@ -342,7 +350,7 @@ const SpinWheel = () => {
           animate={{ rotate: rotation }}
           transition={{ duration: 3, ease: "easeOut" }}
           className="w-full h-full shadow-none"
-          aria-hidden="true" 
+          aria-hidden="true"
         >
           <svg
             viewBox="0 0 500 500"

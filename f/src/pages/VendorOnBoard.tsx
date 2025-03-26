@@ -33,8 +33,6 @@ const offers = [
   "Supercar or House Giveaways"
 ];
 
-
-
 const provinceCities = {
   "Eastern Cape": ["Gqeberha (Port Elizabeth)", "East London", "Mthatha", "Queenstown", "Grahamstown", "King William’s Town"],
   "Free State": ["Bloemfontein", "Welkom", "Bethlehem", "Sasolburg", "Parys", "Kroonstad"],
@@ -46,6 +44,14 @@ const provinceCities = {
   "North West": ["Mahikeng", "Rustenburg", "Klerksdorp", "Potchefstroom", "Brits", "Lichtenburg"],
   "Western Cape": ["Cape Town", "Stellenbosch", "George", "Paarl", "Worcester", "Mossel Bay", "Knysna"]
 };
+
+
+interface Offering {
+  name: string;
+  quantity?: number;
+  endDate?: string;
+  showQuantity?: boolean;
+}
 
 type VendorFormData = {
   businessName: string;
@@ -70,16 +76,25 @@ type VendorFormData = {
   representativePosition: string;
   representativeEmail: string;
   representativePhone: string;
-
   businessDescription?: string;
-  exclusiveOffer: {
+  wheelOffer: {
+    type: string;  // Add type for wheel offers
     offerings: {
       name: string;
       quantity?: number;
       endDate?: string;
       showQuantity?: boolean;
     }[];
+    terms: string;
+  };
+  raffleOffer: {
     type: string;
+    offerings: {
+      name: string;
+      quantity?: number;
+      endDate?: string;
+      showQuantity?: boolean;
+    }[];
     terms: string;
   };
 
@@ -98,6 +113,8 @@ type VendorFormData = {
 
 };
 
+
+
 function VendorOnboarding() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
@@ -109,16 +126,19 @@ function VendorOnboarding() {
   const [addressProofPreview, setAddressProofPreview] = useState<File | null>(null);
   const [confirmationLetterPreview, setConfirmationLetterPreview] = useState<File | null>(null);
   const [businessPromotionalMaterialPreview, setBusinessPromotionalMaterialPreview] = useState<File | null>(null);
-  const [offeringInput, setOfferingInput] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<keyof typeof provinceCities | "">("");
   const isUser = useSelector((state: any) => state.auth.isUserAuthenticated);
 
-
-  const { register, handleSubmit, formState: { errors }, setValue, watch, reset, getValues } = useForm<VendorFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<VendorFormData>({
     defaultValues: {
       socialMediaHandles: {},
-      exclusiveOffer: {
+      wheelOffer: {
+        type: "",
+        terms: "",
+        offerings: [],
+      },
+      raffleOffer: {
         type: "",
         terms: "",
         offerings: [],
@@ -127,47 +147,80 @@ function VendorOnboarding() {
       agreedToTerms: false
     }
   });
-  const offerings = watch("exclusiveOffer.offerings");
+  // Watch both offerings
+  const [wheelOfferingInput, setWheelOfferingInput] = useState("");
+  const [raffleOfferingInput, setRaffleOfferingInput] = useState("");
 
+  const wheelOfferings = watch("wheelOffer.offerings") || [];
+  const raffleOfferings = watch("raffleOffer.offerings") || [];
+  const handleAddOffering = (type: 'wheel' | 'raffle') => {
+    const input = type === 'wheel' ? wheelOfferingInput : raffleOfferingInput;
+    if (!input.trim()) return;
 
+    const newOffering = {
+      name: input.trim(),
+      showQuantity: true,
+      quantity: undefined,
+      endDate: undefined
+    };
 
-  const handleAddOffering = () => {
-    if (offeringInput.trim()) {
-
-      const currentOfferings = getValues("exclusiveOffer.offerings") || [];
-      setValue("exclusiveOffer.offerings", [
-        ...currentOfferings,
-        { name: offeringInput.trim() }
-      ]);
-      setOfferingInput("");
+    if (type === 'wheel') {
+      setValue(`wheelOffer.offerings`, [...wheelOfferings, newOffering]);
+      setWheelOfferingInput("");
+    } else {
+      setValue(`raffleOffer.offerings`, [...raffleOfferings, newOffering]);
+      setRaffleOfferingInput("");
     }
   };
 
-  const handleRemoveOffering = (index: number) => {
-    const currentOfferings = [...getValues("exclusiveOffer.offerings")];
-    currentOfferings.splice(index, 1);
-    setValue("exclusiveOffer.offerings", currentOfferings);
+  const handleRemoveOffering = (index: number, type: 'wheel' | 'raffle') => {
+    if (type === 'wheel') {
+      const updated = [...wheelOfferings];
+      updated.splice(index, 1);
+      setValue("wheelOffer.offerings", updated);
+    } else {
+      const updated = [...raffleOfferings];
+      updated.splice(index, 1);
+      setValue("raffleOffer.offerings", updated);
+    }
   };
 
-  const handleUpdateOffering = (index: number, field: string, value: any) => {
-    const currentOfferings = [...getValues("exclusiveOffer.offerings")];
-    currentOfferings[index] = {
-      ...currentOfferings[index],
-      [field]: value
-    };
-    setValue("exclusiveOffer.offerings", currentOfferings);
+  const handleToggleQuantityDate = (index: number, type: 'wheel' | 'raffle') => {
+    if (type === 'wheel') {
+      const updated = [...wheelOfferings];
+      updated[index].showQuantity = !updated[index].showQuantity;
+      setValue("wheelOffer.offerings", updated);
+    } else {
+      const updated = [...raffleOfferings];
+      updated[index].showQuantity = !updated[index].showQuantity;
+      setValue("raffleOffer.offerings", updated);
+    }
   };
 
-
-  const handleToggleQuantityDate = (index: number) => {
-    const currentOfferings = [...getValues("exclusiveOffer.offerings")];
-    currentOfferings[index] = {
-      ...currentOfferings[index],
-      showQuantity: !currentOfferings[index].showQuantity,
-    };
-    setValue("exclusiveOffer.offerings", currentOfferings);
+  const handleUpdateOffering = (
+    index: number,
+    type: 'wheel' | 'raffle',
+    field: 'quantity' | 'endDate',
+    value: string
+  ): void => {
+    if (type === 'wheel') {
+      const updated: Offering[] = [...wheelOfferings];
+      if (field === 'quantity') {
+        updated[index][field] = value ? parseInt(value) : undefined;
+      } else {
+        updated[index][field] = value;
+      }
+      setValue("wheelOffer.offerings", updated);
+    } else {
+      const updated: Offering[] = [...raffleOfferings];
+      if (field === 'quantity') {
+        updated[index][field] = value ? parseInt(value) : undefined;
+      } else {
+        updated[index][field] = value;
+      }
+      setValue("raffleOffer.offerings", updated);
+    }
   };
-
 
   const getSignature = async (folder: any) => {
     try {
@@ -258,6 +311,7 @@ function VendorOnboarding() {
 
   const onSubmit = async (data: VendorFormData) => {
     setLoading(true);
+
     try {
       const {
         companyRegistrationCertificate,
@@ -342,6 +396,9 @@ function VendorOnboarding() {
       setLoading(false);
       toast.success("Registration completed successfully! Please wait for approval.");
       navigate('/');
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100); // Adding a slight delay to ensure navigation completes first
       reset();
     }
     catch (error: any) {
@@ -465,18 +522,48 @@ function VendorOnboarding() {
                       />
                       {errors.businessName && <p className="text-red-500 text-sm mt-1">{errors.businessName.message}</p>}
                     </div>
+
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
                       <select
                         {...register("businessType", { required: "Business type is required" })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                       >
-                        <option value="restaurant">Restaurant</option>
-                        <option value="retail">Retail</option>
-                        <option value="service">Service</option>
+                        <option value="">Select Business Type</option>
+                        <option value="restaurants_takeaways">Restaurants & Takeaways</option>
+                        <option value="groceries_essentials">Groceries & Essentials</option>
+                        <option value="bars_clubs_nightlife">Bars, Clubs & Nightlife</option>
+                        <option value="fashion_clothing_accessories">Fashion, Clothing & Accessories</option>
+                        <option value="beauty_hair_skincare">Beauty, Hair & Skincare</option>
+                        <option value="health_fitness_wellness">Health, Fitness & Wellness</option>
+                        <option value="medical_healthcare_services">Medical & Healthcare Services</option>
+                        <option value="home_garden_diy">Home, Garden & DIY</option>
+                        <option value="electronics_gadgets_appliances">Electronics, Gadgets & Appliances</option>
+                        <option value="automotive_transportation">Automotive & Transportation</option>
+                        <option value="travel_tourism_hospitality">Travel, Tourism & Hospitality</option>
+                        <option value="education_training_skills">Education, Training & Skills Development</option>
+                        <option value="professional_business_services">Professional & Business Services</option>
+                        <option value="financial_legal_insurance">Financial, Legal & Insurance Services</option>
+                        <option value="real_estate_rentals_property">Real Estate, Rentals & Property Services</option>
+                        <option value="entertainment_arts_events">Entertainment, Arts & Events</option>
+                        <option value="sport_leisure_recreation">Sport, Leisure & Recreation</option>
+                        <option value="children_babies_family">Children, Babies & Family</option>
+                        <option value="pets_animal_care">Pets & Animal Care</option>
+                        <option value="marketing_advertising_media">Marketing, Advertising & Media</option>
+                        <option value="industrial_manufacturing_agriculture">Industrial, Manufacturing & Agriculture</option>
+                        <option value="traditional_cultural_spiritual">Traditional, Cultural & Spiritual Services</option>
+                        <option value="charity_community_social">Charity, Community & Social Welfare</option>
+                        <option value="government_public_services">Government & Public Services</option>
+                        <option value="other">Other</option>
                       </select>
                       {errors.businessType && <p className="text-red-500 text-sm mt-1">{errors.businessType.message}</p>}
                     </div>
+
+
+
+
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Company Registration Number</label>
                       <input
@@ -630,7 +717,7 @@ function VendorOnboarding() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                       <input
                         type="tel"
-                   
+
                         {...register("representativePhone", {
                           required: "Representative phone number is required",
                           pattern: {
@@ -733,140 +820,257 @@ function VendorOnboarding() {
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Brief Business Description</label>
                       <textarea
-                        {...register("businessDescription", { required: "Business description is required" })}
+                        {...register("businessDescription")}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                       />
-                      {errors.businessDescription && <p className="text-red-500 text-sm mt-1">{errors.businessDescription.message}</p>}
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Exclusive Offer Type</label>
-                      <select
-                        {...register("exclusiveOffer.type", { required: "Offer type is required" })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                      >
-                        <option value="">Select an offer type</option>
-                        {offers.map((offer: string, index: number) => (
-                          <option key={index} value={offer}>
-                            {offer}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.exclusiveOffer?.type && (
-                        <p className="text-red-500 text-sm mt-1">Please select the offerings</p>
-                      )}
-                    </div>
+                    {/* Wheel Offerings Section */}
+                    <div className="md:col-span-2 border-t pt-4">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Wheel Offerings</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Wheel Offering Type</label>
+                          <select
+                            {...register("wheelOffer.type", { required: "Wheel offer type is required" })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                          >
+                            <option value="">Select a wheel offer type</option>
+                            {offers.map((offer: string, index: number) => (
+                              <option key={index} value={offer}>
+                                {offer}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.wheelOffer?.type && (
+                            <p className="text-red-500 text-sm mt-1">Please select the wheel offerings</p>
+                          )}
+                        </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Products/Services Offered</label>
-                      <div className="flex gap-2">
-                        <input
-                          value={offeringInput}
-                          onChange={(e) => setOfferingInput(e.target.value)}
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                          placeholder="Enter a product or service"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddOffering}
-                          className="px-4 py-2 bg-[#C5AD59] text-white rounded-md hover:bg-[#b39b47] transition-colors duration-200"
-                        >
-                          Add
-                        </button>
-                      </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Products/Services for Wheel</label>
+                          <div className="flex gap-2">
+                            <input
+                              value={wheelOfferingInput}
+                              onChange={(e) => setWheelOfferingInput(e.target.value)}
+                              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                              placeholder="Enter a product or service"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddOffering('wheel')}
+                              className="px-4 py-2 bg-[#C5AD59] text-white rounded-md hover:bg-[#b39b47] transition-colors duration-200"
+                            >
+                              Add
+                            </button>
+                          </div>
 
-                      <div className="mt-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Current Offerings:</p>
-                        {offerings.length === 0 ? (
-                          <p className="text-sm text-gray-500">No offerings added yet</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {offerings.map((offering: any, index: number) => (
-                              <div key={index} className="bg-gray-50 p-2 rounded-md space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-gray-700 font-semibold">{offering.name}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveOffering(index)}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-
-                                {/* Toggle Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleQuantityDate(index)}
-                                  className="w-full bg-gray-200 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 transition"
-                                >
-                                  {offering.showQuantity ? "Switch to Date Range" : "Switch to Quantity"}
-                                </button>
-
-                                {/* Conditional Inputs */}
-                                {offering.showQuantity ? (
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                      Quantity (Optional)
-                                    </label>
-                                    <input
-                                      type="number"
-                                      value={offering.quantity || ""}
-                                      onChange={(e) =>
-                                        handleUpdateOffering(index, "quantity", e.target.value)
-                                      }
-                                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                                    />
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700">
-                                        End Date
-                                      </label>
-                                      <input
-                                        type="date"
-                                        value={offering.endDate || ""}
-                                        min={new Date().toISOString().split("T")[0]} // Prevent past dates
-                                        onChange={(e) => {
-                                          const selectedDate = new Date(e.target.value);
-                                          const today = new Date();
-                                          today.setHours(0, 0, 0, 0); // Reset time to compare only dates
-
-                                          if (selectedDate < today) {
-                                            alert("End date cannot be in the past");
-                                            return;
-                                          }
-
-                                          handleUpdateOffering(index, "endDate", e.target.value);
-                                        }}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                                      />
+                          <div className="mt-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Current Wheel Offerings:</p>
+                            {wheelOfferings.length === 0 ? (
+                              <p className="text-sm text-gray-500">No wheel offerings added yet</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {wheelOfferings.map((offering: any, index: number) => (
+                                  <div key={index} className="bg-gray-50 p-2 rounded-md space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-700 font-semibold">{offering.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveOffering(index, 'wheel')}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        Remove
+                                      </button>
                                     </div>
 
-                                  </>
-                                )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleQuantityDate(index, 'wheel')}
+                                      className="w-full bg-gray-200 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 transition"
+                                    >
+                                      {offering.showQuantity ? "Switch to Date Range" : "Switch to Quantity"}
+                                    </button>
 
-                                {/* Validation for Quantity or Date Range */}
-                                {!offering.quantity && !offering.startDate && !offering.endDate && (
-                                  <p className="text-red-500 text-sm mt-1">
-                                    Please enter either a quantity or a date range.
-                                  </p>
-                                )}
+                                    {offering.showQuantity ? (
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Quantity (Optional)
+                                        </label>
+                                        <input
+                                          type="number"
+                                          value={offering.quantity || ""}
+                                          onChange={(e) =>
+                                            handleUpdateOffering(index, 'wheel', "quantity", e.target.value)
+                                          }
+                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          End Date
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={offering.endDate || ""}
+                                          min={new Date().toISOString().split("T")[0]}
+                                          onChange={(e) => {
+                                            const selectedDate = new Date(e.target.value);
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+
+                                            if (selectedDate < today) {
+                                              alert("End date cannot be in the past");
+                                              return;
+                                            }
+
+                                            handleUpdateOffering(index, 'wheel', "endDate", e.target.value);
+                                          }}
+                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
-                        )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Wheel Offer Terms</label>
+                          <textarea
+                            {...register("wheelOffer.terms", { required: "Wheel offer terms are required" })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                          />
+                          {errors.wheelOffer?.terms && <p className="text-red-500 text-sm mt-1">{errors.wheelOffer.terms.message}</p>}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Offer Terms</label>
-                      <textarea
-                        {...register("exclusiveOffer.terms", { required: "Offer terms are required" })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                      />
-                      {errors.exclusiveOffer?.terms && <p className="text-red-500 text-sm mt-1">{errors.exclusiveOffer.terms.message}</p>}
+                    {/* Raffle Offerings Section */}
+                    <div className="md:col-span-2 border-t pt-4">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Raffle Offerings</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Raffle Offering Type</label>
+                          <select
+                            {...register("raffleOffer.type", { required: "Raffle offer type is required" })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                          >
+                            <option value="">Select a raffle offer type</option>
+                            {offers.map((offer: string, index: number) => (
+                              <option key={index} value={offer}>
+                                {offer}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.raffleOffer?.type && (
+                            <p className="text-red-500 text-sm mt-1">Please select the raffle offerings</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Products/Services for Raffle</label>
+                          <div className="flex gap-2">
+                            <input
+                              value={raffleOfferingInput}
+                              onChange={(e) => setRaffleOfferingInput(e.target.value)}
+                              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                              placeholder="Enter a product or service"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddOffering('raffle')}
+                              className="px-4 py-2 bg-[#C5AD59] text-white rounded-md hover:bg-[#b39b47] transition-colors duration-200"
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Current Raffle Offerings:</p>
+                            {raffleOfferings.length === 0 ? (
+                              <p className="text-sm text-gray-500">No raffle offerings added yet</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {raffleOfferings.map((offering: any, index: number) => (
+                                  <div key={index} className="bg-gray-50 p-2 rounded-md space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-700 font-semibold">{offering.name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveOffering(index, 'raffle')}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleQuantityDate(index, 'raffle')}
+                                      className="w-full bg-gray-200 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 transition"
+                                    >
+                                      {offering.showQuantity ? "Switch to Date Range" : "Switch to Quantity"}
+                                    </button>
+
+                                    {offering.showQuantity ? (
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Quantity (Optional)
+                                        </label>
+                                        <input
+                                          type="number"
+                                          value={offering.quantity || ""}
+                                          onChange={(e) =>
+                                            handleUpdateOffering(index, 'raffle', "quantity", e.target.value)
+                                          }
+                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          End Date
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={offering.endDate || ""}
+                                          min={new Date().toISOString().split("T")[0]}
+                                          onChange={(e) => {
+                                            const selectedDate = new Date(e.target.value);
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+
+                                            if (selectedDate < today) {
+                                              alert("End date cannot be in the past");
+                                              return;
+                                            }
+
+                                            handleUpdateOffering(index, 'raffle', "endDate", e.target.value);
+                                          }}
+                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Raffle Offer Terms</label>
+                          <textarea
+                            {...register("raffleOffer.terms", { required: "Raffle offer terms are required" })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                          />
+                          {errors.raffleOffer?.terms && <p className="text-red-500 text-sm mt-1">{errors.raffleOffer.terms.message}</p>}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </motion.div>

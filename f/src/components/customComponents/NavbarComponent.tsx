@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { ChevronDown, ChevronUp, Menu, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "@/store/authSlice";
+import { logout, setUserPaid } from "@/store/authSlice";
 import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import axios from "axios";
@@ -14,6 +14,7 @@ const NavbarComponent = () => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const dispatch = useDispatch();
+    const [loading, setLoading] = useState(true);
     const [isPaid, setIsPaid] = useState(false);
     const [openDrop, setOpenDrop] = useState(false);
     const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
@@ -55,13 +56,16 @@ const NavbarComponent = () => {
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-    const handleClickPayNow = async () => {
+
+
+
+    const handleClickPayNowR10 = async () => {
         try {
             const UserToken = localStorage.getItem('UserToken');
             const response = await axios.post(
                 `${API_BASE_URL}/payment/checkout`,
                 {
-                    amount: 5000,
+                    amount: 1000,
                     currency: "ZAR",
                     id
                 },
@@ -90,20 +94,27 @@ const NavbarComponent = () => {
         setIsOpen(false);
     };
 
+
+
     useEffect(() => {
         const fetchUserPaymentStatus = async () => {
             try {
                 const response = await axios.get(`${API_BASE_URL}/users/${id}`);
                 if (response.data.success) {
-                    setIsPaid(response.data.user.isPaid);
+                    const isPaidStatus = response.data.user.isPaid;
+                    setIsPaid(isPaidStatus);
+                    dispatch(setUserPaid(isPaidStatus));
                 }
             } catch (error: any) {
                 console.error("Error fetching user:", error.message);
+            } finally {
+                setLoading(false); // Set loading to false when done
             }
         };
 
         if (id) fetchUserPaymentStatus();
-    }, [id, API_BASE_URL]);
+    }, [id, API_BASE_URL, dispatch]);
+
 
     return (
         <div ref={navRef} className="relative">
@@ -128,12 +139,8 @@ const NavbarComponent = () => {
 
                         <li>
                             <Link
-                                to="#"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    document.getElementById("social")?.scrollIntoView({ behavior: "smooth" });
-                                }}
-                                className="hover:text-[#DBC166] transition-colors duration-300"
+                                to="/aboutUs"
+                                className={`hover:text-[#DBC166] ${location.pathname === "/aboutUs" ? "text-[#DBC166] font-bold" : "text-white"} transition-colors duration-300`}
                             >
                                 About Us
                             </Link>
@@ -202,13 +209,20 @@ const NavbarComponent = () => {
                             <>
                                 <Button
                                     onClick={() => navigate(`/users/${id}/dashboard`)}
-                                    className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
+                                    className="
+    text-white px-5 py-2 border border-[#DBC166] rounded-full 
+    transition-all duration-300 ease-in-out 
+    hover:bg-[#DBC166] hover:text-black 
+    hover:shadow-md hover:scale-105
+    active:scale-95
+  "
                                 >
                                     Dashboard
                                 </Button>
-                                {!isPaid && (
+
+                                {!isPaid && !loading && (
                                     <Button
-                                        onClick={handleClickPayNow}
+                                        onClick={handleClickPayNowR10}
                                         className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
                                     >
                                         Pay Now
@@ -216,16 +230,29 @@ const NavbarComponent = () => {
                                 )}
                                 <Button
                                     onClick={() => navigate(`/users/${id}/draw`)}
-                                    className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
+                                    className="
+    text-white px-5 py-2 border border-[#DBC166] rounded-full 
+    transition-all duration-300 ease-in-out 
+    hover:bg-[#DBC166] hover:text-black 
+    hover:shadow-md hover:scale-105
+    active:scale-95
+  "
                                 >
                                     Draws
                                 </Button>
                                 <Button
                                     onClick={handleLogout}
-                                    className="bg-[#DBC166] text-black px-5 py-2 text-sm lg:text-base rounded-full font-medium transition hover:bg-[#C8A13A]"
+                                    className="
+    bg-[#DBC166] text-black px-5 py-2 text-sm lg:text-base rounded-full 
+    font-medium transition-all duration-300 ease-in-out 
+    hover:bg-[#C8A13A] hover:shadow-md hover:scale-105 
+    active:scale-95 
+    focus:ring-2 focus:ring-[#DBC166] focus:ring-opacity-50
+  "
                                 >
                                     LOGOUT
                                 </Button>
+
                             </>
                         )}
                     </div>
@@ -253,6 +280,16 @@ const NavbarComponent = () => {
                                 className={`font-semibold ${/^\/users\/[a-zA-Z0-9]+$/.test(location.pathname) || location.pathname === "/" ? "text-[#DBC166]" : "text-white"} block py-2 transition duration-300 hover:text-[#DBC166]`}
                             >
                                 Home
+                            </Link>
+
+                        </li>
+
+                        <li>
+                            <Link
+                                to="/aboutUs"
+                                className={`hover:text-[#DBC166] ${location.pathname === "/aboutUs" ? "text-[#DBC166] font-bold" : "text-white"} transition-colors duration-300`}
+                            >
+                                About Us
                             </Link>
                         </li>
                         <li className="w-full text-center relative">
@@ -321,20 +358,20 @@ const NavbarComponent = () => {
                         ) : (
                             <>
                                 <Button
-                                    onClick={() => {
-                                        navigate(`/users/${id}/dashboard`);
-                                        setIsOpen(false);
-                                    }}
-                                    className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
+                                    onClick={() => navigate(`/users/${id}/dashboard`)}
+                                    className="
+    text-white px-5 py-2 border border-[#DBC166] rounded-full 
+    transition-all duration-300 ease-in-out 
+    hover:bg-[#DBC166] hover:text-black 
+    hover:shadow-md hover:scale-105
+    active:scale-95
+  "
                                 >
                                     Dashboard
                                 </Button>
-                                {!isPaid && (
+                                {!isPaid && !loading && (
                                     <Button
-                                        onClick={() => {
-                                            handleClickPayNow();
-                                            setIsOpen(false);
-                                        }}
+                                        onClick={handleClickPayNowR10}
                                         className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
                                     >
                                         Pay Now
@@ -345,7 +382,13 @@ const NavbarComponent = () => {
                                         navigate(`/users/${id}/draw`);
                                         setIsOpen(false);
                                     }}
-                                    className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
+                                    className="
+    text-white px-5 py-2 border border-[#DBC166] rounded-full 
+    transition-all duration-300 ease-in-out 
+    hover:bg-[#DBC166] hover:text-black 
+    hover:shadow-md hover:scale-105
+    active:scale-95
+  "
                                 >
                                     Draws
                                 </Button>
@@ -354,7 +397,12 @@ const NavbarComponent = () => {
                                         handleLogout();
                                         setIsOpen(false);
                                     }}
-                                    className="bg-[#DBC166] text-black py-2 text-sm font-medium rounded-md transition hover:bg-[#C8A13A]"
+                                    className="
+    bg-[#DBC166] text-black px-5 py-2 text-sm lg:text-base rounded-full 
+    font-medium transition-all duration-300 ease-in-out 
+    hover:bg-[#C8A13A] hover:shadow-md hover:scale-105 
+    active:scale-95 
+    focus:ring-2 focus:ring-[#DBC166] focus:ring-opacity-50"
                                 >
                                     LOGOUT
                                 </Button>

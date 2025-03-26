@@ -12,7 +12,7 @@ import affiliateRoutes from './routes/affiliateRoute.js'
 import adminRoutes from './routes/adminRoute.js'
 import generateSig from './routes/generateSig.js'
 import paymentRoute from './routes/PaymentRoute.js'
-import checkForUserRoute from './routes/checkUserRoute.js'
+
 import raffRoute from './routes/RaffRoutes.js'
 import wheelRoute from './routes/wheelRoutes.js'
 import timeRoutes from "./routes/timeRoute.js"; 
@@ -26,11 +26,12 @@ app.use(express.json())
 
 const io = new Server(server, {
     cors: {
-        origin: FRONTEND_URL, 
+        origin: FRONTEND_URL, //check again cuz i changed it while testing on local 
         methods: ["GET", "POST", "PUT"]
     }
 });
 ;
+app.locals.io = io
 
 connectDB();
 
@@ -50,7 +51,6 @@ app.use("/api/time", timeRoutes);
 io.on("connection", (socket) => {
     try {
         console.log("User connected: ", socket.id);
-
         socket.on("disconnect", () => {
             console.log(`❌ User disconnected: ${socket.id}`);
         });

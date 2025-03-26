@@ -10,3 +10,4 @@ TODO:payment verification
 
 
 
+FRONTEND_URL=https://themenuportal.co.za

@@ -9,7 +9,6 @@ const VendorSchema = new mongoose.Schema({
   tradingAddress: { type: String, required: true },
   province: { type: String, required: true },
   city: { type: String, required: true },
-
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
@@ -18,20 +17,29 @@ const VendorSchema = new mongoose.Schema({
   businessContactNumber: { type: String, required: true },
   businessEmail: { type: String, required: true, unique: true },
   websiteUrl: { type: String },
-  socialMediaHandles: { type: Object },
+  
+  socialMediaHandles: {
+    facebook: { type: String },
+    instagram: { type: String },
+    twitter: { type: String },
+    tiktok: { type: String }
+  },
+  
   representativeName: { type: String, required: true },
   representativePosition: { type: String, required: true },
   representativeEmail: { type: String, required: true },
   representativePhone: { type: String, required: true },
   businessDescription: { type: String },
 
-  exclusiveOffer: {
-    type: {
+  // Updated to match frontend structure
+  wheelOffer: {
+    type: { 
       type: String,
       required: true
     },
     terms: {
-      type: String
+      type: String,
+      required: true
     },
     offerings: [
       {
@@ -42,13 +50,38 @@ const VendorSchema = new mongoose.Schema({
         quantity: {
           type: Number
         },
-
         endDate: {
           type: Date
         }
       }
     ]
   },
+
+  raffleOffer: {
+    type: { 
+      type: String,
+      required: true
+    },
+    terms: {
+      type: String,
+      required: true
+    },
+    offerings: [
+      {
+        name: {
+          type: String,
+          required: true
+        },
+        quantity: {
+          type: Number
+        },
+        endDate: {
+          type: Date
+        }
+      }
+    ]
+  },
+
   password: {
     type: String,
     required: [true, "Password is required"],
@@ -56,43 +89,61 @@ const VendorSchema = new mongoose.Schema({
     validate: {
       validator: function (value) {
         return /[A-Z]/.test(value) &&
-          /[a-z]/.test(value) &&
-          /\d/.test(value);
+               /[a-z]/.test(value) &&
+               /\d/.test(value);
       },
       message: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     },
   },
-  vendorTier: { type: String, default: "bronze" },
+  
+  vendorTier: { 
+    type: String, 
+    enum: ["bronze", "silver", "gold"],
+    default: "bronze" 
+  },
+  
   agreedToTerms: { type: Boolean, required: true },
+  
+
   companyRegistrationCertificateURl: {
     public_id: { type: String, required: true },
     secure_url: { type: String, required: true }
   },
+  
   vendorIdURl: {
     public_id: { type: String, required: true },
     secure_url: { type: String, required: true }
   },
+  
   addressProofURl: {
     public_id: { type: String, required: true },
     secure_url: { type: String, required: true }
   },
+  
   confirmationLetterURl: {
     public_id: { type: String, required: true },
     secure_url: { type: String, required: true }
   },
+  
   businessPromotionalMaterialURl: {
     public_id: { type: String },
     secure_url: { type: String }
   },
-  referralCodeUsed:
-  {
-    type: String
+  
+  referralCodeUsed: { type: String },
+  
+  // Timestamps
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
-
-
-
+// Add pre-save hook for password hashing
 VendorSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
@@ -100,9 +151,15 @@ VendorSchema.pre("save", async function (next) {
   next();
 });
 
-
+// Add method for password comparison
 VendorSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Update the timestamp on document update
+VendorSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
 
 export default mongoose.model("Vendor", VendorSchema);

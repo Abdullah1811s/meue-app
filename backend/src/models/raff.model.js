@@ -15,6 +15,7 @@ const RaffSchema = new mongoose.Schema(
         {
           name: { type: String, required: true },
           id: { type: String, required: true },
+          quantity: { type: String },
           endDate: { type: Date },
         },
       ],
@@ -25,12 +26,12 @@ const RaffSchema = new mongoose.Schema(
         user: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User',
-         
+
         },
         entries: {
           type: Number,
           enum: [10, 1], // R50 = 10 entries, R10 = 1 entry
-  
+
         },
       },
     ],

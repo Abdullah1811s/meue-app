@@ -20,7 +20,6 @@ const checkCode = async (code) => {
     }
 }
 
-
 const deleteFile = async (publicId) => {
     try {
         const fileExtension = publicId.split('.').pop().toLowerCase();
@@ -329,95 +328,6 @@ export const vendorTierUpdate = async (req, res) => {
     }
 };
 
-export const registerVendor = async (req, res) => {
-    try {
-        const {
-            businessName,
-            businessType,
-            companyRegNumber,
-            vatNumber,
-            tradingAddress,
-            province,
-            city,
-            businessContactNumber,
-            businessEmail,
-            websiteUrl,
-            socialMediaHandles,
-            representativeName,
-            representativePosition,
-            representativeEmail,
-            representativePhone,
-            businessDescription,
-            offerings,
-            exclusiveOffer,
-            agreedToTerms,
-            companyRegistrationCertificateURl,
-            vendorIdURl,
-            addressProofURl,
-            confirmationLetterURl,
-            businessPromotionalMaterialURl,
-            password,
-            referralCodeUsed
-        } = req.body;
-        console.log("The data from frontend is ", req.body);
-        const existingVendor = await vendorModel.findOne({ businessEmail });
-        if (existingVendor) {
-            return res.status(400).json({ message: "Partner already exists" });
-        }
-        if (
-            !businessName ||
-            !businessType ||
-            !companyRegNumber ||
-            !tradingAddress ||
-            !businessContactNumber ||
-            !businessEmail ||
-            !representativeName ||
-            !representativePosition ||
-            !representativeEmail ||
-            !representativePhone ||
-            !agreedToTerms ||
-            !exclusiveOffer
-        ) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
-
-        const newVendor = await vendorModel.create({
-            businessName,
-            businessType,
-            companyRegNumber,
-            vatNumber,
-            tradingAddress,
-            province,
-            city,
-            businessContactNumber,
-            businessEmail,
-            websiteUrl,
-            socialMediaHandles,
-
-            representativeName,
-            representativePosition,
-            representativeEmail,
-            representativePhone,
-            businessDescription,
-            offerings,
-            exclusiveOffer,
-
-            agreedToTerms,
-            companyRegistrationCertificateURl,
-            vendorIdURl,
-            addressProofURl,
-            confirmationLetterURl,
-            businessPromotionalMaterialURl,
-            password,
-            referralCodeUsed
-        });
-        checkCode(newVendor.referralCodeUsed)
-        res.status(201).json({ message: "Vendor created successfully", vendor: newVendor });
-    } catch (error) {
-        console.error("Error registering vendor:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-};
 
 export const updateVendorStatus = async (req, res) => {
     try {
@@ -495,5 +405,143 @@ export const updateVendorStatus = async (req, res) => {
     } catch (error) {
         console.error("Error updating vendor status:", error);
         return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+
+export const registerVendor = async (req, res) => {
+    try {
+        const {
+            businessName,
+            businessType,
+            companyRegNumber,
+            vatNumber,
+            tradingAddress,
+            province,
+            city,
+            businessContactNumber,
+            businessEmail,
+            websiteUrl,
+            socialMediaHandles,
+            representativeName,
+            representativePosition,
+            representativeEmail,
+            representativePhone,
+            businessDescription,
+            wheelOffer,
+            raffleOffer,
+            agreedToTerms,
+            companyRegistrationCertificateURl,
+            vendorIdURl,
+            addressProofURl,
+            confirmationLetterURl,
+            businessPromotionalMaterialURl,
+            password,
+            referralCodeUsed
+        } = req.body;
+
+        console.log("The data from frontend is ", req.body);
+
+        // Check if vendor already exists
+        const existingVendor = await vendorModel.findOne({ businessEmail });
+        if (existingVendor) {
+            return res.status(400).json({ message: "Partner already exists" });
+        }
+
+        // Validate wheel offer structure
+        if (!wheelOffer.type || !wheelOffer.terms || !wheelOffer.offerings || 
+            !Array.isArray(wheelOffer.offerings) || wheelOffer.offerings.length === 0) {
+            return res.status(400).json({ 
+                message: "Invalid wheel offer structure" 
+            });
+        }
+
+        // Validate raffle offer structure
+        if (!raffleOffer.type || !raffleOffer.terms || !raffleOffer.offerings || 
+            !Array.isArray(raffleOffer.offerings) || raffleOffer.offerings.length === 0) {
+            return res.status(400).json({ 
+                message: "Invalid raffle offer structure" 
+            });
+        }
+
+       
+        const newVendor = await vendorModel.create({
+            businessName,
+            businessType,
+            companyRegNumber,
+            vatNumber,
+            tradingAddress,
+            province,
+            city,
+            businessContactNumber,
+            businessEmail,
+            websiteUrl,
+            socialMediaHandles,
+            representativeName,
+            representativePosition,
+            representativeEmail,
+            representativePhone,
+            businessDescription,
+            wheelOffer: {
+                type: wheelOffer.type,
+                terms: wheelOffer.terms,
+                offerings: wheelOffer.offerings.map(offer => ({
+                    name: offer.name,
+                    quantity: offer.quantity,
+                    endDate: offer.endDate,
+                   
+                }))
+            },
+            raffleOffer: {
+                type: raffleOffer.type,
+                terms: raffleOffer.terms,
+                offerings: raffleOffer.offerings.map(offer => ({
+                    name: offer.name,
+                    quantity: offer.quantity,
+                    endDate: offer.endDate,
+                   
+                }))
+            },
+            agreedToTerms,
+            companyRegistrationCertificateURl,
+            vendorIdURl,
+            addressProofURl,
+            confirmationLetterURl,
+            businessPromotionalMaterialURl,
+            password,
+            referralCodeUsed
+        });
+
+        // Process referral code if used
+        if (referralCodeUsed) {
+            await checkCode(newVendor.referralCodeUsed);
+        }
+
+        // Return success response (excluding password)
+        const vendorResponse = newVendor.toObject();
+        delete vendorResponse.password;
+
+        res.status(201).json({ 
+            message: "Vendor created successfully", 
+            vendor: vendorResponse 
+        });
+
+    } catch (error) {
+        console.error("Error registering vendor:", error);
+        
+       
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({ 
+                message: "Validation error", 
+                errors 
+            });
+        }
+
+        res.status(500).json({ 
+            message: "Internal Server Error", 
+            error: error.message 
+        });
     }
 };

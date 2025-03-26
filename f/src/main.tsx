@@ -32,6 +32,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.tsx'
 import TermsOfService from './pages/TOS.tsx'
 import GeneralTermPdf from './pages/GeneralTerms.tsx'
 import PartnerProgramTerms from './pages/PartnerProgramTerms .tsx'
+import AboutUs from './pages/Aboutus.tsx'
 
 
 const router = createBrowserRouter(
@@ -42,6 +43,7 @@ const router = createBrowserRouter(
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
       <Route path="vendorOnBoarding" element={<VendorOnboarding />} />
+      <Route path="aboutUs" element={<AboutUs />} />
       <Route path="allPartners" element={<AllPartners />} />
       <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/affiliated/register" element={<AffiliateRegistration />} />

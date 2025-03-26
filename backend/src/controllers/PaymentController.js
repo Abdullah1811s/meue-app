@@ -1,6 +1,8 @@
 import axios from 'axios'
 import crypto from 'crypto';
 import usersModel from '../models/users.model.js';
+import { addUserToInvisibleRaffles } from './RaffController.js'
+
 const YOCO_API_URL = process.env.YOCO_API_URL;
 const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -18,7 +20,7 @@ export const Payment = async (req, res) => {
                 amount,
                 currency,
                 cancelUrl: `${FRONTEND_URL}/users/${id}/cancel`,
-                successUrl: `${FRONTEND_URL}/users/${id}/success`,
+                successUrl: `${FRONTEND_URL}/users/${id}`, //updated the route after payment user move to the home page
                 failureUrl: `${FRONTEND_URL}/users/failure`,
                 metadata: {
                     orderId: "12345",
@@ -64,14 +66,34 @@ export const handleWebhook = async (req, res) => {
             const userId = event.data.metadata.userId;
             const paymentId = event.data.id;
             const userType = event.data.amount === 5000 ? "R50" : "R10";
-
+            const entries = userType === "R50" ? 10 : 1;
+            console.log("Updating user:", userId); //need to verify this the status is being update but not userType
+            console.log("UserType to set:", userType);
+            console.log("Amount received:", event.data.amount);
             const updatedUserStatus = await usersModel.findOneAndUpdate(
                 { _id: userId },
-                { $set: { isPaid: true, userType } }, 
+                { $set: { isPaid: true, userType } },
                 { new: true }
             );
+          
 
             console.log(`Payment ${paymentId} succeeded for user ${userId} and the updated user is ${updatedUserStatus}`);
+            try {
+                const updatedRaffles = await addUserToInvisibleRaffles(userId, entries); //need to verify this also cuz the console log is not working on local the webhook is being sent on deployed server
+                console.log(`User added to ${updatedRaffles.length} invisible raffles with ${entries} entries each`);
+            } catch (error) {
+                console.error('Failed to add user to invisible raffles:', error);
+            }
+
+            if (userType === "R10") { //please take a look at this and verify if it is working (after 1 hour payment status of R10 user is change to false indicating they have to pay again)
+                setTimeout(async () => {
+                    await usersModel.findOneAndUpdate(
+                        { _id: userId },
+                        { $set: { isPaid: false } }
+                    );
+                    console.log(`User ${userId} R10 access expired after 1 hour.`);
+                }, 60 * 60 * 1000);
+            }
         }
 
 
