@@ -83,22 +83,22 @@ export const handleWebhook = async (req, res) => {
     if (event.type === 'payment.succeeded') {
       try {
         // Extract critical payment data with safe access
-        const userId = event.metadata?.userId;
+        const userId = event?.payload?.metadata?.userId;
         const paymentId = event?.id;
-        const amount = event?.amount; // not inside metadata will have to test
+        const amount = event?.payload?.amount;
         const userType = amount === 5000 ? "R50" : "R10";
 
         // Validate required fields
         if (!userId || !paymentId) {
-          console.error('Missing payment metadata:', { userId, paymentId });
+          console.error('Missing payment metadata:', { event, userId, paymentId });
           return res.status(400).send('Invalid payment data');
         }
 
-        // Update user payment status and type
+        console.log("Amount:", event.data.amount, "Calculated userType:", userType); 
         const updatedUser = await usersModel.findOneAndUpdate(
           { _id: userId },
           { $set: { isPaid: true, userType } },
-          { new: true, runValidators: true }
+          { new: true }
         );
 
         if (!updatedUser) {
