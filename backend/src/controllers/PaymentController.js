@@ -135,7 +135,7 @@ export const handleWebhook = async (req, res) => {
           return res.status(404).send("User not found");
         }
 
-        console.log(`Payment processed | User: ${userId} | Type: ${userType}`);
+        console.log(`Payment processed | User: ${updatedUser} | Type: ${userType}`); //check if the updated user contain all field (userType and R10Date only for R10 user)
 
 
         try {
@@ -147,10 +147,11 @@ export const handleWebhook = async (req, res) => {
 
 
         const againPayTime = new Date(Date.now() + 60 * 60 * 1000);
-
+        console.log(`the user ${id}  will have to pay again after 1 hours`)
         schedule.scheduleJob(againPayTime, async () => {
           try {
             const user = await usersModel.findById(id);
+
             if (user && user.userType === "R10") {
               await usersModel.findOneAndUpdate(
                 { _id: id },
