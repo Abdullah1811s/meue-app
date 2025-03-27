@@ -163,7 +163,7 @@ export default function Home() {
 
       // Update states with fetched data
       setUser(userResponse.data.user);
-      startTimer(userResponse.data.user.signupDate);
+      startTimer(userResponse.data.user.signupDate); //if the R10UserPaidDate just change the .signupDate to .R10UserPaidDate
       setVendors(vendorResponse.data);
       setHasFetched(true);
     } catch (error) {

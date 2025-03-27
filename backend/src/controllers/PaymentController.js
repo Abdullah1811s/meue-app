@@ -135,8 +135,8 @@ export const handleWebhook = async (req, res) => {
           return res.status(404).send("User not found");
         }
 
-        console.log(`Payment processed | User: ${updatedUser} | Type: ${userType}`); //check if the updated user contain all field (userType and R10Date only for R10 user)
-
+        console.log(`Payment processed | User: ${updatedUser} | Type: ${userType}`); //check if the updated user contain all field (userType and R10UserPaidDate only for R10 user) if yes then check waiting page
+        
 
         try {
           const updatedRaffles = await addUserToInvisibleRaffles(id, entries);
