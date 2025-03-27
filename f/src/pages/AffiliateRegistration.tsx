@@ -76,6 +76,7 @@ function AffiliateRegistration() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [cities, setCities] = useState<string[]>([]);
     const {
         register,
@@ -87,7 +88,7 @@ function AffiliateRegistration() {
     });
 
     const affiliateType = watch("affiliateType");
-  
+
     // Update cities based on selected province
     const handleProvinceChange = (provinceName: string) => {
         const province = provinces.find((p) => p.name === provinceName);
@@ -102,6 +103,7 @@ function AffiliateRegistration() {
 
     const onSubmit = async (data: AffiliateFormData) => {
         try {
+            setLoading(true);
             // Ensure password and confirmPassword match
             if (data.password !== data.confirmPassword) {
                 toast.error("Passwords do not match.");
@@ -135,6 +137,7 @@ function AffiliateRegistration() {
             if (response.status === 201) {
                 toast.success("Affiliate registration successful! We will notify you in 48-72 hours.");
                 await sleep(2000);
+                setLoading(false)
                 navigate("/");
             } else {
                 toast.error(response.data.message || "Something went wrong!");
@@ -522,12 +525,19 @@ function AffiliateRegistration() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
                         <button
                             type="submit"
-                            disabled={!isAgreed}
-                            className={`px-8 py-3 text-white rounded-md transition-all duration-200 ${isAgreed ? "bg-[#C5AD59] hover:bg-[#B89C4A]" : "bg-gray-400 cursor-not-allowed"
+                            disabled={!isAgreed || loading}
+                            className={`px-8 py-3 text-white rounded-md transition-all duration-200 flex items-center justify-center ${!isAgreed || loading
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-[#C5AD59] hover:bg-[#B89C4A]"
                                 }`}
                         >
-                            Register
+                            {loading ? (
+                                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                            ) : (
+                                "Register"
+                            )}
                         </button>
+
                     </motion.div>
                 </form>
             </div>

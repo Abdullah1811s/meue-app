@@ -55,6 +55,22 @@ export const registerAffiliate = async (req, res) => {
             referralCode
         });
 
+        const subject = "Your Affiliate Signup is Complete - Awaiting Approval ✅";
+        const message = `
+            <p>Dear ${newAffiliate.fullName},</p>
+            <p>Thank you for signing up for our affiliate program! We have received your application and it is currently under review.</p>
+            <p>Our team will assess your application and notify you once it has been approved.</p>
+            <p>We appreciate your patience and look forward to having you on board.</p>
+            <p>Best regards, <br> The Menu Team</p>
+        `;
+
+        const smtpConfig = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "affiliates@themenuportal.co.za",
+        };
+
+        const emailSent = await sendEmail(smtpConfig, newAffiliate.email, subject, "Your affiliate application is under review.", message);
 
         res.status(201).json({ message: "Affiliate registered successfully", newAffiliate });
     } catch (error) {

@@ -153,7 +153,7 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
- //if the R10UserPaidDate just change the .signupDate to .R10UserPaidDate in this function
+
   const fetchData = async () => {
     try {
 
@@ -164,7 +164,7 @@ export default function Home() {
 
       // Update states with fetched data
       setUser(userResponse.data.user);
-      startTimer(userResponse.data.user.dailyLoginDate); //if the R10UserPaidDate just change the .signupDate to .R10UserPaidDate
+      startTimer(userResponse.data.user.dailyLoginDate); 
       setVendors(vendorResponse.data);
       setHasFetched(true);
     } catch (error) {
@@ -340,7 +340,7 @@ export default function Home() {
           <div className="fixed text-black bottom-0 right-1 sm:bottom-0 mt-2 sm:right-1 sm:mt-2 bg-[#DBC166]  font-semibold px-4 py-1 rounded-lg shadow-lg text-sm sm:text-base z-20">
             <p>{timeLeft}</p>
           </div>
-        )};
+        )}
 
         {/* hero section */}
         <motion.section
