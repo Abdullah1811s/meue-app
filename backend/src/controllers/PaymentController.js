@@ -136,8 +136,6 @@ export const handleWebhook = async (req, res) => {
         }
 
         console.log(`Payment processed | User: ${updatedUser} | Type: ${userType}`); //check if the updated user contain all field (userType and R10UserPaidDate only for R10 user) if yes then check waiting page since the console log only work on deployed site cuz yoco sending web hook to deployed
-        
-
         try {
           const updatedRaffles = await addUserToInvisibleRaffles(id, entries);
           console.log(`Raffle entries added | Count: ${updatedRaffles.length}`);

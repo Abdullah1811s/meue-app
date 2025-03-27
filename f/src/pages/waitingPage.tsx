@@ -153,6 +153,7 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+ //if the R10UserPaidDate just change the .signupDate to .R10UserPaidDate in this function
   const fetchData = async () => {
     try {
 
