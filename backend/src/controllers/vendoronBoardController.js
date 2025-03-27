@@ -210,7 +210,7 @@ export const delVendor = async (req, res) => {
         if (vendor.businessEmail) {
             const subject = "Partner Account Cancelled";
             let message;
-        
+
             if (vendor.status === "pending") {
                 message = `
                 Dear ${vendor.businessName || "Partner"},
@@ -225,7 +225,7 @@ export const delVendor = async (req, res) => {
                 The Menu Team
                 `;
             }
-        
+
             if (vendor.status === "approved") {
                 message = `
                 Dear ${vendor.businessName || "Partner"},
@@ -242,13 +242,13 @@ export const delVendor = async (req, res) => {
                 The Menu Team
                 `;
             }
-        
+
             const smtpConfig = {
                 host: "mail.themenuportal.co.za",
                 port: 465,
                 user: "vendors@themenuportal.co.za",
             };
-        
+
             try {
                 await sendEmail(smtpConfig, vendor.businessEmail, subject, "Your vendor account has been cancelled.", message);
                 console.log(`Cancellation email sent to ${vendor.businessEmail}`);
@@ -256,7 +256,7 @@ export const delVendor = async (req, res) => {
                 console.error("Failed to send cancellation email:", emailError);
             }
         }
-        
+
         deleteFile(vendor.addressProofURl.public_id);
         deleteFile(vendor.companyRegistrationCertificateURl.public_id);
         deleteFile(vendor.vendorIdURl.public_id);
@@ -358,7 +358,7 @@ export const updateVendorStatus = async (req, res) => {
 
         if (updatedVendor.businessEmail) {
             let subject, message;
-        
+
             if (status === "approved") {
                 subject = "Your Partner Application is Approved 🎉";
                 message = `
@@ -377,16 +377,16 @@ export const updateVendorStatus = async (req, res) => {
                     <p>Best regards, <br> The Menu Team</p>
                 `;
             }
-        
+
             if (subject && message) {
                 const smtpConfig = {
                     host: "mail.themenuportal.co.za",
                     port: 465,
                     user: "vendors@themenuportal.co.za",
                 };
-        
+
                 const emailSent = await sendEmail(smtpConfig, updatedVendor.businessEmail, subject, subject, message);
-        
+
                 if (!emailSent.success) {
                     console.error("Email sending failed but status updated.");
                 }
@@ -394,7 +394,7 @@ export const updateVendorStatus = async (req, res) => {
         } else {
             console.warn("Vendor email not found, skipping email notification.");
         }
-        
+
 
         return res.status(200).json({
             message: `Vendor status updated to '${status}' successfully`,
@@ -450,22 +450,22 @@ export const registerVendor = async (req, res) => {
         }
 
         // Validate wheel offer structure
-        if (!wheelOffer.type || !wheelOffer.terms || !wheelOffer.offerings || 
+        if (!wheelOffer.type || !wheelOffer.terms || !wheelOffer.offerings ||
             !Array.isArray(wheelOffer.offerings) || wheelOffer.offerings.length === 0) {
-            return res.status(400).json({ 
-                message: "Invalid wheel offer structure" 
+            return res.status(400).json({
+                message: "Invalid wheel offer structure"
             });
         }
 
         // Validate raffle offer structure
-        if (!raffleOffer.type || !raffleOffer.terms || !raffleOffer.offerings || 
+        if (!raffleOffer.type || !raffleOffer.terms || !raffleOffer.offerings ||
             !Array.isArray(raffleOffer.offerings) || raffleOffer.offerings.length === 0) {
-            return res.status(400).json({ 
-                message: "Invalid raffle offer structure" 
+            return res.status(400).json({
+                message: "Invalid raffle offer structure"
             });
         }
 
-       
+
         const newVendor = await vendorModel.create({
             businessName,
             businessType,
@@ -490,7 +490,7 @@ export const registerVendor = async (req, res) => {
                     name: offer.name,
                     quantity: offer.quantity,
                     endDate: offer.endDate,
-                   
+
                 }))
             },
             raffleOffer: {
@@ -500,7 +500,7 @@ export const registerVendor = async (req, res) => {
                     name: offer.name,
                     quantity: offer.quantity,
                     endDate: offer.endDate,
-                   
+
                 }))
             },
             agreedToTerms,
@@ -518,30 +518,47 @@ export const registerVendor = async (req, res) => {
             await checkCode(newVendor.referralCodeUsed);
         }
 
-        // Return success response (excluding password)
+
         const vendorResponse = newVendor.toObject();
         delete vendorResponse.password;
 
-        res.status(201).json({ 
-            message: "Vendor created successfully", 
-            vendor: vendorResponse 
+        const subject = "Your Partner Signup is Complete - Awaiting Approval ✅";
+        const message = `
+            <p>Dear ${newVendor.businessName},</p>
+            <p>Thank you for signing up as a partner on our platform! We have received your application and it is currently under review.</p>
+            <p>Our team will assess your application and notify you once it has been approved.</p>
+            <p>We appreciate your patience and look forward to partnering with you.</p>
+            <p>Best regards, <br> The Menu Team</p>
+        `;
+
+        const smtpConfig = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "vendors@themenuportal.co.za",
+        };
+
+        const emailSent = await sendEmail(smtpConfig, newVendor.businessEmail, subject, subject, message);
+
+        res.status(201).json({
+            message: "Vendor created successfully",
+            vendor: vendorResponse
         });
 
     } catch (error) {
         console.error("Error registering vendor:", error);
-        
-       
+
+
         if (error.name === 'ValidationError') {
             const errors = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({ 
-                message: "Validation error", 
-                errors 
+            return res.status(400).json({
+                message: "Validation error",
+                errors
             });
         }
 
-        res.status(500).json({ 
-            message: "Internal Server Error", 
-            error: error.message 
+        res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
         });
     }
 };
