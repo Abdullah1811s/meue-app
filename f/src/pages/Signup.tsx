@@ -168,7 +168,7 @@ function SignUp() {
       }
     }
   };
-
+  console.log(captchaToken);
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">
       {/* Left Section (Welcome Banner) */}
@@ -202,7 +202,7 @@ function SignUp() {
               <ul className="space-y-3">
                 <li className="flex items-start">
                   <span className="text-[#DBC166] mr-2">✓</span>
-                  <span className="text-gray-700">Exclusive deals from premium Partner</span>
+                  <span className="text-gray-700">Exclusive deals from premium partners</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-[#DBC166] mr-2">✓</span>

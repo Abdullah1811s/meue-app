@@ -40,7 +40,7 @@ export const signUp = async (req, res) => {
     try {
         let referrer1;
         let referrer2;
-        const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken, userType } = req.body;
+        const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken } = req.body;
 
         const isCaptchaValid = await verifyCaptcha(captchaToken);
         if (!isCaptchaValid) {
@@ -97,7 +97,6 @@ export const signUp = async (req, res) => {
             city,
             province,
             street,
-            userType,
             town,
             postalCode,
             referralCodeShare
@@ -130,13 +129,6 @@ export const signUp = async (req, res) => {
         newUser.signupPoint += 125;
         newUser.save();
         await addPoints(newUser._id, newUser.signupPoint);
-
-        /*
-        here te user has been added now based 
-        on  the user details like R10 or R50
-        */
-
-
         return res.status(201).json({
             message: "User created successfully",
             user: { ...newUser.toObject(), password: undefined },

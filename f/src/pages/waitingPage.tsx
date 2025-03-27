@@ -91,7 +91,7 @@ const images = [
 export default function Home() {
   const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
   const isVendorAuthenticated = useSelector((state: any) => state.auth.isVendorAuthenticated);
-
+  let userId: string;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
   const sectionRef = useRef(null);
@@ -99,9 +99,10 @@ export default function Home() {
   const [hasFetched, setHasFetched] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<any>();
   const [vendors, setVendors] = useState<any[]>([]);
   const [currentSlide,] = useState(0);
-
+  const [, setUser] = useState<any>();
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
   const isPaid = useSelector((state: any) => state.auth.isPaid)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
@@ -116,19 +117,20 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [isMobile]);
-
   useEffect(() => {
-    // Handle authentication redirect
-    if (isAuthenticated || isVendorAuthenticated) {
-      const id = localStorage.getItem("id");
-      if (id) {
-        navigate(isAuthenticated ? `/users/${id}` : `/vendor/${id}`);
-      }
+    const id = localStorage.getItem("id")
+    if (isAuthenticated && id) {
+      console.log("User authenticated:", id);
+      userId = id;
+      navigate(`/users/${id}`);
+    } else if (isVendorAuthenticated && id) {
+
+      navigate(`/vendor/${id}`);
     }
   }, [isAuthenticated, isVendorAuthenticated, navigate]);
 
   useEffect(() => {
-   
+
     window.scrollTo({ top: 0, behavior: "smooth" });
     const handleScroll = () => setShowScroll(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
@@ -143,7 +145,7 @@ export default function Home() {
     }
     else
       console.log("already fetched");
-  }, [hasFetched]); 
+  }, [hasFetched]);
 
 
 
@@ -153,9 +155,16 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/vendor`);
 
-      setVendors(response.data);
+      const [userResponse, vendorResponse] = await Promise.all([
+        axios.get(`${API_BASE_URL}/users/${userId}`),
+        axios.get(`${API_BASE_URL}/vendor`),
+      ]);
+
+      // Update states with fetched data
+      setUser(userResponse.data.user);
+      startTimer(userResponse.data.user.signupDate);
+      setVendors(vendorResponse.data);
       setHasFetched(true);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -271,14 +280,41 @@ export default function Home() {
     }
   };
 
+  const startTimer = (paidDate: any) => {
+    const paidTime = new Date(paidDate).getTime();
+    const expireTime = paidTime + 60 * 60 * 1000; // 1 hour later
 
+    const updateTimer = () => {
+      const currentTime = new Date().getTime();
+      const remainingTime = expireTime - currentTime;
 
+      if (remainingTime <= 0) {
+        setTimeLeft("Your payment session has ended. Please make a payment to continue.");
+        return;
+      }
+
+      const minutesLeft = Math.floor((remainingTime / (1000 * 60)) % 60);
+      const secondsLeft = Math.floor((remainingTime / 1000) % 60);
+
+      setTimeLeft(
+        minutesLeft > 30
+          ? `${minutesLeft} min ${secondsLeft} sec left before another payment.`
+          : `Pay again in ${minutesLeft} min ${secondsLeft} sec.`
+      );
+    };
+
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000); 
+
+    return () => clearInterval(timerInterval);
+  };
 
   return (
     <>
+
       <Button
         onClick={scrollToTop}
-        className={`fixed bottom-4 sm:bottom-6 lg:bottom-10 
+        className={`fixed bottom-8 sm:bottom-6 lg:bottom-10 
     right-4 sm:right-6 lg:right-10 
     p-2 sm:p-3 lg:p-4 bg-[#DBC166] text-black font-bold 
     hover:bg-[#d4cbab] rounded-full shadow-md 
@@ -299,6 +335,11 @@ export default function Home() {
             <AppTimer />
           </>
         )}
+        {timeLeft && !timeLeft.includes("expired") && (
+          <div className="fixed text-black bottom-0 right-1 sm:bottom-0 mt-2 sm:right-1 sm:mt-2 bg-[#DBC166]  font-semibold px-4 py-1 rounded-lg shadow-lg text-sm sm:text-base z-20">
+            <p>{timeLeft}</p>
+          </div>
+        )};
 
         {/* hero section */}
         <motion.section

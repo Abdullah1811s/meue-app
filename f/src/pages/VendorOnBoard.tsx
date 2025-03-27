@@ -185,17 +185,17 @@ function VendorOnboarding() {
     }
   };
 
-  const handleToggleQuantityDate = (index: number, type: 'wheel' | 'raffle') => {
-    if (type === 'wheel') {
-      const updated = [...wheelOfferings];
-      updated[index].showQuantity = !updated[index].showQuantity;
-      setValue("wheelOffer.offerings", updated);
-    } else {
-      const updated = [...raffleOfferings];
-      updated[index].showQuantity = !updated[index].showQuantity;
-      setValue("raffleOffer.offerings", updated);
-    }
-  };
+  // const handleToggleQuantityDate = (index: number, type: 'wheel' | 'raffle') => {
+  //   if (type === 'wheel') {
+  //     const updated = [...wheelOfferings];
+  //     updated[index].showQuantity = !updated[index].showQuantity;
+  //     setValue("wheelOffer.offerings", updated);
+  //   } else {
+  //     const updated = [...raffleOfferings];
+  //     updated[index].showQuantity = !updated[index].showQuantity;
+  //     setValue("raffleOffer.offerings", updated);
+  //   }
+  // };
 
   const handleUpdateOffering = (
     index: number,
@@ -883,54 +883,60 @@ function VendorOnboarding() {
                                         Remove
                                       </button>
                                     </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700">
+                                        Quantity (Optional)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={offering.quantity || ""}
+                                        onChange={(e) =>
+                                          handleUpdateOffering(index, 'wheel', "quantity", e.target.value)
+                                        }
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700">
+                                        End Date
+                                      </label>
+                                      <input
+                                        type="date"
+                                        value={offering.endDate || ""}
+                                        min={new Date().toISOString().split("T")[0]}
+                                        onChange={(e) => {
+                                          const selectedDate = new Date(e.target.value);
+                                          const today = new Date();
+                                          today.setHours(0, 0, 0, 0);
 
-                                    <button
+                                          if (selectedDate < today) {
+                                            alert("End date cannot be in the past");
+                                            return;
+                                          }
+
+                                          handleUpdateOffering(index, 'wheel', "endDate", e.target.value);
+                                        }}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                      />
+                                    </div>
+
+                                    {/* <button
                                       type="button"
                                       onClick={() => handleToggleQuantityDate(index, 'wheel')}
                                       className="w-full bg-gray-200 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 transition"
                                     >
                                       {offering.showQuantity ? "Switch to Date Range" : "Switch to Quantity"}
-                                    </button>
+                                    </button> */}
 
-                                    {offering.showQuantity ? (
+                                    {/* {offering.showQuantity ? (
                                       <div>
-                                        <label className="block text-sm font-medium text-gray-700">
-                                          Quantity (Optional)
-                                        </label>
-                                        <input
-                                          type="number"
-                                          value={offering.quantity || ""}
-                                          onChange={(e) =>
-                                            handleUpdateOffering(index, 'wheel', "quantity", e.target.value)
-                                          }
-                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                                        />
+
                                       </div>
                                     ) : (
                                       <div>
-                                        <label className="block text-sm font-medium text-gray-700">
-                                          End Date
-                                        </label>
-                                        <input
-                                          type="date"
-                                          value={offering.endDate || ""}
-                                          min={new Date().toISOString().split("T")[0]}
-                                          onChange={(e) => {
-                                            const selectedDate = new Date(e.target.value);
-                                            const today = new Date();
-                                            today.setHours(0, 0, 0, 0);
 
-                                            if (selectedDate < today) {
-                                              alert("End date cannot be in the past");
-                                              return;
-                                            }
-
-                                            handleUpdateOffering(index, 'wheel', "endDate", e.target.value);
-                                          }}
-                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                                        />
                                       </div>
-                                    )}
+                                    )} */}
                                   </div>
                                 ))}
                               </div>
@@ -1007,54 +1013,59 @@ function VendorOnboarding() {
                                         Remove
                                       </button>
                                     </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700">
+                                        Quantity (Optional)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={offering.quantity || ""}
+                                        onChange={(e) =>
+                                          handleUpdateOffering(index, 'raffle', "quantity", e.target.value)
+                                        }
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700">
+                                        End Date
+                                      </label>
+                                      <input
+                                        type="date"
+                                        value={offering.endDate || ""}
+                                        min={new Date().toISOString().split("T")[0]}
+                                        onChange={(e) => {
+                                          const selectedDate = new Date(e.target.value);
+                                          const today = new Date();
+                                          today.setHours(0, 0, 0, 0);
 
-                                    <button
+                                          if (selectedDate < today) {
+                                            alert("End date cannot be in the past");
+                                            return;
+                                          }
+
+                                          handleUpdateOffering(index, 'raffle', "endDate", e.target.value);
+                                        }}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                                      />
+                                    </div>
+                                    {/* <button
                                       type="button"
                                       onClick={() => handleToggleQuantityDate(index, 'raffle')}
                                       className="w-full bg-gray-200 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300 transition"
                                     >
                                       {offering.showQuantity ? "Switch to Date Range" : "Switch to Quantity"}
-                                    </button>
+                                    </button> */}
 
-                                    {offering.showQuantity ? (
+                                    {/* {offering.showQuantity ? (
                                       <div>
-                                        <label className="block text-sm font-medium text-gray-700">
-                                          Quantity (Optional)
-                                        </label>
-                                        <input
-                                          type="number"
-                                          value={offering.quantity || ""}
-                                          onChange={(e) =>
-                                            handleUpdateOffering(index, 'raffle', "quantity", e.target.value)
-                                          }
-                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                                        />
+
                                       </div>
                                     ) : (
                                       <div>
-                                        <label className="block text-sm font-medium text-gray-700">
-                                          End Date
-                                        </label>
-                                        <input
-                                          type="date"
-                                          value={offering.endDate || ""}
-                                          min={new Date().toISOString().split("T")[0]}
-                                          onChange={(e) => {
-                                            const selectedDate = new Date(e.target.value);
-                                            const today = new Date();
-                                            today.setHours(0, 0, 0, 0);
 
-                                            if (selectedDate < today) {
-                                              alert("End date cannot be in the past");
-                                              return;
-                                            }
-
-                                            handleUpdateOffering(index, 'raffle', "endDate", e.target.value);
-                                          }}
-                                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                                        />
                                       </div>
-                                    )}
+                                    )} */}
                                   </div>
                                 ))}
                               </div>

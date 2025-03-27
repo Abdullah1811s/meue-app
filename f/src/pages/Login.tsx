@@ -252,7 +252,7 @@ const Login = () => {
                     </li>
                     <li className="flex items-start">
                       <span className="text-[#DBC166] mr-2 flex-shrink-0">✓</span>
-                      <span className="text-gray-700">Premium vendor offerings</span>
+                      <span className="text-gray-700">Premium partners offerings</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-[#DBC166] mr-2 flex-shrink-0">✓</span>

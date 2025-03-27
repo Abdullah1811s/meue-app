@@ -33,15 +33,17 @@ app.post(
   handleWebhook
 );
 
-app.use(cors({
-  origin: [FRONTEND_URL],
-  credentials: true
-}));
+// app.use(cors({
+//   origin: [FRONTEND_URL],
+//   credentials: true
+// }));
+
+app.use(cors());
 app.use(express.json())
 
 const io = new Server(server, {
     cors: {
-        origin: FRONTEND_URL, //check again cuz i changed it while testing on local 
+        origin: "http://localhost:5173",
         methods: ["GET", "POST", "PUT"]
     }
 });

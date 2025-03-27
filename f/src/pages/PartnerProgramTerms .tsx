@@ -54,7 +54,7 @@ const PartnerProgramTerms = () => {
                 <Section title="3. Registration and Approval">
                     <SubSection title="3.1 Registration Requirements">
                         To join the Partner Program, you must: <br />
-                        1. Complete the Partner Registration Form on <span className='text-blue-500 underline'>www.themenuportal.co.za</span>. <br />
+                        1. Complete the Partner Registration Form on <a  href='https://themenuportal.co.za/'  target='_blank' className='text-blue-500 underline'>www.themenuportal.co.za</a>. <br />
                         2. Provide accurate business information, including: <br />
                         &nbsp;&nbsp;&nbsp;&nbsp;• Business name <br />
                         &nbsp;&nbsp;&nbsp;&nbsp;• Contact person <br />
@@ -168,7 +168,7 @@ const PartnerProgramTerms = () => {
                 {/* Section 13: Contact Information */}
                 <Section title="13. Contact Information">
                     For questions about these Terms, contact us at: <br />
-                    • <strong>Email</strong>: <span className='text-blue-500 underline'>partners@themenuportal.co.za</span>
+                    • <strong>Email</strong>: <a href='mailto:partners@themenuportal.co.za' target='_blank'  className='text-blue-500 underline'>partners@themenuportal.co.za</a>
                 </Section>
             </div>
         </div>

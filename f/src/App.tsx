@@ -3,6 +3,7 @@ import './App.css';
 import NavbarComponent from './components/customComponents/NavbarComponent';
 import { Outlet, useLocation } from 'react-router-dom';
 import Footer from './components/customComponents/Footer';
+import ScrollToTop from './components/customComponents/ScrollToTop';
 
 function App() {
   const location = useLocation();
@@ -14,6 +15,7 @@ function App() {
 
   return (
     <>
+      <ScrollToTop />
       <Toaster position="top-right" reverseOrder={false} />
       {!hideNavAndFooter && <NavbarComponent />}
       <Outlet />

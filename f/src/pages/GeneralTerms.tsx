@@ -84,8 +84,9 @@ const GeneralTermPdf = () => {
             • 6 Months Access: 168 to 186 Days Access (Dependent on Full Calendar Months Accessed) <br />
             • Yearly: 365 Days Access
           </SubSection>
+
           <div className="ml-4 mt-4 overflow-x-auto">
-            <table className="border-collapse border border-gray-500 text-sm">
+            <table className="w-full border-collapse border border-gray-500 text-sm">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-500 p-1">Membership tiers</th>
@@ -97,7 +98,7 @@ const GeneralTermPdf = () => {
               </thead>
               <tbody>
                 <tr className="font-bold bg-gray-100">
-                  <td className="border border-gray-500 p-1">Subscription based (monthly, anytime cancellation)</td>
+                  <td colSpan={5} className="border border-gray-500 p-1">Subscription based (monthly, anytime cancellation)</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-500 p-1">Springbok</td>
@@ -121,7 +122,7 @@ const GeneralTermPdf = () => {
                   <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
                 </tr>
                 <tr className="font-bold bg-gray-100">
-                  <td className="border border-gray-500 p-1">Once off pass (non refundable)</td>
+                  <td colSpan={5} className="border border-gray-500 p-1">Once off pass (non refundable)</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-500 p-1">1 Hour pass (Monday to Thursday)</td>
@@ -231,6 +232,8 @@ const GeneralTermPdf = () => {
               </tbody>
             </table>
           </div>
+
+
           <SubSection title="4.3. Subscription Billing">
             • <strong>Billing Cycle</strong>: Memberships renew automatically on a monthly basis unless cancelled. <br />
             • <strong>Payment Methods</strong>: Payments are processed securely via payment options aligned to the South African FSP regulations. <br />
@@ -326,7 +329,10 @@ const GeneralTermPdf = () => {
         {/* Section 14: Contact Information */}
         <Section title="14. Contact Information">
           For inquiries or support, please contact us via: <br />
-          • <strong>Email</strong>: <span className="text-blue-500 underline">support@themenuportal.co.za</span> <br />
+          • <strong>Email</strong>: <a href="mailto:support@themenuportal.co.za" className="text-blue-500 underline">
+            support@themenuportal.co.za
+          </a>
+          <br />
           • <strong>Address</strong>: 17 Dely Rd, Hazelwood, Pretoria, 0081 <br />
           <br />
           By agreeing to these Terms, you acknowledge that you have read, understood, and accepted them in full. Thank you for choosing The Menu!

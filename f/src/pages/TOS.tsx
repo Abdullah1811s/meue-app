@@ -1,5 +1,5 @@
 const TermsOfService = () => {
-  const preventCopy = (e:any) => {
+  const preventCopy = (e: any) => {
     e.preventDefault();
     return false;
   };
@@ -60,155 +60,154 @@ const TermsOfService = () => {
         <p className="ml-4">
           The platform offers the following membership plans and once-off passes:
         </p>
-        
+
         <div className="ml-4 mt-4 overflow-x-auto">
-                    <table className="border-collapse border border-gray-500 text-sm">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                <th className="border border-gray-500 p-1">Membership tiers</th>
-                                <th className="border border-gray-500 p-1">Cost (Rands)</th>
-                                <th className="border border-gray-500 p-1">Vendor database</th>
-                                <th className="border border-gray-500 p-1"># Bonus competition entries</th>
-                                <th className="border border-gray-500 p-1">Number of competition accessible</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr className="font-bold bg-gray-100">
-                                <td className="border border-gray-500 p-1">Subscription based (monthly, anytime cancellation)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Springbok</td>
-                                <td className="border border-gray-500 p-1">R150.00</td>
-                                <td className="border border-gray-500 p-1">40%</td>
-                                <td className="border border-gray-500 p-1">1</td>
-                                <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Leopard</td>
-                                <td className="border border-gray-500 p-1">R300.00</td>
-                                <td className="border border-gray-500 p-1">70%</td>
-                                <td className="border border-gray-500 p-1">5</td>
-                                <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Lion</td>
-                                <td className="border border-gray-500 p-1">R500.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">10</td>
-                                <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
-                            </tr>
-                            <tr className="font-bold bg-gray-100">
-                                <td className="border border-gray-500 p-1">Once off pass (non refundable)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">1 Hour pass (Monday to Thursday)</td>
-                                <td className="border border-gray-500 p-1">R10.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">1</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">2 Hour pass (Monday to Thursday)</td>
-                                <td className="border border-gray-500 p-1">R15.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">2</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">3 Hour pass (Monday to Thursday)</td>
-                                <td className="border border-gray-500 p-1">R20.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">3</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">1 Hour pass (Friday to Sunday)</td>
-                                <td className="border border-gray-500 p-1">R20.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">1</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">2 Hour pass (Friday to Sunday)</td>
-                                <td className="border border-gray-500 p-1">R30.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">2</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">3 Hour pass (Monday to Thursday)</td>
-                                <td className="border border-gray-500 p-1">R40.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">3</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">24-hour pass (Monday to Thursday)</td>
-                                <td className="border border-gray-500 p-1">R50.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">5</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">24-hour pass (Friday to Sunday)</td>
-                                <td className="border border-gray-500 p-1">R75.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">5</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Three day pass (Monday to Thursday)</td>
-                                <td className="border border-gray-500 p-1">R150.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">10</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the days of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Three day pass (Friday to Sunday)</td>
-                                <td className="border border-gray-500 p-1">R225.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">10</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the days of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Weekly: 7 day pass</td>
-                                <td className="border border-gray-500 p-1">R500.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">15</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the days of access</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Monthly: 28 to 31 day pass</td>
-                                <td className="border border-gray-500 p-1">R750.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">20</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the days of access (benefits across 28-31 day period, benefits begin from initiation date)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">3 month pass</td>
-                                <td className="border border-gray-500 p-1">R2,250.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">30</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the days of access (benefits across 90 day period, benefits begin from initiation date)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">6 month pass</td>
-                                <td className="border border-gray-500 p-1">R4,500.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">50</td>
-                                <td className="border border-gray-500 p-1">Specific to the competition on the days of access (benefits across 180 day period, benefits begin from initiation date)</td>
-                            </tr>
-                            <tr>
-                                <td className="border border-gray-500 p-1">Annual</td>
-                                <td className="border border-gray-500 p-1">R9,000.00</td>
-                                <td className="border border-gray-500 p-1">100%</td>
-                                <td className="border border-gray-500 p-1">100</td>
-                                <td className="border border-gray-500 p-1">All (benefits across 365 day period, benefits begin from initiation date)</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-               
+          <table className="w-full border-collapse border border-gray-500 text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-500 p-1">Membership tiers</th>
+                <th className="border border-gray-500 p-1">Cost (Rands)</th>
+                <th className="border border-gray-500 p-1">Vendor database</th>
+                <th className="border border-gray-500 p-1"># Bonus competition entries</th>
+                <th className="border border-gray-500 p-1">Number of competition accessible</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="font-bold bg-gray-100">
+                <td colSpan={5} className="border border-gray-500 p-1">Subscription based (monthly, anytime cancellation)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Springbok</td>
+                <td className="border border-gray-500 p-1">R150.00</td>
+                <td className="border border-gray-500 p-1">40%</td>
+                <td className="border border-gray-500 p-1">1</td>
+                <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Leopard</td>
+                <td className="border border-gray-500 p-1">R300.00</td>
+                <td className="border border-gray-500 p-1">70%</td>
+                <td className="border border-gray-500 p-1">5</td>
+                <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Lion</td>
+                <td className="border border-gray-500 p-1">R500.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">10</td>
+                <td className="border border-gray-500 p-1">All (subject to maintaining monthly membership)</td>
+              </tr>
+              <tr className="font-bold bg-gray-100">
+                <td colSpan={5} className="border border-gray-500 p-1">Once off pass (non refundable)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">1 Hour pass (Monday to Thursday)</td>
+                <td className="border border-gray-500 p-1">R10.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">1</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">2 Hour pass (Monday to Thursday)</td>
+                <td className="border border-gray-500 p-1">R15.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">2</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">3 Hour pass (Monday to Thursday)</td>
+                <td className="border border-gray-500 p-1">R20.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">3</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">1 Hour pass (Friday to Sunday)</td>
+                <td className="border border-gray-500 p-1">R20.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">1</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">2 Hour pass (Friday to Sunday)</td>
+                <td className="border border-gray-500 p-1">R30.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">2</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">3 Hour pass (Monday to Thursday)</td>
+                <td className="border border-gray-500 p-1">R40.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">3</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">24-hour pass (Monday to Thursday)</td>
+                <td className="border border-gray-500 p-1">R50.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">5</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">24-hour pass (Friday to Sunday)</td>
+                <td className="border border-gray-500 p-1">R75.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">5</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the day of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Three day pass (Monday to Thursday)</td>
+                <td className="border border-gray-500 p-1">R150.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">10</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the days of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Three day pass (Friday to Sunday)</td>
+                <td className="border border-gray-500 p-1">R225.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">10</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the days of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Weekly: 7 day pass</td>
+                <td className="border border-gray-500 p-1">R500.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">15</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the days of access</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Monthly: 28 to 31 day pass</td>
+                <td className="border border-gray-500 p-1">R750.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">20</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the days of access (benefits across 28-31 day period, benefits begin from initiation date)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">3 month pass</td>
+                <td className="border border-gray-500 p-1">R2,250.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">30</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the days of access (benefits across 90 day period, benefits begin from initiation date)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">6 month pass</td>
+                <td className="border border-gray-500 p-1">R4,500.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">50</td>
+                <td className="border border-gray-500 p-1">Specific to the competition on the days of access (benefits across 180 day period, benefits begin from initiation date)</td>
+              </tr>
+              <tr>
+                <td className="border border-gray-500 p-1">Annual</td>
+                <td className="border border-gray-500 p-1">R9,000.00</td>
+                <td className="border border-gray-500 p-1">100%</td>
+                <td className="border border-gray-500 p-1">100</td>
+                <td className="border border-gray-500 p-1">All (benefits across 365 day period, benefits begin from initiation date)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <ul className="ml-12 list-disc">
           <li><b>Subscriptions:</b> Renew automatically unless cancelled through account settings before the renewal date.</li>
           <li><b>Once-off Passes:</b> Offer limited-time access. Once-off passes are non-refundable and valid only for the specified time period.</li>
@@ -348,7 +347,7 @@ const TermsOfService = () => {
           For questions about these Terms, contact us at:
         </p>
         <ul className="ml-12 list-disc">
-          <li><b>Email:</b> <span className="text-blue-500">support@themenuportal.co.za</span> </li>
+          <li><b>Email:</b> <a href="mailto:support@themenuportal.co.za" className="text-blue-500">support@themenuportal.co.za</a> </li>
           <li><b>Address:</b> 17 Dely Rd, Hazelwood, Pretoria, 0081</li>
         </ul>
       </div>

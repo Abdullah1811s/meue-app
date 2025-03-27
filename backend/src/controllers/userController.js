@@ -1,8 +1,6 @@
 import usersModel from '../models/users.model.js';
 import { addPoints } from '../utils/pointsService.js'
 
-
-
 export const getAllUsers = async (req, res) => {
   try {
     const users = await usersModel.find({}, "-password"); // Exclude password field

@@ -122,7 +122,7 @@ const PrivacyPolicy = () => {
                     <li><b>Right to Object:</b> Object to data processing for direct marketing.</li>
                     <li><b>Right to Withdraw Consent:</b> Withdraw consent for data processing at any time.</li>
                 </ul>
-                <p className="ml-4">To exercise your rights, contact us at <b className='text-blue-500 underline'>privacy@themenuportal.co.za</b>.</p>
+                <p className="ml-4">To exercise your rights, contact us at <a href="mailto:privacy@themenuportal.co.za" className='text-blue-500 underline'>privacy@themenuportal.co.za</a>.</p>
 
                 <h2 className="text-xl font-bold mt-4">7. <b>Third-Party Links</b></h2>
                 <p className="ml-4">
@@ -142,7 +142,7 @@ const PrivacyPolicy = () => {
                 <h2 className="text-xl font-bold mt-4">10. <b>Contact Information</b></h2>
                 <p className="ml-4">For any questions or concerns regarding this Privacy Policy, please contact:</p>
                 <ul className="ml-12 list-disc">
-                    <li>Email: <b className='text-blue-500 underline'>privacy@themenuportal.co.za</b></li>
+                    <li>Email: <a href="mailto:privacy@themenuportal.co.za" className='text-blue-500 underline'>privacy@themenuportal.co.za</a></li>
                 </ul>
             </div>
         </div>
