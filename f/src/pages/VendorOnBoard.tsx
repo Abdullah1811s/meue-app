@@ -1517,7 +1517,7 @@ function VendorOnboarding() {
                     Read Terms & Conditions
                   </button>
                   <br />
-                  <a href='/docs/vendorTerm.pdf' download="vendorTerm.pdf" className="text-blue-500 underline">
+                  <a href='/docs/Partner_Contract_pdf.pdf' download="Partner_Contract_pdf.pdf" className="text-blue-500 underline">
                     Download
                   </a>
 
