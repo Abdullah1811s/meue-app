@@ -164,7 +164,9 @@ export default function Home() {
 
       // Update states with fetched data
       setUser(userResponse.data.user);
-      startTimer(userResponse.data.user.dailyLoginDate); 
+      if (userResponse.data.user.userType === "R10") {
+        startTimer(userResponse.data.user.dailyLoginDate);
+      }
       setVendors(vendorResponse.data);
       setHasFetched(true);
     } catch (error) {
@@ -305,7 +307,7 @@ export default function Home() {
     };
 
     updateTimer();
-    const timerInterval = setInterval(updateTimer, 1000); 
+    const timerInterval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timerInterval);
   };
