@@ -22,28 +22,27 @@ import { handleWebhook } from "./controllers/PaymentController.js";
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 const app = express();
-app.set('trust proxy', 1); // Trust first proxy
+app.set('trust proxy', 1); 
 
 const server = http.createServer(app);
 
-// Place before express.json() middleware
 app.post(
   '/api/payment/webhook',
   express.raw({ type: 'application/json' }),
   handleWebhook
 );
 
-// app.use(cors({
-//   origin: [FRONTEND_URL],
-//   credentials: true
-// }));
+app.use(cors({
+  origin: [FRONTEND_URL],
+  credentials: true
+}));
 
-app.use(cors());
+// app.use(cors());
 app.use(express.json())
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: FRONTEND_URL,
         methods: ["GET", "POST", "PUT"]
     }
 });

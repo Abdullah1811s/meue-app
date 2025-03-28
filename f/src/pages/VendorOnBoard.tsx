@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
@@ -129,7 +129,15 @@ function VendorOnboarding() {
   const [showModal, setShowModal] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<keyof typeof provinceCities | "">("");
   const isUser = useSelector((state: any) => state.auth.isUserAuthenticated);
+  const [referralCode, setReferralCode] = useState("");
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
+  }, [])
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<VendorFormData>({
     defaultValues: {
       socialMediaHandles: {},
@@ -147,6 +155,14 @@ function VendorOnboarding() {
       agreedToTerms: false
     }
   });
+
+
+
+  useEffect(() => {
+    if (referralCode) {
+      setValue("referralCodeUsed", referralCode); 
+    }
+  }, [referralCode, setValue]);
   // Watch both offerings
   const [wheelOfferingInput, setWheelOfferingInput] = useState("");
   const [raffleOfferingInput, setRaffleOfferingInput] = useState("");
@@ -902,6 +918,7 @@ function VendorOnboarding() {
                                       </label>
                                       <input
                                         type="date"
+                                        required
                                         value={offering.endDate || ""}
                                         min={new Date().toISOString().split("T")[0]}
                                         onChange={(e) => {
@@ -1471,8 +1488,16 @@ function VendorOnboarding() {
                     <input
                       {...register("referralCodeUsed")}
                       type="text"
-                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#C5AD59] outline-none"
+                      value={referralCode}
+                      readOnly
+                      onCopy={(e) => e.preventDefault()}
+                      onCut={(e) => e.preventDefault()}
+                      onPaste={(e) => e.preventDefault()}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onKeyDown={(e) => e.preventDefault()}
+                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#C5AD59] outline-none select-none cursor-not-allowed"
                     />
+
                   </div>
 
                 </motion.div>

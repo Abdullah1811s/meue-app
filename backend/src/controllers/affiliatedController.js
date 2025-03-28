@@ -170,10 +170,10 @@ export const updateStatus = async (req, res) => {
                 <p>Dear ${affiliate.fullName},</p>
                 <p>We are pleased to inform you that your affiliate application has been <strong>approved</strong>.</p>
                 <p>Welcome aboard! You can now start earning commissions through our program.</p>
-                <p>Your referral code is <strong>${affiliate.referralCode}</strong></p>
+                <p>To get started, please <a href="https://themenuportal.co.za/affiliated/login" target="_blank">log in to your account</a>.</p>
                 <p>Best regards, <br> The Menu Team</p>
             `;
-
+                
 
             const smtpConfig = {
                 host: "mail.themenuportal.co.za",

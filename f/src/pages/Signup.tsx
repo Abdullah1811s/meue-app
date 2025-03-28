@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, EyeOff, Home } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -59,6 +59,15 @@ function SignUp() {
   const dispatch = useDispatch();
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("");
+  const [referralCode, setReferralCode] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
+  }, [])
 
   const {
     register,
@@ -107,6 +116,7 @@ function SignUp() {
       console.log("Payment error", error);
     }
   };
+
   const handleClickPayNowR10 = async (id: string) => {
     try {
       const UserToken = localStorage.getItem('UserToken');
@@ -129,10 +139,17 @@ function SignUp() {
       console.log("Payment error", error);
     }
   };
+  useEffect(() => {
+    if (referralCode) {
+      setValue("referralCode", referralCode); // Ensure referral code is registered
+    }
+  }, [referralCode, setValue]);
   const onSubmit = async (data: SignUpForm) => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    console.log("The data is ", data);
+    console.log("The payment option is : ", selectedPaymentOption);
     try {
-      console.log("The payment option is : ", selectedPaymentOption);
+
       const UserResponse = await axios.post(`${API_BASE_URL}/auth/signUp`, { ...data, captchaToken }, {
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +167,7 @@ function SignUp() {
       else {
         handleClickPayNowR10(userId)
       }
-      
+
     } catch (error: any) {
       console.error('Signup Error:', error?.response?.data?.message || error?.message);
 
@@ -168,7 +185,7 @@ function SignUp() {
       }
     }
   };
-  console.log(captchaToken);
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">
       {/* Left Section (Welcome Banner) */}
@@ -501,8 +518,16 @@ function SignUp() {
                   {...register("referralCode")}
                   type="text"
                   placeholder="Enter referral code if available"
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
+                  value={referralCode}
+                  readOnly
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166] select-none cursor-not-allowed"
+                  onCopy={(e) => e.preventDefault()}
+                  onCut={(e) => e.preventDefault()}
+                  onPaste={(e) => e.preventDefault()}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onKeyDown={(e) => e.preventDefault()}
                 />
+
                 {errors.referralCode && <p className="mt-1 text-sm text-red-600">{errors.referralCode.message}</p>}
               </motion.div>
             </div>

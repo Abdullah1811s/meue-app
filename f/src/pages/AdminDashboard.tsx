@@ -17,7 +17,9 @@ import {
   User,
   Tag,
   ShipWheelIcon,
-  Check
+  Check,
+  Award,
+  Loader
 
 } from 'lucide-react';
 import {
@@ -156,20 +158,56 @@ interface RaffleItem {
   status: "completed" | "scheduled";
 }
 
+interface Prize {
+  name: string;
+  quantity: string;
+  endDate: Date | null;
+}
+
 interface RaffFormData {
   name: string;
   scheduledAt: string;
-  prizes: string[];
+  prizes: Prize[];
 }
+
+export interface IUser {
+  _id?: string;
+  name: string;
+  email: string;
+  phone: string;
+
+  role?: "user" | "admin";
+  TotalPoints?: number;
+  DailyLoginPoint?: number;
+  wheelRotatePoint?: number;
+  signupPoint?: number;
+  ReferralPoint?: number;
+  dailyLoginDate?: string;
+  city: string;
+  province: string;
+  street: string;
+  signupDate?: string;
+  town: string;
+  userType?: "R50" | "R10";
+  R10UserPaidDate?: string;
+  postalCode: string;
+  isPaid?: boolean;
+  prizeWon?: string;
+  referralCodeShare?: string;
+  numberOfTimesWheelRotate?: number;
+}
+
+
 const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
 
 const AdminDashboard = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const adminToken = localStorage.getItem("AdminToken");
   const [affiliates, setAffiliates] = useState<Affiliated[]>([]);
   const [vendors, setVendors] = useState<IVendor[]>([]);
   const [raff, setRaff] = useState<RaffleItem[]>([])
+  const [users, setUsers] = useState<IUser[]>([])
   const [isLoading, setIsLoading] = useState(false);
-  const adminToken = localStorage.getItem("AdminToken");
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
@@ -179,6 +217,7 @@ const AdminDashboard = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [isManageWeeklyReferral, setManageWeeklyReferral] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isManageUser, setManageUser] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   // const [onRaff, setOnRaff] = useState<boolean>(false);
@@ -194,6 +233,7 @@ const AdminDashboard = () => {
   const [scheduleDate, setScheduleDate] = useState<any>("");
   const [maxOfferDate, setMaxOfferDate] = useState<any>(null);
   const [vendorOnWheel, setVendorOnWheel] = useState<any[]>([]);
+  const [isDeletingUser, setDeleteing] = useState(false);
 
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     username: '',
@@ -204,9 +244,12 @@ const AdminDashboard = () => {
   const [formData, setFormData] = useState<RaffFormData>({
     name: "",
     scheduledAt: "",
-    prizes: [""]
+    prizes: [{
+      name: "",
+      quantity: "",
+      endDate: null
+    }]
   });
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData({
@@ -215,22 +258,27 @@ const AdminDashboard = () => {
     });
   };
 
-  const handlePrizeChange = (index: number, value: string): void => {
+  const handlePrizeChange = (index: number, field: keyof Prize, value: any): void => {
     const updatedPrizes = [...formData.prizes];
-    updatedPrizes[index] = value;
+    updatedPrizes[index] = {
+      ...updatedPrizes[index],
+      [field]: value
+    };
     setFormData({
       ...formData,
       prizes: updatedPrizes
     });
   };
-
   const addPrizeField = (): void => {
     setFormData({
       ...formData,
-      prizes: [...formData.prizes, ""]
+      prizes: [...formData.prizes, {
+        name: "",
+        quantity: "",
+        endDate: null
+      }]
     });
   };
-
 
   const removePrizeField = (index: number): void => {
     const updatedPrizes = formData.prizes.filter((_, i) => i !== index);
@@ -242,47 +290,68 @@ const AdminDashboard = () => {
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("the form data is", formData)
     if (isSubmitting) return;
     try {
       e.preventDefault();
       setIsSubmitting(true);
+
+      // Format the main raffle date
       const formattedDate = selectedDate
         ? new Date(selectedDate).toISOString()
         : '';
 
+      // Prepare prizes data - ensure required fields are present
+      const preparedPrizes = formData.prizes.map(prize => ({
+        name: prize.name,
+        quantity: prize.quantity || "1", // Default quantity if not provided
+        endDate: prize.endDate ? new Date(prize.endDate).toISOString() : null
+      }));
+
       const submissionData = {
-        ...formData,
-        scheduledAt: formattedDate
+        name: formData.name,
+        scheduledAt: formattedDate,
+        prizes: preparedPrizes,
+        vendorId: "your-vendor-id", // Add this if needed
+        status: "scheduled", // Default status
+        isVisible: false // Default visibility
       };
+
       const response = await axios.post(`${API_BASE_URL}/Raff/createRaff`, submissionData, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json'
         }
       });
+
       setRaff((prev) => [...prev, response.data.raffle]);
-      console.log(response);
       toast.success(response.data.message);
 
-      console.log("Form submitted with data:", submissionData);
-
-
+      // Reset form to initial state
       setFormData({
         name: "",
         scheduledAt: "",
-        prizes: [""]
+        prizes: [{
+          name: "",
+
+          quantity: "",
+          endDate: null
+        }]
       });
       setSelectedDate(null);
       setOpenDialog(false);
     }
     catch (error: any) {
-      console.log(error);
-      toast.error(error.error);
+      console.error("Error creating raff:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to create raff";
+      toast.error(errorMessage);
     }
     finally {
       setIsSubmitting(false);
     }
   };
+
 
 
   const handleLogout = () => {
@@ -461,8 +530,19 @@ const AdminDashboard = () => {
     }
   }
 
-  const switchTab = (tab: 'affiliate' | 'partner' | 'weeklyReferral' | 'wheelManage') => {
+  const fetchUser = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/users/`);
+      console.log(res.data);
+      setUsers(res.data.users);
+    } catch (error) {
+      toast.error("Failed to fetch user  =. Try again!");
+    }
+  }
+
+  const switchTab = (tab: 'affiliate' | 'partner' | 'weeklyReferral' | 'wheelManage' | 'manageUser') => {
     if (tab === 'affiliate') {
+      setManageUser(false);
       setManageAffiliate(true);
       setManagePartner(false);
       setManageWeeklyReferral(false);
@@ -471,6 +551,7 @@ const AdminDashboard = () => {
       setSidebarOpen(false);
       fetchAffiliate();
     } else if (tab === 'partner') {
+      setManageUser(false);
       setManageAffiliate(false);
       setManagePartner(true);
       setManageWeeklyReferral(false);
@@ -479,6 +560,7 @@ const AdminDashboard = () => {
       setManageWheel(false);
       fetchVendor();
     } else if (tab == 'weeklyReferral') {
+      setManageUser(false);
       setManageAffiliate(false);
       setManagePartner(false);
       setManageWeeklyReferral(true);
@@ -487,7 +569,18 @@ const AdminDashboard = () => {
       setManageWheel(false);
       fetchRaff();
     }
+    else if (tab == 'manageUser') {
+      setManageUser(true);
+      setManageAffiliate(false);
+      setManagePartner(false);
+      setManageWeeklyReferral(false);
+      setHasSelectedOption(true);
+      setSidebarOpen(false);
+      setManageWheel(false);
+      fetchUser();
+    }
     else {
+      setManageUser(false);
       setManageAffiliate(false);
       setManagePartner(false);
       setManageWeeklyReferral(false);
@@ -659,8 +752,19 @@ const AdminDashboard = () => {
         }
       }
     } catch (error: any) {
-      console.error("Error adding to raffle:", error);
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      console.error("Full error:", error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message ||
+          error.response.data?.error ||
+          "Failed to add to raffle system";
+        toast.error(errorMessage);
+      } else if (error.request) {
+        toast.error("Network error - please check your connection");
+      } else {
+        toast.error("An unexpected error occurred");
+      }
+
     }
   };
 
@@ -758,6 +862,31 @@ const AdminDashboard = () => {
   console.log("vendor on wheel : ", vendorOnWheel);
 
 
+  const deleteUser = async (id: string) => {
+    try {
+      setDeleteing(true);
+      await axios.delete(
+        `${API_BASE_URL}/users/del-user`,
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+          data: { id },
+        }
+      );
+      setUsers((prevUsers) => prevUsers.filter((user) => user._id !== id));
+      toast.success("User deleted successfully!");
+
+    } catch (error) {
+      console.error("Delete User Error:", error);
+      toast.error("Failed to delete user. Try again!");
+    } finally {
+      setDeleteing(false);
+    }
+  };
+
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Sidebar - uses fixed positioning on larger screens, sliding drawer on mobile */}
@@ -801,6 +930,13 @@ const AdminDashboard = () => {
           >
             <ShipWheelIcon size={20} className="mr-3 flex-shrink-0" />
             <span className="truncate">Manage Wheel</span>
+          </div>
+          <div
+            className={`px-4 py-3 flex items-center cursor-pointer ${isManageUser ? 'bg-[#DBC166] text-white' : 'hover:bg-gray-100'}`}
+            onClick={() => switchTab('manageUser')}
+          >
+            <PackageCheck size={20} className="mr-3 flex-shrink-0" />
+            <span className="truncate">Manage User</span>
           </div>
         </nav>
       </motion.div>
@@ -1041,6 +1177,10 @@ const AdminDashboard = () => {
                                           <DialogTitle>Enter Schedule Date</DialogTitle>
                                           <DialogDescription>
                                             Ensure the date is before {maxOfferDate?.toDateString()} and not in the past.
+                                            <div className="text-red-500 font-medium">
+                                              Important: The raffle cannot be created if there are no paid participants
+                                              available.
+                                            </div>
                                           </DialogDescription>
                                         </DialogHeader>
                                         <Input
@@ -1255,6 +1395,83 @@ const AdminDashboard = () => {
           )}
 
 
+          {isManageUser && (
+            <motion.div
+              initial={{ y: -50, opacity: 0 }} // Start from the top
+              animate={{ y: 0, opacity: 1 }} // Move to normal position
+              transition={{ duration: 0.5, ease: "easeOut" }} // Smooth transition
+              className=""
+            >
+              <h2 className="text-2xl font-bold mb-4">Manage Users</h2>
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0, y: -50 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { staggerChildren: 0.1, ease: "easeOut" },
+                  },
+                }}
+              >
+                {users.map((user) => (
+                  <motion.div
+                    key={user._id}
+                    className="p-5 border rounded-lg shadow-md bg-white flex flex-col space-y-2"
+                    variants={{
+                      hidden: { opacity: 0, y: -30 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                    }}
+                  >
+                    <h3 className="text-lg font-semibold">{user.name}</h3>
+
+                    <p className="text-gray-600 flex items-center">
+                      <Mail size={16} className="mr-2" /> {user.email}
+                    </p>
+
+                    <p className="text-gray-600 flex items-center">
+                      <Phone size={16} className="mr-2" /> {user.phone}
+                    </p>
+
+                    <p className="text-gray-600 flex items-center">
+                      <MapPin size={16} className="mr-2" /> {user.street}, {user.city}, {user.province} - {user.postalCode}
+                    </p>
+
+                    <p className="text-gray-600">User Type: <span className="font-medium">{user.userType}</span></p>
+                    <p className="text-gray-600">Total Points: <span className="font-medium">{user.TotalPoints}</span></p>
+                    <p className="text-gray-600">Signup Date: <span className="font-medium">{new Date(user.signupDate || "").toLocaleDateString()}</span></p>
+
+                    {user.prizeWon && (
+                      <p className="text-gray-600 flex items-center">
+                        <Award size={16} className="mr-2" /> Prize Won: {user.prizeWon}
+                      </p>
+                    )}
+
+                    <button
+                      onClick={() => user._id && deleteUser(user._id)}
+                      disabled={isDeletingUser}
+                      className={`mt-3 px-4 py-2 text-white rounded-lg flex items-center justify-center transition duration-200 ${isDeletingUser ? "bg-gray-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"
+                        }`}
+                    >
+                      {isDeletingUser ? (
+                        <>
+                          <Loader size={18} className="mr-2 animate-spin" /> Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 size={18} className="mr-2" /> Delete
+                        </>
+                      )}
+                    </button>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+          )}
+
+
           {isManageWeeklyReferral && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -1303,24 +1520,39 @@ const AdminDashboard = () => {
                       <div className="grid w-full items-center gap-2">
                         <label>Prizes</label>
                         {formData.prizes.map((prize, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Input
-                              placeholder={`Prize ${index + 1}`}
-                              value={prize}
-                              onChange={(e) => handlePrizeChange(index, e.target.value)}
-                              required
-                            />
-                            {formData.prizes.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removePrizeField(index)}
-                                className="h-8 w-8 flex-shrink-0"
-                              >
-                                <X size={16} />
-                              </Button>
-                            )}
+                          <div key={index} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder={`Prize Name ${index + 1}`}
+                                value={prize.name}
+                                onChange={(e) => handlePrizeChange(index, 'name', e.target.value)}
+                                required
+                              />
+
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder="Quantity"
+                                value={prize.quantity}
+                                onChange={(e) => handlePrizeChange(index, 'quantity', e.target.value)}
+                              />
+                              <CustomDatePicker
+                                selectedDate={prize.endDate}
+                                setSelectedDate={(date) => handlePrizeChange(index, 'endDate', date)}
+
+                              />
+                              {formData.prizes.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removePrizeField(index)}
+                                  className="h-8 w-8 flex-shrink-0"
+                                >
+                                  <X size={16} />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ))}
                         <Button
@@ -1578,9 +1810,6 @@ const AdminDashboard = () => {
 
             </div>
           )}
-
-
-
 
         </div>
       </motion.div>

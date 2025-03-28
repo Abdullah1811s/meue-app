@@ -8,13 +8,13 @@ const RaffSchema = new mongoose.Schema(
     },
     vendorId: {
       type: String,
-      required: true,
+   
     },
     prizes: {
       type: [
         {
           name: { type: String, required: true },
-          id: { type: String, required: true },
+          id: { type: String },
           quantity: { type: String },
           endDate: { type: Date },
         },

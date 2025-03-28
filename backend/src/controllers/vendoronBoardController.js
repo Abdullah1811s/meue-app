@@ -4,21 +4,58 @@ import { sendEmail } from "../utils/emailService.js";
 import { v2 as cloudinary } from 'cloudinary'
 import usersModel from '../models/users.model.js';
 import { addPoints } from '../utils/pointsService.js'
-
-const checkCode = async (code) => {
+import referralModel from "../models/referral.model.js";
+import affiliateModel from "../models/affiliate.model.js";
+const checkCode = async (code, _id) => {
     try {
-        const referrer2 = await usersModel.findOne({ referralCodeShare: code });
-        if (referrer2) {
-            referrer2.ReferralPoint += 100
-            await referrer2.save();
-            await addPoints(referrer2._id, referrer2.ReferralPoint);
+        console.log("Checking referral code:", code, "for user ID:", _id);
+
+        // Check if the referral code belongs to a User
+        const referrerUser = await usersModel.findOne({ referralCodeShare: code });
+
+        // Check if the referral code belongs to an Affiliate
+        const referrerAffiliate = await affiliateModel.findOne({ referralCode: code });
+
+        if (referrerUser) {
+            console.log("Referral belongs to a User:", referrerUser._id);
+
+            const newReferrer = await referralModel.create({
+                referrer: referrerUser._id,
+                referrerModel: "User",
+                referredUser: _id,
+                referralCode: code,
+                status: "pending",
+            });
+
+            console.log("User referral link created:", newReferrer);
+
+            // Update referral points for the User
+            referrerUser.ReferralPoint += 100;
+            await referrerUser.save();
+            await addPoints(referrerUser._id, referrerUser.ReferralPoint);
         }
+        else if (referrerAffiliate) {
+            console.log("Referral belongs to an Affiliate:", referrerAffiliate._id);
+
+            // Store referral in the referral database
+            const newReferrer = await referralModel.create({
+                referrer: referrerAffiliate._id,
+                referrerModel: "Affiliate",
+                referredUser: _id,
+                referralCode: code,
+                status: "pending",
+            });
+            console.log("Affiliate referral link created:", newReferrer);
+            await referrerAffiliate.save();
+        }
+        else {
+            console.log("No valid referrer found for the code:", code);
+        }
+    } catch (error) {
+        console.error("Error checking referral code:", error);
     }
-    catch (error) {
-        console.error("Error checking code:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-}
+};
+
 
 const deleteFile = async (publicId) => {
     try {
@@ -365,9 +402,11 @@ export const updateVendorStatus = async (req, res) => {
                     <p>Dear ${updatedVendor.businessName},</p>
                     <p>Congratulations! Your vendor application has been <strong>approved</strong>. 🎉</p>
                     <p>You can now proceed to <strong>Partner → Register → Login</strong> to access your vendor dashboard and start managing your business.</p>
+                    <p>To get started, please <a href="https://themenuportal.co.za/vendor/login" target="_blank">log in to your vendor account</a>.</p>
                     <p>If you have any questions, feel free to reach out to our support team.</p>
                     <p>Best regards, <br> The Menu Team</p>
                 `;
+
             } else if (status === "rejected") {
                 subject = "Your Partner Application Status";
                 message = `
@@ -409,7 +448,6 @@ export const updateVendorStatus = async (req, res) => {
 };
 
 
-
 export const registerVendor = async (req, res) => {
     try {
         const {
@@ -441,9 +479,7 @@ export const registerVendor = async (req, res) => {
             referralCodeUsed
         } = req.body;
 
-        console.log("The data from frontend is ", req.body);
 
-        // Check if vendor already exists
         const existingVendor = await vendorModel.findOne({ businessEmail });
         if (existingVendor) {
             return res.status(400).json({ message: "Partner already exists" });
@@ -515,7 +551,7 @@ export const registerVendor = async (req, res) => {
 
         // Process referral code if used
         if (referralCodeUsed) {
-            await checkCode(newVendor.referralCodeUsed);
+            await checkCode(newVendor.referralCodeUsed, newVendor._id);
         }
 
 

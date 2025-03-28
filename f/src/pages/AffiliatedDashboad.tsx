@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 import DashboardDetailCard from "../components/customComponents/DashboardDetailCard ";
+import toast from "react-hot-toast";
+import { Clipboard, ClipboardCheck } from "lucide-react"; // Import icons
+
 interface User {
     _id: string;
     name: string;
@@ -39,15 +42,26 @@ const AffiliatedDashboard = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const { id } = useParams();
     // const navigate = useNavigate();
-
+    const BASE_SIGNUP_URL = import.meta.env.VITE_BASE_SIGNUP_URL;
+    const BASE_SIGNUP_URL_vendor = import.meta.env.VITE_BASE_SIGNUP_URL_VENDOR;
     const [referredBy, setReferredBy] = useState<User | null>(null);
-    const [userCode, setUserCode] = useState<string | null>(null);
+    const [, setUserCode] = useState<string | null>(null);
     const [referrals, setReferrals] = useState<Referral[]>([]);
     const [user, setUser] = useState<User | null>(null);
     const [earnings] = useState<{ total: string } | null>(null);
     const [payout] = useState<{ status: string } | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [userReferralLink, setUserReferralLink] = useState<string>();
+    const [vendorReferralLink, setVendorReferralLink] = useState<string>();
+    const [copiedText, setCopiedText] = useState<string | null>(null);
+    const copyToClipboard = (text: string) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopiedText(text); // Set copied text to show check icon
+        toast.success("Link has been copied");
+        setTimeout(() => setCopiedText(null), 2000); // Reset after 2 sec
+    };
 
 
     useEffect(() => {
@@ -71,9 +85,11 @@ const AffiliatedDashboard = () => {
                 setUser(userInfo?.data?.user || null);
                 setUserCode(userCodeResponse?.data?.referralCode || null);
                 setReferredBy(referralDetails?.data?.referrer || null);
+                setUserReferralLink(`${BASE_SIGNUP_URL}?ref=${userCodeResponse.data.referralCode}`);
+                setVendorReferralLink(`${BASE_SIGNUP_URL_vendor}?ref=${userCodeResponse.data.referralCode}`);
                 setReferrals(allReferredUser?.data?.referrals?.filter((ref: { user: any; }) => ref && ref.user) || []);
-
-            } catch (error:any) {
+                console.log(userCodeResponse.data.referralCode)
+            } catch (error: any) {
                 console.error("Error fetching data", error);
                 setError(error.message);
             } finally {
@@ -147,7 +163,42 @@ const AffiliatedDashboard = () => {
             >
                 <DashboardDetailCard title="Earnings" value={earnings?.total || "0"} />
                 <DashboardDetailCard title="Payout Status" value={payout?.status || "Pending"} />
-                <DashboardDetailCard title="My referral code" value={userCode || "Not available"} />
+
+                {/* User Referral Code */}
+                <div className="flex items-center gap-2 bg-gray-100 p-4 rounded-lg">
+                    <DashboardDetailCard title="My User Referral Code" value={userReferralLink || "Not available"} />
+                    {userReferralLink && (
+                        <button
+                            onClick={() => copyToClipboard(userReferralLink)}
+                            className="flex items-center bg-black text-white px-3 py-1 rounded-lg "
+                        >
+                            {copiedText === userReferralLink ? (
+                                <ClipboardCheck className="w-4 h-4 mr-1" />
+                            ) : (
+                                <Clipboard className="w-4 h-4 mr-1" />
+                            )}
+                         
+                        </button>
+                    )}
+                </div>
+
+                {/* Vendor Referral Code */}
+                <div className="flex items-center gap-2 bg-gray-100 p-4 rounded-lg">
+                    <DashboardDetailCard title="My Vendor Referral Code" value={vendorReferralLink || "Not available"} />
+                    {vendorReferralLink && (
+                        <button
+                            onClick={() => copyToClipboard(vendorReferralLink)}
+                            className="flex items-center bg-black text-white px-3 py-1 rounded-lg "
+                        >
+                            {copiedText === vendorReferralLink ? (
+                                <ClipboardCheck className="w-4 h-4 mr-1" />
+                            ) : (
+                                <Clipboard className="w-4 h-4 mr-1" />
+                            )}
+                           
+                        </button>
+                    )}
+                </div>
             </motion.div>
 
             <motion.div

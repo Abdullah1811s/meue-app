@@ -1,5 +1,6 @@
 import usersModel from '../models/users.model.js';
 import { addPoints } from '../utils/pointsService.js'
+import { sendEmail } from '../utils/emailService.js';
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -71,3 +72,41 @@ export const updatePoint = async (req, res) => {
     return res.status(500).json({ message: "Please try again later" });
   }
 };
+
+export const delUser = async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id)
+      return res.status(400).json({ error: "please provide the user id" });
+    const user = await usersModel.findByIdAndDelete(id);
+    if (!user)
+      return res.status(404).json({ error: "user not found" });
+    const subject = "Your Account Has Been Removed ";
+    const message = `
+    <p>Dear ${user.name},</p>
+    <p>We regret to inform you that your account has been removed from our system.</p>
+    <p>If you believe this was done in error or have any questions, please feel free to contact our support team at <a href="mailto:support@themenuportal.co.za">support@themenuportal.co.za</a>.</p>
+    <p>We appreciate your time with us and wish you all the best.</p>
+    <p>Best regards, <br> The Menu Team</p>
+`;
+
+    const smtpConfig = {
+      host: "mail.themenuportal.co.za",
+      port: 465,
+      user: "support@themenuportal.co.za",
+    };
+
+    const emailSent = await sendEmail(
+      smtpConfig,
+      user.email,
+      subject,
+      "Your account has been removed.",
+      message
+    );
+
+    res.status(200).json({ message: "The user has been deleted" });
+  }
+  catch (error) {
+    return res.status(500).json({ message: "Error in deleting user" })
+  }
+}

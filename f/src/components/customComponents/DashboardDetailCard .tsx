@@ -9,6 +9,7 @@ const DashboardDetailCard = ({ title, value }: { title: string, value: any }) =>
             transition={{ duration: 0.3 }}
         >
             <h2 className="text-lg font-semibold">{title}</h2>
+          
             <p>{value || "Nothing to show"}</p>
         </motion.div>
     );

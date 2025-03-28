@@ -20,7 +20,7 @@ export const Payment = async (req, res) => {
         amount,
         currency,
         cancelUrl: `${FRONTEND_URL}/users/${id}/cancel`,
-        successUrl: `${FRONTEND_URL}/users/${id}`, //updated the route after payment user move to the home page
+        successUrl: `${FRONTEND_URL}/users/${id}`, 
         failureUrl: `${FRONTEND_URL}/users/failure`,
         metadata: {
           orderId: "12345",

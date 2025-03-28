@@ -4,6 +4,8 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import DashboardDetailCard from "../components/customComponents/DashboardDetailCard ";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+import { Copy } from "lucide-react";
 interface User {
     _id: string;
     name: string;
@@ -38,9 +40,10 @@ interface Referral {
 
 const UserDash = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const BASE_SIGNUP_URL = import.meta.env.VITE_BASE_SIGNUP_URL;
+    const BASE_SIGNUP_URL_vendor = import.meta.env.VITE_BASE_SIGNUP_URL_VENDOR;
     const { id } = useParams();
     const navigate = useNavigate();
-
     const [referredBy, setReferredBy] = useState<User | null>(null);
     const [, setUserCode] = useState<string | null>(null);
     const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -50,13 +53,14 @@ const UserDash = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [myInfo, setMyInfo] = useState<any>();
     const [error, setError] = useState<string | null>(null);
+    const [userReferralLink, setUserReferralLink] = useState<string>();
+    const [vendorReferralLink, setVendorReferralLink] = useState<string>();
 
-    const handleHome = () =>
-    {
+
+    const handleHome = () => {
         navigate(`/users/${id}`);
     }
-    const handleLogout = () =>
-    {
+    const handleLogout = () => {
         localStorage.removeItem("UserToken")
         localStorage.removeItem("id")
         navigate('/');
@@ -79,13 +83,16 @@ const UserDash = () => {
                     axios.get(`${API_BASE_URL}/referral/${id}/Code`),
                     axios.get(`${API_BASE_URL}/referral/${id}/referrals`),
                 ].map(p => p.catch(error => ({ data: null, error }))));
-             
-              
+
+
                 setMyInfo(myInfo.data.user)
                 setUser(userInfo?.data?.users || null);
                 setUserCode(userCodeResponse?.data?.referralCode || null);
+                setUserReferralLink(`${BASE_SIGNUP_URL}?ref=${myInfo.data.user.referralCodeShare}`);
+                setVendorReferralLink(`${BASE_SIGNUP_URL_vendor}?ref=${myInfo.data.user.referralCodeShare}`);
                 setReferredBy(referralDetails?.data?.referrer || null);
                 setReferrals(allReferredUser?.data?.referrals?.filter((ref: { user: any; }) => ref && ref.user) || []);
+                console.log(allReferredUser.data);
                 if (referrals.length >= 10) {
                     const res = await axios.put(`${API_BASE_URL}/users/${id}/increasePoint`);
                     console.log(res);
@@ -116,16 +123,28 @@ const UserDash = () => {
             </div>
         );
     }
+    const copyToClipboard = (linkType: string) => {
+        const link = linkType === "user" ? userReferralLink : vendorReferralLink;
+
+        if (link) {
+            navigator.clipboard.writeText(link).then(() => {
+                toast.success(`${linkType === "user" ? "User" : "Vendor"} link has been copied`);
+            }).catch(() => {
+                toast.error("Failed to copy the link");
+            });
+        }
+    };
+
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
-             <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleHome}>
+            <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleHome}>
                 Home
             </Button>
             <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleLogout}>
                 logout
             </Button>
-           
+
             <motion.h1
                 className="text-3xl font-bold mb-4"
                 initial={{ opacity: 0 }}
@@ -169,16 +188,44 @@ const UserDash = () => {
             )}
 
             <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
             >
-                <DashboardDetailCard title="My referral code" value={myInfo.referralCodeShare || "Not available"} />
+                <div className="p-4 bg-white rounded-xl shadow-md flex flex-col gap-4">
+                    {/* User Referral Link */}
+                    <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg shadow-sm">
+                        <DashboardDetailCard title="User Referral Link" value={userReferralLink || "Not available"} />
+                        {userReferralLink && (
+                            <button
+                                onClick={() => copyToClipboard("user")}
+                                className="text-[#DBC166] font-bold hover:text-[#C0AC50] transition-transform transform hover:scale-110"
+                            >
+                                <Copy size={22} strokeWidth={2.5} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Vendor Referral Link */}
+                    <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg shadow-sm">
+                        <DashboardDetailCard title="Vendor Referral Link" value={vendorReferralLink || "Not available"} />
+                        {vendorReferralLink && (
+                            <button
+                                onClick={() => copyToClipboard("vendor")}
+                                className="text-[#DBC166] font-bold hover:text-[#C0AC50] transition-transform transform hover:scale-110"
+                            >
+                                <Copy size={22} strokeWidth={2.5} />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </motion.div>
 
+
+
             <motion.div
-                className="bg-white p-4 rounded-lg shadow-md mt-4"
+                className="bg-white p-4 rounded-lg shadow-md mt-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
