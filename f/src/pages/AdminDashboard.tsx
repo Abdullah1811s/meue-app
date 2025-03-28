@@ -234,6 +234,7 @@ const AdminDashboard = () => {
   const [maxOfferDate, setMaxOfferDate] = useState<any>(null);
   const [vendorOnWheel, setVendorOnWheel] = useState<any[]>([]);
   const [isDeletingUser, setDeleteing] = useState(false);
+  const [isRaffLoading, setIsRaffLoading] = useState(false);
 
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     username: '',
@@ -729,7 +730,7 @@ const AdminDashboard = () => {
             : [];
 
 
-          const response = await axios.post(
+          await axios.post(
             `${API_BASE_URL}/Raff/createRaff`,
             {
               name: exclusiveOffer,
@@ -746,7 +747,7 @@ const AdminDashboard = () => {
           );
 
           toast.success("Added to Raffle system");
-          console.log(response);
+
         } else {
           toast.error("Invalid quantity");
         }
@@ -770,20 +771,18 @@ const AdminDashboard = () => {
 
   const handleConfirmSchedule = async (exclusiveOffer: string, offering: any, vendorId: string,) => {
 
+    setIsRaffLoading(true);
     if (!scheduleDate) return;
 
     if (new Date(scheduleDate) > maxOfferDate) {
       toast.error("Schedule date cannot be after the exclusive offer date.");
     } else {
-      console.log("Scheduled date:", scheduleDate, "and this is the end date", maxOfferDate);
-
       const newDate = new Date(maxOfferDate)
-      console.log(exclusiveOffer, scheduleDate, offering);
-      console.log("This is end date", newDate)
       const prize = offering
-        ? [{ name: offering.name, id: offering._id, endDate: newDate }]
+        ? [{ name: offering.name, id: offering._id, endDate: newDate, quantity: offering.quantity }]
         : [];
-      const response = await axios.post(`${API_BASE_URL}/Raff/createRaff`, {
+
+      await axios.post(`${API_BASE_URL}/Raff/createRaff`, {
         name: exclusiveOffer,
         scheduleAt: scheduleDate,
         prizes: prize,
@@ -795,8 +794,7 @@ const AdminDashboard = () => {
         }
       });
       toast.success("Added on Raffle system")
-
-      console.log(response);
+      setIsRaffLoading(false);
     }
 
     setIsOpen(false);
@@ -1137,7 +1135,7 @@ const AdminDashboard = () => {
                                 {offering.endDate && (
                                   <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
                                 )}
-                                <p>Show Quantity: {offering.showQuantity ? 'Yes' : 'No'}</p>
+
                               </div>
                             ))}
                           </div>
@@ -1160,16 +1158,21 @@ const AdminDashboard = () => {
                                 {offering.endDate && (
                                   <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
                                 )}
-                                <p>Show Quantity: {offering.showQuantity ? 'Yes' : 'No'}</p>
+
 
                                 {vendor.status === "approved" && (
                                   <>
                                     <Button
                                       onClick={() => handleShowOnRaff('raffle', offering, vendor._id)}
-                                      className="mt-2 px-4 py-1 bg-[#DBC166] text-white font-semibold rounded-lg shadow-md hover:bg-[#C2A857]"
+                                      disabled={isRaffLoading}
+                                      className={`mt-2 px-4 py-1 font-semibold rounded-lg shadow-md ${isRaffLoading
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : 'bg-[#DBC166] hover:bg-[#C2A857] text-white'
+                                        }`}
                                     >
-                                      Show on Raffle
+                                      {isRaffLoading ? 'Loading...' : 'Show on Raffles'}
                                     </Button>
+
 
                                     <Dialog open={isOpen} onOpenChange={setIsOpen}>
                                       <DialogContent>
@@ -1193,10 +1196,16 @@ const AdminDashboard = () => {
                                         <DialogFooter>
                                           <Button
                                             onClick={() => handleConfirmSchedule('raffle', offering, vendor._id)}
-                                            disabled={!scheduleDate || new Date(scheduleDate) < new Date() || (maxOfferDate && new Date(scheduleDate) > maxOfferDate)}
+                                            disabled={
+                                              isRaffLoading ||
+                                              !scheduleDate ||
+                                              new Date(scheduleDate) < new Date() ||
+                                              (maxOfferDate && new Date(scheduleDate) > maxOfferDate)
+                                            }
                                           >
-                                            Confirm
+                                            {isRaffLoading ? "Processing..." : "Confirm"}
                                           </Button>
+
                                         </DialogFooter>
                                       </DialogContent>
                                     </Dialog>

@@ -28,7 +28,7 @@ export const getAllRaff = async (req, res) => {
 export const makeNewRaff = async (req, res) => {
     try {
         const { name, scheduleAt, prizes, vendorId } = req.body;
-
+       
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }

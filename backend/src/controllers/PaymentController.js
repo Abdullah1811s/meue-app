@@ -146,11 +146,10 @@ export const handleWebhook = async (req, res) => {
 
 
         const againPayTime = new Date(Date.now() + 60 * 60 * 1000);
-        console.log(`the user ${id}  will have to pay again after 1 hours`)
+       
         schedule.scheduleJob(againPayTime, async () => {
           try {
             const user = await usersModel.findById(id);
-
             if (user && user.userType === "R10") {
               await usersModel.findOneAndUpdate(
                 { _id: id },
