@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import usersModel from '../models/users.model.js';
 import { addUserToInvisibleRaffles } from './RaffController.js'
 import schedule from 'node-schedule';
+import mongoose from 'mongoose'
 const YOCO_API_URL = process.env.YOCO_API_URL;
 const YOCO_SECRET_KEY = process.env.YOCO_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -168,7 +169,7 @@ export const handleWebhook = async (req, res) => {
       }
     }
 
-
+    console.log("=> Webhook processed")
     res.status(200).send('Webhook processed');
   } catch (error) {
     console.error('Webhook error:', error);
