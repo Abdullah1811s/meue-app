@@ -26,7 +26,19 @@ const provinceCities: Record<string, string[]> = {
 const signUpSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Please enter a valid email'),
-  phone: z.string(),
+  phone: z.string()
+  .min(1, "Phone number is required")
+  .regex(/^\+?[0-9]*$/, {
+    message: "Must start with + followed by numbers only"
+  })
+  .refine(val => {
+    if (val.startsWith('+')) {
+      return val.length >= 10 && val.length <= 15; // + and 9-14 digits
+    }
+    return val.length >= 8 && val.length <= 15; // 8-15 digits if no +
+  }, {
+    message: "Phone number must be 8-15 digits (9-14 if starts with +)"
+  }),
   street: z.string().min(1, 'Street address is required'),
   town: z.string().min(1, 'Suburb/Town is required'),
   city: z.string().min(1, 'City is required'),
@@ -343,14 +355,47 @@ function SignUp() {
                 transition={{ duration: 0.3, delay: 0.15 }}
                 className="md:col-span-2"
               >
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mobile Number
+                </label>
                 <input
-                  {...register("phone")}
+                  {...register("phone", {
+                    required: "Mobile number is required",
+                    pattern: {
+                      value: /^\+?[0-9\s-]+$/, // Allows +, numbers, spaces, and hyphens
+                      message: "Only numbers, +, spaces, or hyphens are allowed"
+                    },
+                    validate: (value) => {
+                      // Count only the digits for length validation
+                      const digitCount = value.replace(/[^0-9]/g, '').length;
+                      return (digitCount >= 8 && digitCount <= 15) ||
+                        "Phone number must be 8-15 digits (excluding +, spaces)";
+                    }
+                  })}
                   type="tel"
-                  placeholder="Enter your mobile number"
+                  inputMode="tel"
+                  onKeyDown={(e) => {
+                    // Allow: backspace, delete, tab, escape, enter
+                    if ([8, 9, 13, 27, 46].includes(e.keyCode) ||
+                      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                      (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+                      // Allow: home, end, left, right
+                      (e.keyCode >= 35 && e.keyCode <= 39) ||
+                      // Allow: + (only at start)
+                      (e.key === '+')) {
+                      return;
+                    }
+                    // Prevent if not a number, space, or hyphen
+                    if (!/[0-9\s-]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="e.g., +90 234 567 8901"
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
                 />
-                {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                )}
               </motion.div>
 
               {/* Address Section */}
