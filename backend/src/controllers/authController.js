@@ -138,8 +138,7 @@ export const signUp = async (req, res) => {
     } catch (error) {
         console.error("Error while signing up:", error);
         return res.status(500).json({
-            message: "Server error [SIGN UP CONTROLLER]",
-            error: error.message,
+            error: error,
         });
     }
 };

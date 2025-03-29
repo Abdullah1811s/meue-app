@@ -26,7 +26,7 @@ const provinceCities: Record<string, string[]> = {
 const signUpSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  phone: z.string(),
   street: z.string().min(1, 'Street address is required'),
   town: z.string().min(1, 'Suburb/Town is required'),
   city: z.string().min(1, 'City is required'),
@@ -139,15 +139,18 @@ function SignUp() {
       console.log("Payment error", error);
     }
   };
+
   useEffect(() => {
     if (referralCode) {
       setValue("referralCode", referralCode); // Ensure referral code is registered
     }
   }, [referralCode, setValue]);
+
+
+
   const onSubmit = async (data: SignUpForm) => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    console.log("The data is ", data);
-    console.log("The payment option is : ", selectedPaymentOption);
+
     try {
 
       const UserResponse = await axios.post(`${API_BASE_URL}/auth/signUp`, { ...data, captchaToken }, {
@@ -439,14 +442,35 @@ function SignUp() {
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.3, delay: 0.3 }}
               >
-                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Postal Code
+                </label>
                 <input
-                  {...register("postalCode")}
+                  {...register("postalCode", {
+                    required: "Postal code is required",
+                    pattern: {
+                      value: /^\d+$/, // Only digits (0-9)
+                      message: "Postal code must contain only numbers",
+                    },
+
+                  })}
                   type="text"
-                  placeholder="Enter postal code"
+                  inputMode="numeric" // Shows numeric keyboard on mobile
+                  pattern="[0-9]*" // Additional HTML5 validation
+                  onKeyPress={(e) => {
+                    // Prevent non-numeric characters
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="Enter postal code (numbers only)"
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
                 />
-                {errors.postalCode && <p className="mt-1 text-sm text-red-600">{errors.postalCode.message}</p>}
+                {errors.postalCode && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.postalCode.message}
+                  </p>
+                )}
               </motion.div>
 
               {/* Security Section */}
