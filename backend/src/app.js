@@ -31,12 +31,12 @@ app.post(
   express.raw({ type: 'application/json' }),
   handleWebhook
 );
-app.use(cors());
+// app.use(cors());
 
-// app.use(cors({
-//   origin: [FRONTEND_URL],
-//   credentials: true
-// }));
+app.use(cors({
+  origin: [FRONTEND_URL],
+  credentials: true
+}));
 
 app.use(express.json())
 
