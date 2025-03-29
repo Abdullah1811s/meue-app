@@ -7,20 +7,18 @@ import { useDispatch } from "react-redux";
 import { vendorLogout } from "@/store/authSlice";
 
 
-const wheelOffers = [
+
+const offers = [
   "Discount Vouchers",
   "Buy One, Get One Free",
   "Cashback Rewards",
   "Service Discounts",
   "Exclusive Deals for Members",
-  "Retail Gift Vouchers",
+  "Retail Gift Vouchers (Lower Value)",
   "Entertainment Offers",
   "Food & Beverage Offers",
   "Limited Stock Offers",
-  "Limited-Time Flash Deals"
-];
-
-const raffleOffers = [
+  "Limited-Time Flash Deals",
   "Luxury Experiences",
   "High-Value Gift Cards",
   "Exclusive VIP Packages",
@@ -34,19 +32,16 @@ const raffleOffers = [
 ];
 
 
-
 interface Offering {
   name: string;
   quantity?: number;
   endDate?: string;
-  showQuantity?: boolean;
-  _id?: string; // Optional, as it seems to be added by the backend
 }
 
-interface ExclusiveOffer {
+interface Offer {
   type: string;
-  terms: string;
   offerings: Offering[];
+  terms: string;
 }
 
 interface VendorFormData {
@@ -74,7 +69,8 @@ interface VendorFormData {
   };
   vendorTier: string;
   status: string;
-  exclusiveOffer: ExclusiveOffer;
+  wheelOffer?: Offer;
+  raffleOffer?: Offer;
   companyRegistrationCertificateURl: {
     public_id: string;
     secure_url: string;
@@ -223,26 +219,6 @@ const Dashboard = () => {
           [socialField]: value,
         },
       });
-    } else if (name.startsWith("offer.")) {
-      const offerField = name.split(".")[1];
-      setFormData({
-        ...formData,
-        exclusiveOffer: {
-          ...formData.exclusiveOffer,
-          [offerField]: value,
-        },
-      });
-    } else if (name.startsWith("offering.")) {
-      const [_, index, field] = name.split(".");
-      const updatedOfferings = [...formData.exclusiveOffer.offerings];
-      updatedOfferings[index][field] = value;
-      setFormData({
-        ...formData,
-        exclusiveOffer: {
-          ...formData.exclusiveOffer,
-          offerings: updatedOfferings,
-        },
-      });
     } else {
       setFormData({
         ...formData,
@@ -253,7 +229,9 @@ const Dashboard = () => {
 
   const handleUpdateVendor = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log("The form data is ", formData);
+    const { wheelOffer } = formData;
+    console.log(wheelOffer);
     if (cooldownActive) {
       Math.floor(cooldownTime / 60);
       cooldownTime % 60;
@@ -262,24 +240,13 @@ const Dashboard = () => {
 
     setIsLoading(true);
     try {
-      const { exclusiveOffer } = formData;
-      console.log(exclusiveOffer);
-      if (wheelOffers.includes(exclusiveOffer.type)) {
-        console.log("Updating wheel...");
-        await axios.put(`${API_BASE_URL}/wheel/${id}/exclusive-offer`, {
-          exclusiveOffer,
-        });
+      const { wheelOffer } = formData;
+      console.log(wheelOffer);
 
-      }
-      else if (raffleOffers.includes(exclusiveOffer.type)) {
-
-
-        // console.log("updating raff ....." , id);
-        // const response = await axios.put(`${API_BASE_URL}/Raff/updateOfferings/${id}`, {
-        //   offerings
-        // });
-      }
-
+      console.log("Updating wheel...");
+      await axios.put(`${API_BASE_URL}/wheel/${id}/exclusive-offer`, {
+        wheelOffer,
+      });
       await axios.put(`${API_BASE_URL}/vendor/update/${id}`, formData);
       setUpdateSuccess(true);
       setTimeout(() => setUpdateSuccess(false), 3000);
@@ -363,21 +330,91 @@ const Dashboard = () => {
     tap: { scale: 0.95 },
   };
 
-  const handleDeleteOffering = (index: number) => {
-    // Create a copy of the offerings array
-    const updatedOfferings = [...formData.exclusiveOffer.offerings];
+  const handleInputChange1 = (
+    e: any,
+    offerType: 'wheelOffer' | 'raffleOffer',
+    offeringIndex?: number,
+    fieldName?: keyof Offering | keyof Offer
+  ) => {
+    const { value } = e.target;
 
-    // Remove the offering at the specified index
-    updatedOfferings.splice(index, 1);
+    setFormData((prev: any) => {
+      // Create a deep copy of the previous state
+      const newData = { ...prev };
 
-    // Update the formData state
-    setFormData({
-      ...formData,
-      exclusiveOffer: {
-        ...formData.exclusiveOffer,
-        offerings: updatedOfferings,
-      },
+      // Initialize the offer if it doesn't exist
+      if (!newData[offerType]) {
+        newData[offerType] = {
+          type: '',
+          offerings: [],
+          terms: ''
+        };
+      }
+
+      // Handle nested offering fields
+      if (offeringIndex !== undefined && fieldName && newData[offerType]) {
+        const updatedOfferings = [...(newData[offerType]?.offerings || [])];
+
+        // Initialize the offering if it doesn't exist
+        if (!updatedOfferings[offeringIndex]) {
+          updatedOfferings[offeringIndex] = { name: '' };
+        }
+
+        // Update the specific field
+        updatedOfferings[offeringIndex] = {
+          ...updatedOfferings[offeringIndex],
+          [fieldName]: fieldName === 'quantity' ? (value === '' ? undefined : Number(value)) : value
+        };
+
+        newData[offerType] = {
+          ...newData[offerType],
+          offerings: updatedOfferings
+        };
+      }
+      // Handle direct offer fields (type, terms)
+      else if (fieldName && newData[offerType]) {
+        newData[offerType] = {
+          ...newData[offerType],
+          [fieldName]: value
+        };
+      }
+
+      return newData;
     });
+  };
+
+  const handleCreateNewOffer = (offerType: 'wheelOffer' | 'raffleOffer') => {
+    setFormData((prev: any) => ({
+      ...prev,
+      [offerType]: {
+        type: '',
+        offerings: [{ name: '' }],
+        terms: ''
+      }
+    }));
+  };
+
+  const handleAddOffering = (offerType: 'wheelOffer' | 'raffleOffer') => {
+    setFormData((prev: any) => ({
+      ...prev,
+      [offerType]: {
+        ...prev[offerType],
+        offerings: [
+          ...(prev[offerType]?.offerings || []),
+          { name: '' }
+        ]
+      }
+    }));
+  };
+
+  const handleDeleteOffering = (offerType: 'wheelOffer' | 'raffleOffer', index: number) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      [offerType]: {
+        ...prev[offerType],
+        offerings: (prev[offerType]?.offerings || []).filter((_: any, i: any) => i !== index)
+      }
+    }));
   };
 
   return (
@@ -435,7 +472,7 @@ const Dashboard = () => {
               <nav className="px-2 py-4 space-y-1">
                 <motion.button
                   onClick={() => handleTabChange("profile")}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-md w-full ${activeTab === "profile" ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-md w-full ${activeTab === "profile" ? "bg-[#DBC166] text-black" : "text-gray-600"
                     }`}
                   variants={navItemVariants}
                   whileHover="hover"
@@ -448,7 +485,7 @@ const Dashboard = () => {
 
                 <motion.button
                   onClick={() => handleTabChange("payment")}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-md w-full ${activeTab === "payment" ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-md w-full ${activeTab === "payment" ? "bg-[#DBC166] text-black" : "text-gray-600"
                     }`}
                   variants={navItemVariants}
                   whileHover="hover"
@@ -461,7 +498,7 @@ const Dashboard = () => {
 
                 <motion.button
                   onClick={() => handleTabChange("settings")}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-md w-full ${activeTab === "settings" ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-md w-full ${activeTab === "settings" ? "bg-[#DBC166] text-black" : "text-gray-600"
                     }`}
                   variants={navItemVariants}
                   whileHover="hover"
@@ -545,7 +582,7 @@ const Dashboard = () => {
                           >
                             {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
                           </span>
-                          <span className="ml-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                          <span className="ml-2 px-3 py-1 bg[#DBC166] text-black rounded-full text-sm font-semibold">
                             {vendor.vendorTier.charAt(0).toUpperCase() + vendor.vendorTier.slice(1)} Tier
                           </span>
                         </div>
@@ -591,7 +628,7 @@ const Dashboard = () => {
                           )}
 
                           <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-                            <p className="text-sm text-blue-700">
+                            <p className="text-sm text-black">
                               You can update your business information below. Document uploads are not available for editing
                               in this interface.
                             </p>
@@ -896,122 +933,265 @@ const Dashboard = () => {
                                 />
                               </div>
 
-                              {formData.exclusiveOffer && (
-                                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                                  <h4 className="text-sm font-medium text-gray-700 mb-3">Exclusive Offer</h4>
-                                  {raffleOffers.includes(formData.exclusiveOffer.type) && (
-                                    <p className="text-red-500 text-xs font-medium">
-                                      Can't update/delete offers which are ongoing on raffle.
-                                    </p>
-                                  )}
-                                  <div className="space-y-4">
-                                    <div>
-                                      <label htmlFor="offer.type" className="block text-sm font-medium text-gray-700">
-                                        Offer Type
-                                      </label>
-                                      <input
-                                        type="text"
-                                        id="offer.type"
-                                        name="offer.type"
-                                        value={formData.exclusiveOffer.type || ""}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                      />
-                                    </div>
+                              <div>
+                                {/* Wheel Offer Section */}
+                                {formData.wheelOffer ? (
+                                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-3">Wheel Offer</h4>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Offer Type
+                                        </label>
+                                        <select
+                                          value={formData.wheelOffer.type}
+                                          onChange={(e) => handleInputChange1(e, 'wheelOffer', undefined, 'type')}
+                                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                          required
+                                        >
+                                          {offers.map((offer: any, index: any) => (
+                                            <option key={index} value={offer}>
+                                              {offer}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
 
-                                    <div>
-                                      <label htmlFor="offer.terms" className="block text-sm font-medium text-gray-700">
-                                        Terms & Conditions
-                                      </label>
-                                      <textarea
-                                        id="offer.terms"
-                                        name="offer.terms"
-                                        rows={2}
-                                        value={formData.exclusiveOffer.terms || ""}
-                                        onChange={handleInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                      />
-                                    </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Terms & Conditions
+                                        </label>
+                                        <textarea
+                                          rows={2}
+                                          value={formData.wheelOffer.terms}
+                                          onChange={(e) => handleInputChange1(e, 'wheelOffer', undefined, 'terms')}
+                                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                        />
+                                      </div>
 
-                                    <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-3">
-                                        Offerings
-                                      </label>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                                          Offerings
+                                        </label>
 
-                                      {formData.exclusiveOffer.offerings.map((offering: Offering, index: number) => (
-                                        <div key={index} className="space-y-2 mb-4">
-                                          {/* Name Input */}
-                                          <input
-                                            type="text"
-                                            placeholder="Name"
-                                            value={offering.name || ""}
-                                            onChange={(e) =>
-                                              handleInputChange({
-                                                target: { name: `offering.${index}.name`, value: e.target.value },
-                                              } as React.ChangeEvent<HTMLInputElement>)
-                                            }
-                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                          />
+                                        {formData.wheelOffer.offerings.map((offering: any, index: any) => (
+                                          <div key={`wheel-${index}`} className="space-y-2 mb-4">
+                                            <input
+                                              type="text"
+                                              placeholder="Name"
+                                              value={offering.name}
+                                              onChange={(e) => handleInputChange1(e, 'wheelOffer', index, 'name')}
+                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                            />
 
-                                          {/* Quantity Input (Rendered only if offering.endDate is null or empty) */}
-                                          {!offering.endDate && (
                                             <input
                                               type="number"
                                               placeholder="Quantity"
-                                              value={offering.quantity === 0 ? "" : offering.quantity} // Preserve empty input
-                                              onChange={(e) =>
-                                                handleInputChange({
-                                                  target: { name: `offering.${index}.quantity`, value: e.target.value === "" ? "" : parseInt(e.target.value, 10) || 0 },
-                                                } as unknown as React.ChangeEvent<HTMLInputElement>)
-                                              }
-                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                              value={offering.quantity || ''}
+                                              onChange={(e) => handleInputChange1(e, 'wheelOffer', index, 'quantity')}
+                                              onKeyDown={(e) => {
+                                                // Prevent negative numbers, decimal points, and non-numeric characters
+                                                if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                                                  e.preventDefault();
+                                                }
+                                              }}
+                                              min="1"
+                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                                             />
-                                          )}
 
-                                          {/* End Date Input (Rendered only if offering.endDate is not null or empty) */}
-                                          {offering.endDate && (
                                             <input
                                               type="date"
                                               placeholder="End Date"
-                                              value={offering.endDate} // Uses offering.endDate as the value
-                                              onChange={(e) =>
-                                                handleInputChange({
-                                                  target: { name: `offering.${index}.endDate`, value: e.target.value },
-                                                } as React.ChangeEvent<HTMLInputElement>)
-                                              }
-                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                              value={offering.endDate || ''}
+                                              onChange={(e) => {
+                                                const selectedDate = new Date(e.target.value);
+                                                const today = new Date();
+                                                today.setHours(0, 0, 0, 0);
+
+                                                if (selectedDate >= today) {
+                                                  handleInputChange1(e, 'wheelOffer', index, 'endDate');
+                                                } else {
+                                                  // Optionally show an error message or reset the value
+                                                  e.target.value = '';
+                                                }
+                                              }}
+                                              min={new Date().toISOString().split('T')[0]} // Set min date to today
+                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                                             />
-                                          )}
 
-                                          {/* Delete Button */}
-                                          <button
-                                            type="button"
-                                            onClick={() => handleDeleteOffering(index)}
-                                            className="mt-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                                          >
-                                            Delete
-                                          </button>
-                                        </div>
-                                      ))}
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteOffering('wheelOffer', index)}
+                                              className="mt-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600"
+                                            >
+                                              Delete
+                                            </button>
+                                          </div>
+                                        ))}
 
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAddOffering('wheelOffer')}
+                                          className="mt-2 bg-[#DBC166] text-white py-1 px-3 rounded-md hover:scale-3d"
+                                        >
+                                          Add Offering
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                ) : (
+                                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-3">Create Wheel Offer</h4>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCreateNewOffer('wheelOffer')}
+                                      className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+                                    >
+                                      Create Wheel Offer
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* Raffle Offer Section */}
+                                {formData.raffleOffer ? (
+                                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-3">Raffle Offer</h4>
+                                    <p className="text-sm text-gray-600 mb-2">
+                                      ⚠ Caution: If the offer is already on raffle, updating will create a new one.
+                                    </p>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Offer Type
+                                        </label>
+                                        <select
+                                          value={formData.wheelOffer.type}
+                                          onChange={(e) => handleInputChange1(e, 'wheelOffer', undefined, 'type')}
+                                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                          required
+                                        >
+                                          {offers.map((offer: any, index: any) => (
+                                            <option key={index} value={offer}>
+                                              {offer}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700">
+                                          Terms & Conditions
+                                        </label>
+                                        <textarea
+                                          rows={2}
+                                          value={formData.raffleOffer.terms}
+                                          onChange={(e) => handleInputChange1(e, 'raffleOffer', undefined, 'terms')}
+                                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                                          Offerings
+                                        </label>
+
+                                        {formData.raffleOffer.offerings.map((offering: any, index: any) => (
+                                          <div key={`raffle-${index}`} className="space-y-2 mb-4">
+                                            <input
+                                              type="text"
+                                              placeholder="Name"
+                                              value={offering.name}
+                                              onChange={(e) => handleInputChange1(e, 'raffleOffer', index, 'name')}
+                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                            />
+
+                                            <input
+                                              type="number"
+                                              placeholder="Quantity"
+                                              value={offering.quantity || ''}
+                                              onChange={(e) => handleInputChange1(e, 'raffleOffer', index, 'quantity')}
+                                              onKeyDown={(e) => {
+                                                // Prevent negative numbers, decimal points, and non-numeric characters
+                                                if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                                                  e.preventDefault();
+                                                }
+                                              }}
+                                              min="1"
+                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                            />
+
+                                            <input
+                                              type="date"
+                                              placeholder="End Date"
+                                              value={offering.endDate || ''}
+                                              onChange={(e) => {
+                                                const selectedDate = new Date(e.target.value);
+                                                const today = new Date();
+                                                today.setHours(0, 0, 0, 0);
+
+                                                if (selectedDate >= today) {
+                                                  handleInputChange1(e, 'raffleOffer', index, 'endDate');
+                                                } else {
+                                                  // Update the state with empty value
+                                                  handleInputChange1(e, 'raffleOffer', index, 'endDate');
+                                                }
+                                              }}
+                                              min={new Date().toISOString().split('T')[0]}
+                                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                            />
+
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteOffering('raffleOffer', index)}
+                                              className="mt-2 bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600"
+                                            >
+                                              Delete
+                                            </button>
+                                          </div>
+                                        ))}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAddOffering('raffleOffer')}
+                                          className="mt-2 bg-[#DBC166] text-white py-1 px-3 rounded-md hover:scale-3d"
+                                        >
+                                          Add Offering
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-3">Create Raffle Offer</h4>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCreateNewOffer('raffleOffer')}
+                                      className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+                                    >
+                                      Create Raffle Offer
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+
+
+
+
+
                           </div>
 
                           <div className="pt-4">
                             <div className="flex justify-end">
                               <motion.button
                                 type="submit"
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm mb-2 text-white bg-[#DBC166] hover:bg-[#C0AC5B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#DBC166]"
                                 variants={buttonVariants}
                                 whileHover="hover"
                                 whileTap="tap"
                               >
                                 Save Changes
                               </motion.button>
+
                             </div>
                           </div>
                         </form>
@@ -1022,7 +1202,11 @@ const Dashboard = () => {
                             {vendor.companyRegistrationCertificateURl && (
                               <li>
                                 <a
-                                  href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.companyRegistrationCertificateURl.secure_url)}`}
+                                  href={
+                                    vendor.companyRegistrationCertificateURl.secure_url.endsWith(".pdf")
+                                      ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.companyRegistrationCertificateURl.secure_url)}`
+                                      : vendor.companyRegistrationCertificateURl.secure_url
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition duration-200 text-sm"
@@ -1035,12 +1219,16 @@ const Dashboard = () => {
                             {vendor.vendorIdURl && (
                               <li>
                                 <a
-                                  href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.vendorIdURl.secure_url)}`}
+                                  href={
+                                    vendor.vendorIdURl.secure_url.endsWith(".pdf")
+                                      ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.vendorIdURl.secure_url)}`
+                                      : vendor.vendorIdURl.secure_url
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition duration-200 text-sm"
                                 >
-                                  🆔 <span>partner ID</span>
+                                  🆔 <span>Partner ID</span>
                                 </a>
                               </li>
                             )}
@@ -1048,7 +1236,11 @@ const Dashboard = () => {
                             {vendor.addressProofURl && (
                               <li>
                                 <a
-                                  href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.addressProofURl.secure_url)}`}
+                                  href={
+                                    vendor.addressProofURl.secure_url.endsWith(".pdf")
+                                      ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.addressProofURl.secure_url)}`
+                                      : vendor.addressProofURl.secure_url
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition duration-200 text-sm"
@@ -1061,7 +1253,11 @@ const Dashboard = () => {
                             {vendor.confirmationLetterURl && (
                               <li>
                                 <a
-                                  href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.confirmationLetterURl.secure_url)}`}
+                                  href={
+                                    vendor.confirmationLetterURl.secure_url.endsWith(".pdf")
+                                      ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.confirmationLetterURl.secure_url)}`
+                                      : vendor.confirmationLetterURl.secure_url
+                                  }
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition duration-200 text-sm"
@@ -1084,6 +1280,7 @@ const Dashboard = () => {
                               </li>
                             )}
                           </ul>
+
                         </div>
 
                       </>
@@ -1105,7 +1302,7 @@ const Dashboard = () => {
                   >
                     <h2 className="text-lg font-medium text-gray-900 mb-6">Payments</h2>
                     <div className="bg-white p-6 rounded-lg shadow-sm">
-                      <p className="text-gray-600">Payment information and history will be displayed here.</p>
+                      <p className="text-gray-600">Payment information and history will be displayed here(coming soon).</p>
                     </div>
                   </motion.div>
                 )}
@@ -1121,7 +1318,7 @@ const Dashboard = () => {
                   >
                     <h2 className="text-lg font-medium text-gray-900 mb-6">Settings</h2>
                     <div className="bg-white p-6 rounded-lg shadow-sm">
-                      <p className="text-gray-600">Settings and preferences will be managed here.</p>
+                      <p className="text-gray-600">Settings and preferences will be managed here(coming soon).</p>
                     </div>
                   </motion.div>
                 )}

@@ -104,72 +104,6 @@ export const removeVendorFromWheel = async (req, res) => {
 
 
 
-export const updateVendorExclusiveOffer = async (req, res) => {
-    const { vendorId } = req.params;
-    const { exclusiveOffer } = req.body;
-    console.log("Updating offer with data:", req.body);
-
-    try {
-
-        if (!mongoose.Types.ObjectId.isValid(vendorId)) {
-            return res.status(400).json({ message: 'Invalid vendor ID' });
-        }
-
-        if (!exclusiveOffer || !exclusiveOffer.offerings || !Array.isArray(exclusiveOffer.offerings)) {
-            return res.status(400).json({ message: 'Invalid exclusive offer data' });
-        }
-
-        const isValidOfferings = exclusiveOffer.offerings.every(offering =>
-            offering.name && (offering.quantity !== undefined || (offering.startDate && offering.endDate))
-        );
-
-        
-
-
-        const updateData = {
-            'vendor.offerings': exclusiveOffer.offerings.map(offering => ({
-                name: offering.name,
-                quantity: offering.quantity !== undefined ? offering.quantity : null,
-                startDate: offering.startDate || null,
-                endDate: offering.endDate || null,
-                _id: offering._id ? offering._id : new mongoose.Types.ObjectId() // Preserve _id or generate new
-            }))
-        };
-
-        console.log("Formatted update data:", updateData);
-
-
-        const existingVendor = await wheelModel.findOne({ 'vendor.vendorInfo': new mongoose.Types.ObjectId(vendorId) });
-
-        if (!existingVendor) {
-            console.log("Vendor not found, update aborted.");
-            return res.status(404).json({ message: 'Vendor not found' });
-        }
-
-        console.log("Vendor found. Proceeding with update...");
-
-
-        const updatedVendor = await wheelModel.findOneAndUpdate(
-            { 'vendor.vendorInfo': new mongoose.Types.ObjectId(vendorId) },
-            { $set: updateData },
-            { new: true, runValidators: true }
-        );
-
-        console.log("Updated vendor data:", updatedVendor);
-
-        if (!updatedVendor) {
-            return res.status(404).json({ message: 'Vendor not found after update' });
-        }
-
-        res.status(200).json({
-            message: 'Exclusive offer updated successfully',
-            data: updatedVendor,
-        });
-    } catch (error) {
-        console.error('Error updating vendor exclusive offer:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
 
 
 
@@ -344,5 +278,126 @@ export const updateWinner = async (req, res) => {
     } catch (error) {
         console.error("Error updating vendors:", error);
         return res.status(500).json({ message: "Please try again later" });
+    }
+};
+
+
+export const updateVendorExclusiveOffer = async (req, res) => {
+    const { vendorId } = req.params;
+    const { wheelOffer } = req.body;
+    console.log("Updating offer with data:", req.body, "and id is", vendorId);
+
+    try {
+        if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+            return res.status(400).json({ message: 'Invalid vendor ID' });
+        }
+
+        // First check if vendor exists in Vendor model
+        const vendorExists = await vendorModel.findById(vendorId);
+        if (!vendorExists) {
+            return res.status(404).json({ message: 'Vendor not found in vendor database' });
+        }
+
+        const updateData = {
+            'vendor.offerings': wheelOffer.offerings.map(offering => ({
+                name: offering.name,
+                quantity: offering.quantity !== undefined ? offering.quantity : null,
+                startDate: offering.startDate || null,
+                endDate: offering.endDate || null,
+                _id: offering._id ? offering._id : new mongoose.Types.ObjectId()
+            }))
+        };
+
+        console.log("Formatted update data:", updateData);
+
+        // Check if vendor exists in Wheel model
+        let existingWheel = await wheelModel.findOne({ 'vendor.vendorInfo': vendorId });
+
+        if (!existingWheel) {
+            // Vendor doesn't exist in Wheel model - create new entry
+            console.log("Vendor not found in Wheel model, creating new entry...");
+            
+            const newWheelEntry = new wheelModel({
+                vendor: {
+                    vendorInfo: vendorId,
+                    offerings: updateData['vendor.offerings']
+                }
+            });
+
+            const savedWheel = await newWheelEntry.save();
+            console.log("New wheel entry created:", savedWheel);
+
+            return res.status(201).json({
+                message: 'New vendor wheel entry created successfully',
+                data: savedWheel,
+            });
+        }
+
+        // Vendor exists in Wheel model - update existing entry
+        console.log("Vendor found in Wheel model. Proceeding with update...");
+
+        const updatedVendor = await wheelModel.findOneAndUpdate(
+            { 'vendor.vendorInfo': vendorId },
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        console.log("Updated vendor data:", updatedVendor);
+
+        if (!updatedVendor) {
+            return res.status(404).json({ message: 'Vendor not found after update' });
+        }
+
+        res.status(200).json({
+            message: 'Exclusive offer updated successfully',
+            data: updatedVendor,
+        });
+    } catch (error) {
+        console.error('Error updating vendor exclusive offer:', error);
+        res.status(500).json({ 
+            message: 'Internal server error',
+            error: error.message 
+        });
+    }
+};
+
+export const addWheelEntry = async (req, res) => {
+    try {
+        const { vendorInfo, vendor } = req.body;
+        console.log(vendor.offerings)
+        // Create new wheel entry - vendorInfo is now optional
+        const newWheelEntry = new wheelModel({
+            vendor: {
+                vendorInfo: vendorInfo || null, // Set to null if not provided
+                offerings: vendor.offerings
+            }
+        });
+        console.log("new : " ,   newWheelEntry);
+        // Save to database
+        const savedEntry = await newWheelEntry.save();
+        console.log(savedEntry);
+        // Only populate if vendorInfo exists
+        let populatedEntry;
+        if (savedEntry.vendor.vendorInfo) {
+            populatedEntry = await wheelModel.findById(savedEntry._id)
+                .populate('vendor.vendorInfo', '-__v')
+                .exec();
+        } else {
+            populatedEntry = savedEntry;
+        }
+        console.log(populatedEntry);
+        res.status(201).json({
+            success: true,
+            message: "New wheel entry added successfully",
+            data: populatedEntry
+        });
+
+    } catch (error) {
+        console.error("Error adding wheel entry:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
     }
 };

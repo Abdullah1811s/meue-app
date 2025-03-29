@@ -156,78 +156,7 @@ export const getALlDetails = async (req, res) => {
     }
 }
 
-export const updateVendorDetails = async (req, res) => {
-    try {
-        const vendorId = req.params.id;
-        const updates = req.body;
-        console.log(updates);
-        const restrictedFields = ['password', 'status', 'vendorTier'];
-        restrictedFields.forEach(field => {
-            if (updates[field]) {
-                delete updates[field];
-            }
-        });
 
-        // Validation for email uniqueness if email is being updated
-        if (updates.businessEmail) {
-            const existingVendor = await vendorModel.findOne({
-                businessEmail: updates.businessEmail,
-                _id: { $ne: vendorId }
-            });
-
-            if (existingVendor) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Business email already in use by another vendor"
-                });
-            }
-        }
-
-
-        const updatedVendor = await vendorModel.findByIdAndUpdate(
-            vendorId,
-            { $set: updates },
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        if (!updatedVendor) {
-            return res.status(404).json({
-                success: false,
-                message: "Vendor not found"
-            });
-        }
-
-        const vendorResponse = updatedVendor.toObject();
-        delete vendorResponse.password;
-
-        return res.status(200).json({
-            success: true,
-            message: "Vendor details updated successfully",
-            data: vendorResponse
-        });
-
-    } catch (error) {
-        console.error("Error updating vendor details:", error);
-
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({
-                success: false,
-                message: "Validation error",
-                errors: messages
-            });
-        }
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update vendor details",
-            error: error.message
-        });
-    }
-};
 
 export const delVendor = async (req, res) => {
     try {
@@ -283,7 +212,7 @@ export const delVendor = async (req, res) => {
             const smtpConfig = {
                 host: "mail.themenuportal.co.za",
                 port: 465,
-                user: "vendors@themenuportal.co.za",
+                user: "partners@themenuportal.co.za",
             };
 
             try {
@@ -377,9 +306,7 @@ export const updateVendorStatus = async (req, res) => {
 
 
         const validStatuses = ["pending", "approved", "rejected"];
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({ message: "Invalid status value" });
-        }
+       
 
         const updatedVendor = await vendorModel.findByIdAndUpdate(
             id,
@@ -401,7 +328,6 @@ export const updateVendorStatus = async (req, res) => {
                 message = `
                     <p>Dear ${updatedVendor.businessName},</p>
                     <p>Congratulations! Your vendor application has been <strong>approved</strong>. 🎉</p>
-                    <p>You can now proceed to <strong>Partner → Register → Login</strong> to access your vendor dashboard and start managing your business.</p>
                     <p>To get started, please <a href="https://themenuportal.co.za/vendor/login" target="_blank">log in to your vendor account</a>.</p>
                     <p>If you have any questions, feel free to reach out to our support team.</p>
                     <p>Best regards, <br> The Menu Team</p>
@@ -421,7 +347,7 @@ export const updateVendorStatus = async (req, res) => {
                 const smtpConfig = {
                     host: "mail.themenuportal.co.za",
                     port: 465,
-                    user: "vendors@themenuportal.co.za",
+                    user: "partners@themenuportal.co.za",
                 };
 
                 const emailSent = await sendEmail(smtpConfig, updatedVendor.businessEmail, subject, subject, message);
@@ -485,21 +411,7 @@ export const registerVendor = async (req, res) => {
             return res.status(400).json({ message: "Partner already exists" });
         }
 
-        // Validate wheel offer structure
-        if (!wheelOffer.type || !wheelOffer.terms || !wheelOffer.offerings ||
-            !Array.isArray(wheelOffer.offerings) || wheelOffer.offerings.length === 0) {
-            return res.status(400).json({
-                message: "Invalid wheel offer structure"
-            });
-        }
 
-        // Validate raffle offer structure
-        if (!raffleOffer.type || !raffleOffer.terms || !raffleOffer.offerings ||
-            !Array.isArray(raffleOffer.offerings) || raffleOffer.offerings.length === 0) {
-            return res.status(400).json({
-                message: "Invalid raffle offer structure"
-            });
-        }
 
 
         const newVendor = await vendorModel.create({
@@ -570,7 +482,7 @@ export const registerVendor = async (req, res) => {
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
             port: 465,
-            user: "vendors@themenuportal.co.za",
+            user: "partners@themenuportal.co.za",
         };
 
         const emailSent = await sendEmail(smtpConfig, newVendor.businessEmail, subject, subject, message);
@@ -594,6 +506,96 @@ export const registerVendor = async (req, res) => {
 
         res.status(500).json({
             message: "Internal Server Error",
+            error: error.message
+        });
+    }
+};
+
+
+export const updateVendorDetails = async (req, res) => {
+    try {
+        const vendorId = req.params.id;
+        const updates = req.body;
+        
+        // Remove restricted fields
+        const restrictedFields = ['password', 'status', 'vendorTier', 'createdAt', '_id'];
+        restrictedFields.forEach(field => {
+            if (updates[field]) {
+                delete updates[field];
+            }
+        });
+
+        // Validate email uniqueness if email is being updated
+        if (updates.businessEmail) {
+            const existingVendor = await vendorModel.findOne({
+                businessEmail: updates.businessEmail,
+                _id: { $ne: vendorId }
+            });
+
+            if (existingVendor) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Business email already in use by another vendor"
+                });
+            }
+        }
+
+
+        // Handle nested objects properly (especially for socialMediaHandles)
+        const updateObject = {};
+        for (const key in updates) {
+            if (key.includes('.')) {
+                // Handle nested fields (like 'wheelOffer.type')
+                const [parent, child] = key.split('.');
+                if (!updateObject[parent]) {
+                    updateObject[parent] = updates[parent] || {};
+                }
+                updateObject[parent][child] = updates[key];
+            } else {
+                updateObject[key] = updates[key];
+            }
+        }
+
+        const updatedVendor = await vendorModel.findByIdAndUpdate(
+            vendorId,
+            { $set: updateObject },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!updatedVendor) {
+            return res.status(404).json({
+                success: false,
+                message: "Vendor not found"
+            });
+        }
+
+        const vendorResponse = updatedVendor.toObject();
+        delete vendorResponse.password;
+
+        return res.status(200).json({
+            success: true,
+            message: "Vendor details updated successfully",
+            data: vendorResponse
+        });
+
+    } catch (error) {
+        console.error("Error updating vendor details:", error);
+
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({
+                success: false,
+                message: "Validation error",
+                errors: messages
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update vendor details",
             error: error.message
         });
     }

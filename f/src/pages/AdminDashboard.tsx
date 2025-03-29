@@ -36,7 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import CustomDatePicker from '@/components/customComponents/Datepicker';
 import { Input } from '@/components/ui/input';
-import { Mail, Phone, MapPin, Clipboard, CheckCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Clipboard } from 'lucide-react';
 
 
 export interface IVendor {
@@ -235,7 +235,12 @@ const AdminDashboard = () => {
   const [vendorOnWheel, setVendorOnWheel] = useState<any[]>([]);
   const [isDeletingUser, setDeleteing] = useState(false);
   const [isRaffLoading, setIsRaffLoading] = useState(false);
-
+  const [open1, setOpen1] = useState(false);
+  const [offer, setOffer] = useState({
+    name: "",
+    quantity: "",
+    endDate: "",
+  });
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     username: '',
     email: '',
@@ -314,7 +319,6 @@ const AdminDashboard = () => {
         name: formData.name,
         scheduledAt: formattedDate,
         prizes: preparedPrizes,
-        vendorId: "your-vendor-id", // Add this if needed
         status: "scheduled", // Default status
         isVisible: false // Default visibility
       };
@@ -644,7 +648,8 @@ const AdminDashboard = () => {
         }
       );
 
-
+      console.log(res);
+      toast.success("Partner status updated successfully");
       setVendors(prevPartners =>
         prevPartners.map((partner): IVendor => {
           if (partner._id === id) {
@@ -670,17 +675,15 @@ const AdminDashboard = () => {
         );
 
         console.log("Successfully added wheel offers:", response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to add wheel offers:", error);
-
+        toast.error(`No offer available from the partner to add to the wheel. Please check and try again.`, { duration: 5000 });
         throw error;
       }
 
 
-      toast.success("Partner status updated successfully");
+
     } catch (error: any) {
-      console.error("Error updating partner status:", error.message);
-      toast.error("Failed to update status");
     } finally {
       setLoadingStates(prev => ({ ...prev, [id]: false })); // Stop loading
     }
@@ -857,7 +860,7 @@ const AdminDashboard = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
   };
 
-  console.log("vendor on wheel : ", vendorOnWheel);
+
 
 
   const deleteUser = async (id: string) => {
@@ -884,6 +887,72 @@ const AdminDashboard = () => {
     }
   };
 
+
+  const handleSubmit1 = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      // Validate required fields
+      if (!offer.name) {
+        throw new Error("Offer name is required");
+      }
+
+      // Validate date if provided
+      if (offer.endDate && new Date(offer.endDate) < new Date()) {
+        throw new Error("End date cannot be in the past");
+      }
+
+      // Prepare the request data using ACTUAL form values
+      const offerData = {
+        vendor: {
+          vendorInfo: null, // or your vendor ID if available
+          offerings: [{
+            name: offer.name, // Use state value
+            quantity: offer.quantity ? parseInt(offer.quantity) : undefined,
+            endDate: offer.endDate || undefined
+          }]
+        }
+      };
+
+      console.log("Submitting offer:", offerData);
+
+      // Send to backend
+      const response = await axios.post(`${API_BASE_URL}/wheel/addAdmin`, offerData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
+      });
+
+      // Handle successful response
+      if (response.status === 200 || response.status === 201) {
+        console.log("Offer created successfully:", response.data);
+        toast.success("Offer has been added on wheel")
+      } else {
+        throw new Error(response.data.message || "Failed to create offer");
+      }
+
+      // Reset form and close dialog
+      setOpen(false);
+      setOffer({ name: "", quantity: "", endDate: "" });
+
+    } catch (error) {
+      console.error("Error submitting offer:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create offer");
+
+      if (axios.isAxiosError(error)) {
+        console.error("Backend error:", error.response?.data);
+      }
+    }
+  };
+
+
+
+
+  const handleChange1 = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setOffer(prev => ({ ...prev, [name]: value }));
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -913,7 +982,13 @@ const AdminDashboard = () => {
             <PackageCheck size={20} className="mr-3 flex-shrink-0" />
             <span className="truncate">Manage Partners</span>
           </div>
-
+          <div
+            className={`px-4 py-3 flex items-center cursor-pointer ${isManageUser ? 'bg-[#DBC166] text-white' : 'hover:bg-gray-100'}`}
+            onClick={() => switchTab('manageUser')}
+          >
+            <User size={20} className="mr-3 flex-shrink-0" />
+            <span className="truncate">Manage User</span>
+          </div>
           <div
             className={`px-4 py-3 flex items-center cursor-pointer ${isManageWeeklyReferral ? 'bg-[#DBC166] text-white' : 'hover:bg-gray-100'}`}
             onClick={() => switchTab('weeklyReferral')}
@@ -929,13 +1004,7 @@ const AdminDashboard = () => {
             <ShipWheelIcon size={20} className="mr-3 flex-shrink-0" />
             <span className="truncate">Manage Wheel</span>
           </div>
-          <div
-            className={`px-4 py-3 flex items-center cursor-pointer ${isManageUser ? 'bg-[#DBC166] text-white' : 'hover:bg-gray-100'}`}
-            onClick={() => switchTab('manageUser')}
-          >
-            <PackageCheck size={20} className="mr-3 flex-shrink-0" />
-            <span className="truncate">Manage User</span>
-          </div>
+         
         </nav>
       </motion.div>
 
@@ -1234,7 +1303,11 @@ const AdminDashboard = () => {
                           {vendor.companyRegistrationCertificateURl && (
                             <li>
                               <a
-                                href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.companyRegistrationCertificateURl.secure_url)}`}
+                                href={
+                                  vendor.companyRegistrationCertificateURl.secure_url.endsWith(".pdf")
+                                    ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.companyRegistrationCertificateURl.secure_url)}`
+                                    : vendor.companyRegistrationCertificateURl.secure_url
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 underline text-sm"
@@ -1247,7 +1320,11 @@ const AdminDashboard = () => {
                           {vendor.vendorIdURl && (
                             <li>
                               <a
-                                href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.vendorIdURl.secure_url)}`}
+                                href={
+                                  vendor.vendorIdURl.secure_url.endsWith(".pdf")
+                                    ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.vendorIdURl.secure_url)}`
+                                    : vendor.vendorIdURl.secure_url
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 underline text-sm"
@@ -1260,7 +1337,11 @@ const AdminDashboard = () => {
                           {vendor.addressProofURl && (
                             <li>
                               <a
-                                href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.addressProofURl.secure_url)}`}
+                                href={
+                                  vendor.addressProofURl.secure_url.endsWith(".pdf")
+                                    ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.addressProofURl.secure_url)}`
+                                    : vendor.addressProofURl.secure_url
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 underline text-sm"
@@ -1273,7 +1354,11 @@ const AdminDashboard = () => {
                           {vendor.confirmationLetterURl && (
                             <li>
                               <a
-                                href={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.confirmationLetterURl.secure_url)}`}
+                                href={
+                                  vendor.confirmationLetterURl.secure_url.endsWith(".pdf")
+                                    ? `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(vendor.confirmationLetterURl.secure_url)}`
+                                    : vendor.confirmationLetterURl.secure_url
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 underline text-sm"
@@ -1283,17 +1368,20 @@ const AdminDashboard = () => {
                             </li>
                           )}
 
-                          <li>
-                            <a
-                              href={vendor.businessPromotionalMaterialURl?.secure_url + "#toolbar=0"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 underline text-sm"
-                            >
-                              Business Promotional Material
-                            </a>
-                          </li>
+                          {vendor.businessPromotionalMaterialURl && (
+                            <li>
+                              <a
+                                href={vendor.businessPromotionalMaterialURl?.secure_url + "#toolbar=0"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 underline text-sm"
+                              >
+                                Business Promotional Material
+                              </a>
+                            </li>
+                          )}
                         </ul>
+
                       </div>
 
                       <div className="mt-4 md:mt-6 flex flex-wrap gap-2">
@@ -1743,39 +1831,117 @@ const AdminDashboard = () => {
 
           {isManageWheel ? (
             <div className="min-h-screen">
+              <h1 className='font-bold text-2xl mb-2'>Manage Wheel: </h1>
+              <div className="mb-6 flex">
+                <h2 className="font-bold text-xl mb-2">Create offer on wheel:</h2>
+
+                <Dialog open={open1} onOpenChange={setOpen1}>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="bg-[#DBC166] ml-3 hover:bg-[#c0a855] text-black p-2 rounded-full transition duration-200"
+                    >
+                      <Plus size={20} strokeWidth={2} />
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Create New Offer</DialogTitle>
+                    </DialogHeader>
+
+                    <form onSubmit={handleSubmit1} className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="block text-sm font-medium">
+                          Name *
+                        </label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={offer.name}
+                          onChange={handleChange1}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="quantity" className="block text-sm font-medium">
+                          Quantity (optional)
+                        </label>
+                        <Input
+                          id="quantity"
+                          name="quantity"
+                          type="number"
+                          value={offer.quantity}
+                          onChange={handleChange1}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="endDate" className="block text-sm font-medium">
+                          End Date
+                        </label>
+                        <Input
+                          id="endDate"
+                          name="endDate"
+                          type="date"
+                          required
+                          value={offer.endDate}
+                          onChange={handleChange1}
+                          min={new Date().toISOString().split('T')[0]} // Sets minimum date to today
+                        />
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <Button type="submit">Create Offer</Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {vendorOnWheel
                   .filter((vendor) => vendor?.vendor.offerings?.length > 0) // 🔥 Fixed filter condition
                   .map((vendor) => (
                     <div key={vendor._id} className="bg-white shadow-lg rounded-xl p-6">
                       {/* Vendor Details */}
-                      <h1 className="text-2xl font-bold mb-4 text-gray-800">Vendor Details</h1>
+                      <h1 className="text-2xl font-bold mb-4 text-gray-800">Details</h1>
                       <div className="mb-6 space-y-3">
-                        <div className="flex items-center text-gray-700">
-                          <User className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Business Name:</strong> {vendor.vendor.vendorInfo?.businessName || 'N/A'}
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <Mail className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Email:</strong> {vendor.vendor.vendorInfo?.businessEmail || 'N/A'}
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <Phone className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Contact:</strong> {vendor.vendor.vendorInfo?.businessContactNumber || 'N/A'}
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <Clipboard className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Description:</strong> {vendor.vendor.vendorInfo?.businessDescription || 'N/A'}
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <MapPin className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Location:</strong>
-                          {`${vendor.vendorInfo?.city || ''}, ${vendor.vendor.vendorInfo?.province || ''}`.trim() || 'N/A'}
-                        </div>
-                        <div className="flex items-center text-gray-700">
-                          <CheckCircle className="w-5 h-5 mr-2" />
-                          <strong className="mr-2">Status:</strong> {vendor.vendor.status || 'N/A'}
-                        </div>
+                        {vendor.vendor.vendorInfo ? (
+                          <>
+                            <div className="flex items-center text-gray-700">
+                              <User className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Business Name:</strong>
+                              {vendor.vendor.vendorInfo.businessName}
+                            </div>
+                            <div className="flex items-center text-gray-700">
+                              <Mail className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Email:</strong>
+                              {vendor.vendor.vendorInfo.businessEmail}
+                            </div>
+                            <div className="flex items-center text-gray-700">
+                              <Phone className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Contact:</strong>
+                              {vendor.vendor.vendorInfo.businessContactNumber}
+                            </div>
+                            <div className="flex items-center text-gray-700">
+                              <Clipboard className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Description:</strong>
+                              {vendor.vendor.vendorInfo.businessDescription}
+                            </div>
+                            <div className="flex items-center text-gray-700">
+                              <MapPin className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Location:</strong>
+                              {`${vendor.vendor.vendorInfo.city || ''}, ${vendor.vendor.vendorInfo.province || ''}`.trim()}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center text-gray-700">
+                            <User className="w-5 h-5 mr-2" />
+                            <strong>Created by admin</strong>
+                          </div>
+                        )}
+
+                      
                       </div>
 
                       {/* Offerings */}

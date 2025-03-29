@@ -71,7 +71,7 @@ type VendorFormData = {
     twitter?: string;
     tiktok?: string;
   };
-
+  countryCode: string
   representativeName: string;
   representativePosition: string;
   representativeEmail: string;
@@ -160,9 +160,10 @@ function VendorOnboarding() {
 
   useEffect(() => {
     if (referralCode) {
-      setValue("referralCodeUsed", referralCode); 
+      setValue("referralCodeUsed", referralCode);
     }
   }, [referralCode, setValue]);
+  
   // Watch both offerings
   const [wheelOfferingInput, setWheelOfferingInput] = useState("");
   const [raffleOfferingInput, setRaffleOfferingInput] = useState("");
@@ -634,8 +635,13 @@ function VendorOnboarding() {
                       />
                       {errors.businessContactNumber && <p className="text-red-500 text-sm mt-1">{errors.businessContactNumber.message}</p>}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Business Email Address</label>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-800">
+                        Business Email Address
+                        <span className="text-xs text-gray-500 font-normal ml-2">(We'll send a confirmation here)</span>
+                      </label>
+
                       <input
                         {...register("businessEmail", {
                           required: "Business email is required",
@@ -644,10 +650,18 @@ function VendorOnboarding() {
                             message: "Invalid email address"
                           }
                         })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                        className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent transition-all duration-200"
+
                       />
-                      {errors.businessEmail && <p className="text-red-500 text-sm mt-1">{errors.businessEmail.message}</p>}
+
+                      {errors.businessEmail && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.businessEmail.message}
+                        </p>
+                      )}
                     </div>
+
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
                       <input
@@ -729,23 +743,62 @@ function VendorOnboarding() {
                       {errors.representativeEmail && <p className="text-red-500 text-sm mt-1">{errors.representativeEmail.message}</p>}
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                      <input
-                        type="tel"
 
-                        {...register("representativePhone", {
-                          required: "Representative phone number is required",
-                          pattern: {
-                            value: /^(\+27|0)[6-8][0-9]{8}$/,
-                            message: "Enter a valid South African phone number"
-                          }
-                        })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
-                      />
 
-                      {errors.representativePhone && <p className="text-red-500 text-sm mt-1">{errors.representativePhone.message}</p>}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-800">
+                        Phone Number
+                      </label>
+
+                      <div className="flex space-x-2">
+                        {/* Country Code Dropdown */}
+                        <select
+                          {...register("countryCode", { required: "Select a country code" })}
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                        >
+                          <option value="+1">🇺🇸 +1</option>
+                          <option value="+44">🇬🇧 +44</option>
+                          <option value="+27">🇿🇦 +27</option>
+                          <option value="+91">🇮🇳 +91</option>
+                          <option value="+61">🇦🇺 +61</option>
+                          <option value="+49">🇩🇪 +49</option>
+                          <option value="+33">🇫🇷 +33</option>
+                          <option value="+81">🇯🇵 +81</option>
+                          <option value="+55">🇧🇷 +55</option>
+
+
+                        </select>
+
+                        {/* Phone Number Input */}
+                        <input
+                          type="tel"
+                          {...register("representativePhone", {
+                            required: "Phone number is required",
+                            pattern: {
+                              value: /^[0-9]{6,14}$/,
+                              message: "Enter a valid phone number"
+                            }
+                          })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                          placeholder="Enter phone number"
+                        />
+                      </div>
+
+                      {/* Error Messages */}
+                      {errors.countryCode && (
+                        <p className="text-red-500 text-sm mt-1">{errors.countryCode.message}</p>
+                      )}
+                      {errors.representativePhone && (
+                        <p className="text-red-500 text-sm mt-1">{errors.representativePhone.message}</p>
+                      )}
                     </div>
+
+
+
+
+
+
+
                   </div>
 
                   <div>
@@ -848,7 +901,7 @@ function VendorOnboarding() {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Wheel Offering Type</label>
                           <select
-                            {...register("wheelOffer.type", { required: "Wheel offer type is required" })}
+                            {...register("wheelOffer.type")}
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           >
                             <option value="">Select a wheel offer type</option>
@@ -868,6 +921,7 @@ function VendorOnboarding() {
                           <div className="flex gap-2">
                             <input
                               value={wheelOfferingInput}
+                              spellCheck={true}
                               onChange={(e) => setWheelOfferingInput(e.target.value)}
                               className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                               placeholder="Enter a product or service"
@@ -964,7 +1018,9 @@ function VendorOnboarding() {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Wheel Offer Terms</label>
                           <textarea
-                            {...register("wheelOffer.terms", { required: "Wheel offer terms are required" })}
+                            {...register("wheelOffer.terms")}
+                            spellCheck={true}
+                            autoCorrect="on"
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           />
                           {errors.wheelOffer?.terms && <p className="text-red-500 text-sm mt-1">{errors.wheelOffer.terms.message}</p>}
@@ -979,7 +1035,7 @@ function VendorOnboarding() {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Raffle Offering Type</label>
                           <select
-                            {...register("raffleOffer.type", { required: "Raffle offer type is required" })}
+                            {...register("raffleOffer.type")}
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           >
                             <option value="">Select a raffle offer type</option>
@@ -999,6 +1055,8 @@ function VendorOnboarding() {
                           <div className="flex gap-2">
                             <input
                               value={raffleOfferingInput}
+                              spellCheck={true}
+                              autoCorrect="on"
                               onChange={(e) => setRaffleOfferingInput(e.target.value)}
                               className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                               placeholder="Enter a product or service"
@@ -1093,7 +1151,9 @@ function VendorOnboarding() {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Raffle Offer Terms</label>
                           <textarea
-                            {...register("raffleOffer.terms", { required: "Raffle offer terms are required" })}
+                            {...register("raffleOffer.terms")}
+                            spellCheck={true}
+                            autoCorrect="on"
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           />
                           {errors.raffleOffer?.terms && <p className="text-red-500 text-sm mt-1">{errors.raffleOffer.terms.message}</p>}
@@ -1127,40 +1187,52 @@ function VendorOnboarding() {
                     >
                       <input
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf, image/*"
                         {...register("companyRegistrationCertificate", {
-                          required: "Company Registration Certificate is required",
-                          validate: (fileList: any) => {
 
-                            if (!fileList || fileList.length === 0) return "File is required";
+                          validate: (fileList: any) => {
+                            if (!fileList || fileList.length === 0) return true;
+
                             const file = fileList[0];
-                            if (file.type !== "application/pdf") return "Only PDF files are allowed";
-                            if (file.size > 20 * 1024 * 1024) {
-                              return "File size must be under 20MB"; // This only shows during form submission
+                            const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+
+                            if (!allowedTypes.includes(file.type)) {
+                              return "Only PDF, PNG, or JPG files are allowed";
                             }
+
+                            if (file.size > 20 * 1024 * 1024) {
+                              return "File size must be under 20MB";
+                            }
+
                             return true;
                           },
                         })}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
+
                           if (file) {
                             if (file.size > 20 * 1024 * 1024) {
-                              toast.error("File size must be under 20MB"); // Now shows immediately
-                              setCompanyPreview(null); // Reset preview if invalid
-                              setValue("companyRegistrationCertificate", null); // Reset form value
+                              toast.error("File size must be under 20MB");
+                              setCompanyPreview(null);
+                              setValue("companyRegistrationCertificate", null);
                               return;
                             }
 
-                            if (file.type === "application/pdf") {
+                            const isPDF = file.type === "application/pdf";
+                            const isImage = file.type.startsWith("image/");
+
+                            if (isPDF || isImage) {
                               setCompanyPreview(file);
                             } else {
+                              toast.error("Only PDF, PNG, or JPG files are allowed");
                               setCompanyPreview(null);
                               setValue("companyRegistrationCertificate", null);
                             }
                           }
                         }}
                       />
+
 
                       <span className="text-gray-600">Click to upload or drag & drop</span>
                     </div>
@@ -1176,7 +1248,7 @@ function VendorOnboarding() {
                           rel="noopener noreferrer"
                           className="text-blue-500 text-sm hover:underline"
                         >
-                          View PDF
+                          View
                         </a>
 
                         {/* Remove Button */}
@@ -1212,37 +1284,52 @@ function VendorOnboarding() {
                     <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
                       <input
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf, image/*"
                         {...register("vendorId", {
-                          required: "Partner Id is required",
+
                           validate: (fileList: any) => {
-                            if (!fileList || fileList.length === 0) return "File is required";
+                            if (!fileList || fileList.length === 0) return true;
+
                             const file = fileList[0];
-                            if (file.type !== "application/pdf") return "Only PDF files are allowed";
-                            if (file.size > 20 * 1024 * 1024) return "File size must be under 20MB";
+                            const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+
+                            if (!allowedTypes.includes(file.type)) {
+                              return "Only PDF, PNG, or JPG files are allowed";
+                            }
+
+                            if (file.size > 20 * 1024 * 1024) {
+                              return "File size must be under 20MB";
+                            }
+
                             return true;
                           },
                         })}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
+
                           if (file) {
                             if (file.size > 20 * 1024 * 1024) {
-                              toast.error("File size must be under 20MB"); // Now shows immediately
-                              setVendorIdPreview(null); // Reset preview if invalid
-                              setValue("vendorId", null); // Reset form value
+                              toast.error("File size must be under 20MB");
+                              setVendorIdPreview(null);
+                              setValue("vendorId", null);
                               return;
                             }
-                            if (file && file.type === "application/pdf" && file.size <= 20 * 1024 * 1024) {
+
+                            const isPDF = file.type === "application/pdf";
+                            const isImage = file.type.startsWith("image/");
+
+                            if (isPDF || isImage) {
                               setVendorIdPreview(file);
                             } else {
-                              setVendorIdPreview(null); // Reset preview if invalid file
-                              setValue("vendorId", null); // Reset value if invalid file
+                              toast.error("Only PDF, PNG, or JPG files are allowed");
+                              setVendorIdPreview(null);
+                              setValue("vendorId", null);
                             }
                           }
-
                         }}
                       />
+
                       <span className="text-gray-600">Click to upload or drag & drop</span>
                     </div>
 
@@ -1257,7 +1344,7 @@ function VendorOnboarding() {
                           rel="noopener noreferrer"
                           className="text-blue-500 text-sm hover:underline"
                         >
-                          View PDF
+                          View
                         </a>
 
                         {/* Remove Button */}
@@ -1287,37 +1374,52 @@ function VendorOnboarding() {
                     <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
                       <input
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf, image/*"
                         {...register("addressProof", {
-                          required: "Address Proof is required",
+
                           validate: (fileList: any) => {
-                            if (!fileList || fileList.length === 0) return "File is required";
+                            if (!fileList || fileList.length === 0) return true;
+
                             const file = fileList[0];
-                            if (file.type !== "application/pdf") return "Only PDF files are allowed";
-                            if (file.size > 20 * 1024 * 1024) return "File size must be under 20MB";
+                            const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+
+                            if (!allowedTypes.includes(file.type)) {
+                              return "Only PDF, PNG, or JPG files are allowed";
+                            }
+
+                            if (file.size > 20 * 1024 * 1024) {
+                              return "File size must be under 20MB";
+                            }
+
                             return true;
                           },
                         })}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
+
                           if (file) {
                             if (file.size > 20 * 1024 * 1024) {
-                              toast.error("File size must be under 20MB"); // Now shows immediately
-                              setAddressProofPreview(null); // Reset preview if invalid
-                              setValue("addressProof", null); // Reset form value
+                              toast.error("File size must be under 20MB");
+                              setAddressProofPreview(null);
+                              setValue("addressProof", null);
                               return;
                             }
-                            if (file && file.type === "application/pdf" && file.size <= 20 * 1024 * 1024) {
+
+                            const isPDF = file.type === "application/pdf";
+                            const isImage = file.type.startsWith("image/");
+
+                            if (isPDF || isImage) {
                               setAddressProofPreview(file);
                             } else {
-                              setAddressProofPreview(null); // Reset preview if invalid file
-                              setValue("addressProof", null); // Reset value if invalid file
+                              toast.error("Only PDF, PNG, or JPG files are allowed");
+                              setAddressProofPreview(null);
+                              setValue("addressProof", null);
                             }
                           }
-
                         }}
                       />
+
                       <span className="text-gray-600">Click to upload or drag & drop</span>
                     </div>
 
@@ -1332,7 +1434,7 @@ function VendorOnboarding() {
                           rel="noopener noreferrer"
                           className="text-blue-500 text-sm hover:underline"
                         >
-                          View PDF
+                          View
                         </a>
 
                         {/* Remove Button */}
@@ -1362,35 +1464,51 @@ function VendorOnboarding() {
                     <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
                       <input
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,image/*"
                         {...register("confirmationLetter", {
                           validate: (fileList: any) => {
-                            if (!fileList || fileList.length === 0) return true; // Allow empty as it seems optional based on original code
+                            if (!fileList || fileList.length === 0) return true; // Allow empty since it's optional
+
                             const file = fileList[0];
-                            if (file.type !== "application/pdf") return "Only PDF files are allowed";
-                            if (file.size > 20 * 1024 * 1024) return "File size must be under 20MB";
+                            const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+
+                            if (!allowedTypes.includes(file.type)) {
+                              return "Only PDF, PNG, JPG, or JPEG files are allowed";
+                            }
+
+                            if (file.size > 20 * 1024 * 1024) {
+                              return "File size must be under 20MB";
+                            }
+
                             return true;
                           },
                         })}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
+
                           if (file) {
                             if (file.size > 20 * 1024 * 1024) {
-                              toast.error("File size must be under 20MB"); // Now shows immediately
-                              setConfirmationLetterPreview(null); // Reset preview if invalid
-                              setValue("confirmationLetter", null); // Reset form value
+                              toast.error("File size must be under 20MB");
+                              setConfirmationLetterPreview(null);
+                              setValue("confirmationLetter", null);
                               return;
                             }
-                            if (file && file.type === "application/pdf" && file.size <= 20 * 1024 * 1024) {
+
+                            const isPDF = file.type === "application/pdf";
+                            const isImage = file.type.startsWith("image/");
+
+                            if (isPDF || isImage) {
                               setConfirmationLetterPreview(file);
                             } else {
-                              setConfirmationLetterPreview(null); // Reset preview if invalid file
-                              setValue("confirmationLetter", null); // Reset value if invalid file
+                              toast.error("Only PDF, PNG, JPG, or JPEG files are allowed");
+                              setConfirmationLetterPreview(null);
+                              setValue("confirmationLetter", null);
                             }
                           }
                         }}
                       />
+
                       <span className="text-gray-600">Click to upload or drag & drop</span>
                     </div>
 
@@ -1405,7 +1523,7 @@ function VendorOnboarding() {
                           rel="noopener noreferrer"
                           className="text-blue-500 text-sm hover:underline"
                         >
-                          View PDF
+                          View
                         </a>
 
                         {/* Remove Button */}
@@ -1436,7 +1554,7 @@ function VendorOnboarding() {
                       <input
                         type="file"
                         accept="image/*"
-                        {...register("businessPromotionalMaterial", { required: "Business Promotional Material is required" })}
+                        {...register("businessPromotionalMaterial")}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           const file = e.target.files?.[0];

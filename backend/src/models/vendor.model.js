@@ -35,17 +35,17 @@ const VendorSchema = new mongoose.Schema({
   wheelOffer: {
     type: { 
       type: String,
-      required: true
+      
     },
     terms: {
       type: String,
-      required: true
+      
     },
     offerings: [
       {
         name: {
           type: String,
-          required: true
+         
         },
         quantity: {
           type: Number
@@ -60,11 +60,11 @@ const VendorSchema = new mongoose.Schema({
   raffleOffer: {
     type: { 
       type: String,
-      required: true
+     
     },
     terms: {
       type: String,
-      required: true
+     
     },
     offerings: [
       {
