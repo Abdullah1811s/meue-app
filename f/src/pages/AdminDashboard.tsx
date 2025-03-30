@@ -32,14 +32,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import CustomDatePicker from '@/components/customComponents/Datepicker';
 import { Input } from '@/components/ui/input';
-import { Mail, Phone, MapPin, Clipboard } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 
 
 export interface IVendor {
+  referralCodeUsed: any;
   wheelOffer: any;
   raffleOffer: any;
   _id: string;
@@ -192,7 +193,7 @@ export interface IUser {
   R10UserPaidDate?: string;
   postalCode: string;
   isPaid?: boolean;
-  prizeWon?: string;
+  prizeWon?: string[] | undefined;
   referralCodeShare?: string;
   numberOfTimesWheelRotate?: number;
 }
@@ -203,6 +204,7 @@ const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
 const AdminDashboard = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const adminToken = localStorage.getItem("AdminToken");
+  const { id } = useParams();
   const [affiliates, setAffiliates] = useState<Affiliated[]>([]);
   const [vendors, setVendors] = useState<IVendor[]>([]);
   const [raff, setRaff] = useState<RaffleItem[]>([])
@@ -392,6 +394,7 @@ const AdminDashboard = () => {
       });
 
       setVendors(response.data);
+      console.log("The vendor data is : ", vendors);
     } catch (error: any) {
       console.error("Error fetching data:", error.message);
     }
@@ -811,39 +814,68 @@ const AdminDashboard = () => {
   const fetchVendorOnWheel = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
-      console.log(res.data.data);
-      setVendorOnWheel(res.data.data);
+      console.log("This is the data from backend:", res.data.data);
 
-
+      // 🎯 Filter to include only vendors/admins with offerings
+      const filteredData = res.data.data.filter(
+        (entry: any) =>
+          (entry.vendor?.offerings?.length ?? 0) > 0 ||
+          (entry.admin?.offerings?.length ?? 0) > 0
+      );
+      console.log("THis is the filter data", filteredData)
+      setVendorOnWheel(filteredData);
     } catch (error: any) {
-      console.error("Error removing vendor:", error);
-
+      console.error("Error fetching vendor on wheel:", error);
     }
-  }
+  };
 
   const handleDeleteOffering = async (offerId: string) => {
     try {
+      console.log("This is the offering:", offerId);
 
       const res = await axios.delete(`${API_BASE_URL}/wheel/offers/${offerId}`, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      console.log("Offer deleted successfully:", res.data);
+
       if (res.status === 200) {
-        console.log("Offer deleted successfully:", res.data);
-        toast.success("offer deleted");
+        toast.success("Offer deleted");
+
+        setVendorOnWheel((prevData) =>
+          prevData.map((wheel) => ({
+            ...wheel,
+            vendor: wheel.vendor
+              ? {
+                ...wheel.vendor,
+                offerings: wheel.vendor.offerings
+                  ? wheel.vendor.offerings.filter((offering: any) => offering._id !== offerId)
+                  : [],
+              }
+              : null,
+            admin: wheel.admin
+              ? {
+                ...wheel.admin,
+                offerings: wheel.admin.offerings
+                  ? wheel.admin.offerings.filter((offering: any) => offering._id !== offerId)
+                  : [],
+              }
+              : null,
+          })).filter((wheel) =>
+            (wheel.vendor?.offerings?.length ?? 0) > 0 ||
+            (wheel.admin?.offerings?.length ?? 0) > 0
+          ) // Remove empty entries
+        );
       } else {
         console.error("Failed to delete offer:", res.data);
         throw new Error("Failed to delete offer");
       }
     } catch (error) {
       console.error("Error deleting offer:", error);
-
     }
-    // Reload the current page
-    window.location.reload();
-  }
+  };
+
+
 
   const sidebarVariants = {
     open: { x: 0, transition: { duration: 0.3 } },
@@ -892,31 +924,27 @@ const AdminDashboard = () => {
     e.preventDefault();
 
     try {
-      // Validate required fields
+
       if (!offer.name) {
         throw new Error("Offer name is required");
       }
 
-      // Validate date if provided
+
       if (offer.endDate && new Date(offer.endDate) < new Date()) {
         throw new Error("End date cannot be in the past");
       }
 
-      // Prepare the request data using ACTUAL form values
+
       const offerData = {
-        vendor: {
-          vendorInfo: null, // or your vendor ID if available
+        admin: {
+          adminInfo: id,
           offerings: [{
-            name: offer.name, // Use state value
+            name: offer.name,
             quantity: offer.quantity ? parseInt(offer.quantity) : undefined,
             endDate: offer.endDate || undefined
           }]
         }
       };
-
-      console.log("Submitting offer:", offerData);
-
-      // Send to backend
       const response = await axios.post(`${API_BASE_URL}/wheel/addAdmin`, offerData, {
         headers: {
           'Content-Type': 'application/json',
@@ -924,15 +952,14 @@ const AdminDashboard = () => {
         },
       });
 
-      // Handle successful response
       if (response.status === 200 || response.status === 201) {
-        console.log("Offer created successfully:", response.data);
-        toast.success("Offer has been added on wheel")
+
+        toast.success("Offer has been added on wheel please do a reload to see!")
       } else {
         throw new Error(response.data.message || "Failed to create offer");
       }
 
-      // Reset form and close dialog
+
       setOpen(false);
       setOffer({ name: "", quantity: "", endDate: "" });
 
@@ -1004,7 +1031,7 @@ const AdminDashboard = () => {
             <ShipWheelIcon size={20} className="mr-3 flex-shrink-0" />
             <span className="truncate">Manage Wheel</span>
           </div>
-         
+
         </nav>
       </motion.div>
 
@@ -1175,11 +1202,13 @@ const AdminDashboard = () => {
                       <p className="text-gray-500 break-words">
                         Website: <a href={vendor.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Visit</a>
                       </p>
+                      <p className="text-gray-500 break-words">Code used: {vendor.referralCodeUsed || "No code used"}</p>
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Representative:</h3>
                       <p className="break-words">{vendor.representativeName} ({vendor.representativePosition})</p>
                       <p className="break-words">Email: {vendor.representativeEmail}</p>
                       <p className="break-words">Phone: {vendor.representativePhone}</p>
+
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Exclusive Offer:</h3>
                       {/* Wheel Offer Section */}
@@ -1540,10 +1569,18 @@ const AdminDashboard = () => {
                     <p className="text-gray-600">Total Points: <span className="font-medium">{user.TotalPoints}</span></p>
                     <p className="text-gray-600">Signup Date: <span className="font-medium">{new Date(user.signupDate || "").toLocaleDateString()}</span></p>
 
-                    {user.prizeWon && (
-                      <p className="text-gray-600 flex items-center">
-                        <Award size={16} className="mr-2" /> Prize Won: {user.prizeWon}
-                      </p>
+                    {user?.prizeWon && user.prizeWon.length > 0 && (
+                      <div className="text-gray-600">
+                        <div className="flex items-center">
+                          <Award size={16} className="mr-2" />
+                          <span>Prizes Won:</span>
+                        </div>
+                        <ul className="list-disc pl-5 mt-1">
+                          {user.prizeWon.map((prize, index) => (
+                            <li key={index}>{prize}</li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
 
                     <button
@@ -1898,87 +1935,114 @@ const AdminDashboard = () => {
                   </DialogContent>
                 </Dialog>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {vendorOnWheel
-                  .filter((vendor) => vendor?.vendor.offerings?.length > 0) // 🔥 Fixed filter condition
-                  .map((vendor) => (
-                    <div key={vendor._id} className="bg-white shadow-lg rounded-xl p-6">
-                      {/* Vendor Details */}
-                      <h1 className="text-2xl font-bold mb-4 text-gray-800">Details</h1>
-                      <div className="mb-6 space-y-3">
-                        {vendor.vendor.vendorInfo ? (
-                          <>
+                  .filter((entry) => (entry.vendor?.offerings?.length || 0) > 0 || (entry.admin?.offerings?.length || 0) > 0) // 🎯 Only show cards with offerings
+                  .map((entry) => (
+                    <div key={entry._id} className="bg-white shadow-lg rounded-xl p-6">
+                      {/* 🎯 Vendor Details (Only if Offerings Exist) */}
+                      {entry.vendor?.offerings?.length > 0 && entry.vendor?.vendorInfo && (
+                        <>
+                          <h1 className="text-2xl font-bold mb-4 text-gray-800">Vendor Details</h1>
+                          <div className="mb-6 space-y-3">
                             <div className="flex items-center text-gray-700">
                               <User className="w-5 h-5 mr-2" />
                               <strong className="mr-2">Business Name:</strong>
-                              {vendor.vendor.vendorInfo.businessName}
+                              {entry.vendor.vendorInfo.businessName}
                             </div>
                             <div className="flex items-center text-gray-700">
                               <Mail className="w-5 h-5 mr-2" />
                               <strong className="mr-2">Email:</strong>
-                              {vendor.vendor.vendorInfo.businessEmail}
+                              {entry.vendor.vendorInfo.businessEmail}
                             </div>
                             <div className="flex items-center text-gray-700">
                               <Phone className="w-5 h-5 mr-2" />
                               <strong className="mr-2">Contact:</strong>
-                              {vendor.vendor.vendorInfo.businessContactNumber}
+                              {entry.vendor.vendorInfo.businessContactNumber}
                             </div>
-                            <div className="flex items-center text-gray-700">
-                              <Clipboard className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Description:</strong>
-                              {vendor.vendor.vendorInfo.businessDescription}
-                            </div>
-                            <div className="flex items-center text-gray-700">
-                              <MapPin className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Location:</strong>
-                              {`${vendor.vendor.vendorInfo.city || ''}, ${vendor.vendor.vendorInfo.province || ''}`.trim()}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center text-gray-700">
-                            <User className="w-5 h-5 mr-2" />
-                            <strong>Created by admin</strong>
                           </div>
-                        )}
+                        </>
+                      )}
 
-                      
-                      </div>
+                      {/* 🎯 Admin Details (Only if Offerings Exist) */}
+                      {entry.admin?.offerings?.length > 0 && entry.admin?.adminInfo && (
+                        <>
+                          <h1 className="text-2xl font-bold mb-4 text-gray-800">Admin Details</h1>
+                          <div className="mb-6 space-y-3">
+                            <div className="flex items-center text-gray-700">
+                              <User className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Admin Name:</strong>
+                              {entry.admin.adminInfo.name || "N/A"}
+                            </div>
+                            <div className="flex items-center text-gray-700">
+                              <Mail className="w-5 h-5 mr-2" />
+                              <strong className="mr-2">Email:</strong>
+                              {entry.admin.adminInfo.email || "N/A"}
+                            </div>
+                          </div>
+                        </>
+                      )}
 
-                      {/* Offerings */}
+                      {/* 🎯 Offerings */}
                       <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
                         <Tag className="w-5 h-5 mr-2" /> Wheel Offerings
                       </h2>
                       <div className="space-y-4">
-                        {vendor.vendor.offerings?.map((offering: any) => (
-                          <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
-                            {/* Auto-shown badge */}
-                            <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
-                              <Check className="w-3 h-3 mr-1" />
-                              Auto-shown
-                            </span>
+                        {entry.vendor?.offerings?.length > 0 ? (
+                          entry.vendor.offerings.map((offering: any) => (
+                            <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
+                              <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                                <Check className="w-3 h-3 mr-1" />
+                                Vendor Offer
+                              </span>
 
-                            <div className="mt-6 space-y-2">
-                              <p className="font-medium">Name: {offering.name}</p>
-                              {offering.quantity && <p>Quantity: {offering.quantity}</p>}
-                              {offering.endDate && (
-                                <p className="flex items-center">
-                                  <Calendar className="w-5 h-5 mr-2 text-gray-600" />
-                                  <span>End Date: {new Date(offering.endDate).toLocaleDateString()}</span>
-                                </p>
-                              )}
-                              <button
-                                onClick={() => handleDeleteOffering(offering._id)}
-                                className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-                              >
-                                <Trash2 className="w-4 h-4 mr-1.5" /> Remove
-                              </button>
+                              <div className="mt-6 space-y-2">
+                                <p className="font-medium">Name: {offering.name}</p>
+                                {offering.quantity && <p>Quantity: {offering.quantity}</p>}
+                                <button
+                                  onClick={() => handleDeleteOffering(offering._id)}
+                                  className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1.5" /> Remove
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        ) : entry.admin?.offerings?.length > 0 ? (
+                          entry.admin.offerings.map((offering: any) => (
+                            <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
+                              <span className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                                <Check className="w-3 h-3 mr-1" />
+                                Admin Offer
+                              </span>
+
+                              <div className="mt-6 space-y-2">
+                                <p className="font-medium">Name: {offering.name}</p>
+                                {offering.quantity && <p>Quantity: {offering.quantity}</p>}
+                                <button
+                                  onClick={() => handleDeleteOffering(offering._id)}
+                                  className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1.5" /> Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500">No offerings available</p>
+                        )}
                       </div>
                     </div>
                   ))}
               </div>
+
+
+
+
+
+
+
             </div>
           ) : (
             <div className="flex items-center justify-center h-64">

@@ -163,13 +163,14 @@ function VendorOnboarding() {
       setValue("referralCodeUsed", referralCode);
     }
   }, [referralCode, setValue]);
-  
+
   // Watch both offerings
   const [wheelOfferingInput, setWheelOfferingInput] = useState("");
   const [raffleOfferingInput, setRaffleOfferingInput] = useState("");
 
   const wheelOfferings = watch("wheelOffer.offerings") || [];
   const raffleOfferings = watch("raffleOffer.offerings") || [];
+
   const handleAddOffering = (type: 'wheel' | 'raffle') => {
     const input = type === 'wheel' ? wheelOfferingInput : raffleOfferingInput;
     if (!input.trim()) return;
@@ -328,7 +329,7 @@ function VendorOnboarding() {
 
   const onSubmit = async (data: VendorFormData) => {
     setLoading(true);
-
+   
     try {
       const {
         companyRegistrationCertificate,
@@ -363,35 +364,45 @@ function VendorOnboarding() {
         timestamp: businessPromotionalMaterialTimestamp
       } = await getSignature("businessPromotionalMaterial");
 
-      const companyRegistrationCertificateURl = await uploadFile(
-        "companyRegistrationCertificate",
-        companyRegistrationTimestamp,
-        companyRegistrationSignature
-      );
+      const companyRegistrationCertificateURl = companyRegistrationTimestamp && companyRegistrationSignature
+        ? await uploadFile(
+          "companyRegistrationCertificate",
+          companyRegistrationTimestamp,
+          companyRegistrationSignature
+        )
+        : null;
 
-      const vendorIdURl = await uploadFile(
-        "vendorId",
-        vendorIdTimestamp,
-        vendorIdSignature
-      );
+      const vendorIdURl = vendorIdTimestamp && vendorIdSignature
+        ? await uploadFile(
+          "vendorId",
+          vendorIdTimestamp,
+          vendorIdSignature
+        )
+        : null;
 
-      const addressProofURl = await uploadFile(
-        "addressProof",
-        addressProofTimestamp,
-        addressProofSignature
-      );
+      const addressProofURl = addressProofTimestamp && addressProofSignature
+        ? await uploadFile(
+          "addressProof",
+          addressProofTimestamp,
+          addressProofSignature
+        )
+        : null;
 
-      const confirmationLetterURl = await uploadFile(
-        "confirmationLetter",
-        confirmationLetterTimestamp,
-        confirmationLetterSignature
-      );
+      const confirmationLetterURl = confirmationLetterTimestamp && confirmationLetterSignature
+        ? await uploadFile(
+          "confirmationLetter",
+          confirmationLetterTimestamp,
+          confirmationLetterSignature
+        )
+        : null;
 
-      const businessPromotionalMaterialURl = await uploadFile(
-        "businessPromotionalMaterial",
-        businessPromotionalMaterialTimestamp,
-        businessPromotionalMaterialSignature
-      );
+      const businessPromotionalMaterialURl = businessPromotionalMaterialTimestamp && businessPromotionalMaterialSignature
+        ? await uploadFile(
+          "businessPromotionalMaterial",
+          businessPromotionalMaterialTimestamp,
+          businessPromotionalMaterialSignature
+        )
+        : null;
 
       // Add all URLs to the filtered data object
       const updatedData = {
@@ -403,7 +414,7 @@ function VendorOnboarding() {
         businessPromotionalMaterialURl,
       };
 
-      console.log("The updated data is ", updatedData.vendorIdURl);
+     
       const response = await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
         headers: {
           "Content-Type": "application/json",
@@ -1179,7 +1190,7 @@ function VendorOnboarding() {
                   {/* company register detail */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Company Registration Certificate (PDF)
+                      Company Registration Certificate 
                     </label>
 
                     <div
@@ -1278,7 +1289,7 @@ function VendorOnboarding() {
                   {/* Partner ID Upload */}
 
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Partner Id (PDF)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Partner Id</label>
 
                     {/* Upload Box */}
                     <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
@@ -1370,7 +1381,7 @@ function VendorOnboarding() {
 
                   {/* Address Proof */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Proof (PDF)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Proof </label>
                     <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
                       <input
                         type="file"
@@ -1460,7 +1471,7 @@ function VendorOnboarding() {
 
                   {/* Confirmation Letter */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Confirmation Letter (PDF)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Confirmation Letter</label>
                     <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
                       <input
                         type="file"

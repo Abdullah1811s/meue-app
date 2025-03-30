@@ -3,12 +3,12 @@ import { Button } from "../ui/button";
 import { ChevronDown, ChevronUp, Menu, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, setUserPaid } from "@/store/authSlice";
-import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import axios from "axios";
 
 const NavbarComponent = () => {
-    const { id } = useParams();
+    const id = localStorage.getItem("id");
     const [mobileDrop, setMobileDrop] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -23,6 +23,9 @@ const NavbarComponent = () => {
     // Refs for click outside detection
     const navRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+
+
 
     // Handle clicks outside the mobile menu
     useEffect(() => {

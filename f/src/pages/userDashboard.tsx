@@ -2,41 +2,26 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
-import DashboardDetailCard from "../components/customComponents/DashboardDetailCard ";
-import { Button } from "@/components/ui/button";
+import { Copy, Home, LogOut, User, Users, Gift } from "lucide-react";
 import toast from "react-hot-toast";
-import { Copy } from "lucide-react";
+
 interface User {
     _id: string;
     name: string;
     email: string;
     phone?: string;
+    city?: string;
+    province?: string;
+    town?: string;
+    street?: string;
+    postalCode?: string;
+    referralCodeShare?: string;
 }
 
 interface Referral {
     user: User;
     referralCode?: string;
 }
-
-// interface ReferralDetailsResponse {
-//     referrer?: User;
-// }
-
-// interface UserCodeResponse {
-//     referralCode?: string;
-// }
-
-// interface ReferralsResponse {
-//     referrals: Referral[];
-// }
-
-// interface UserResponse {
-//     user: User;
-// }
-
-// interface ApiResponse<T> {
-//     data: T;
-// }
 
 const UserDash = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -45,57 +30,43 @@ const UserDash = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [referredBy, setReferredBy] = useState<User | null>(null);
-    const [, setUserCode] = useState<string | null>(null);
     const [referrals, setReferrals] = useState<Referral[]>([]);
-    const [, setUser] = useState<User | null>(null);
-    // const [earnings] = useState<{ total: string } | null>(null);
-    // const [payout] = useState<{ status: string } | null>(null);
+    const [myInfo, setMyInfo] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [myInfo, setMyInfo] = useState<any>();
     const [error, setError] = useState<string | null>(null);
-    const [userReferralLink, setUserReferralLink] = useState<string>();
-    const [vendorReferralLink, setVendorReferralLink] = useState<string>();
+    const [userReferralLink, setUserReferralLink] = useState<string>("");
+    const [vendorReferralLink, setVendorReferralLink] = useState<string>("");
 
-
-    const handleHome = () => {
-        navigate(`/users/${id}`);
-    }
+    const handleHome = () => navigate(`/users/${id}`);
     const handleLogout = () => {
-        localStorage.removeItem("UserToken")
-        localStorage.removeItem("id")
+        localStorage.removeItem("UserToken");
+        localStorage.removeItem("id");
         navigate('/');
         window.location.reload();
-    }
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                if (!id) {
-                    throw new Error("User ID not found");
-                }
+                if (!id) throw new Error("User ID not found");
 
-                // Fetch all API data concurrently
-                const [userInfo, myInfo, referralDetails, userCodeResponse, allReferredUser] = await Promise.all([
+                const [ myInfo, referralDetails, allReferredUser] = await Promise.all([
                     axios.get(`${API_BASE_URL}/users`),
                     axios.get(`${API_BASE_URL}/users/${id}`),
                     axios.get(`${API_BASE_URL}/referral/${id}/ReferredBy`),
-                    axios.get(`${API_BASE_URL}/referral/${id}/Code`),
                     axios.get(`${API_BASE_URL}/referral/${id}/referrals`),
                 ].map(p => p.catch(error => ({ data: null, error }))));
 
-
-                setMyInfo(myInfo.data.user)
-                setUser(userInfo?.data?.users || null);
-                setUserCode(userCodeResponse?.data?.referralCode || null);
+                setMyInfo(myInfo.data.user);
                 setUserReferralLink(`${BASE_SIGNUP_URL}?ref=${myInfo.data.user.referralCodeShare}`);
                 setVendorReferralLink(`${BASE_SIGNUP_URL_vendor}?ref=${myInfo.data.user.referralCodeShare}`);
                 setReferredBy(referralDetails?.data?.referrer || null);
                 setReferrals(allReferredUser?.data?.referrals?.filter((ref: { user: any; }) => ref && ref.user) || []);
-                console.log(allReferredUser.data);
+
                 if (referrals.length >= 10) {
-                    const res = await axios.put(`${API_BASE_URL}/users/${id}/increasePoint`);
-                    console.log(res);
+                    await axios.put(`${API_BASE_URL}/users/${id}/increasePoint`);
                 }
             } catch (error: any) {
                 console.error("Error fetching data", error);
@@ -108,152 +79,230 @@ const UserDash = () => {
         fetchData();
     }, [id]);
 
+    const copyToClipboard = (linkType: string) => {
+        const link = linkType === "user" ? userReferralLink : vendorReferralLink;
+        if (link) {
+            navigator.clipboard.writeText(link)
+                .then(() => toast.success(`${linkType === "user" ? "User" : "Vendor"} link copied!`))
+                .catch(() => toast.error("Failed to copy link"));
+        }
+    };
+
     if (isLoading) {
         return (
-            <div className="p-6 flex justify-center items-center min-h-screen">
-                <p className="text-lg">Loading...</p>
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#DBC166]"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="p-6 flex justify-center items-center min-h-screen">
-                <p className="text-red-500">Error: {error}</p>
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
+                    <h2 className="text-xl font-bold mb-2">Error</h2>
+                    <p className="text-red-500 mb-4">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-full bg-[#DBC166] text-white py-2 rounded-md hover:bg-[#C0AC50] transition"
+                    >
+                        Retry
+                    </button>
+                </div>
             </div>
         );
     }
-    const copyToClipboard = (linkType: string) => {
-        const link = linkType === "user" ? userReferralLink : vendorReferralLink;
-
-        if (link) {
-            navigator.clipboard.writeText(link).then(() => {
-                toast.success(`${linkType === "user" ? "User" : "Vendor"} link has been copied`);
-            }).catch(() => {
-                toast.error("Failed to copy the link");
-            });
-        }
-    };
-
 
     return (
-        <div className="p-6 bg-gray-100 min-h-screen">
-            <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleHome}>
-                Home
-            </Button>
-            <Button className="bg-[#DBC166] m-5 ml-0" onClick={handleLogout}>
-                logout
-            </Button>
-
-            <motion.h1
-                className="text-3xl font-bold mb-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-            >
-                User Dashboard
-            </motion.h1>
-
-            {myInfo && (
-                <motion.div
-                    className="bg-white p-4 rounded-lg shadow-md mb-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+            {/* Header */}
+            <header className="flex justify-between items-center mb-8">
+                <motion.h1
+                    className="text-3xl font-bold text-gray-800"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h2 className="text-xl font-semibold">Your Details:</h2>
-                    <p><strong>Name:</strong> {myInfo.name || "No name provided"}</p>
-                    <p><strong>Email:</strong> {myInfo.email || "No email provided"}</p>
-                    <p><strong>Phone Number:</strong> {myInfo.phone || "No phone provided"}</p>
-                    <p><strong>City:</strong> {myInfo.city || "No city provided"}</p>
-                    <p><strong>Province:</strong> {myInfo.province || "No province provided"}</p>
-                    <p><strong>Town:</strong> {myInfo.town || "No town provided"}</p>
-                    <p><strong>Street:</strong> {myInfo.street || "No street provided"}</p>
-                    <p><strong>Postal Code:</strong> {myInfo.postalCode || "No postal code provided"}</p>
+                    My Dashboard
+                </motion.h1>
 
-                </motion.div>
-            )}
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleHome}
+                        className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-md hover:bg-gray-50 transition"
+                    >
+                        <Home size={18} /> Home
+                    </button>
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-md hover:bg-gray-50 transition"
+                    >
+                        <LogOut size={18} /> Logout
+                    </button>
+                </div>
+            </header>
 
-            {referredBy && (
-                <motion.div
-                    className="bg-white p-4 rounded-lg shadow-md mb-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <h2 className="text-xl font-semibold">Referred By:</h2>
-                    <p><strong>Name:</strong> {referredBy.name || "Not available"}</p>
-                    <p><strong>Email:</strong> {referredBy.email || "Not available"}</p>
-                </motion.div>
-            )}
-
-            <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-            >
-                <div className="p-4 bg-white rounded-xl shadow-md flex flex-col gap-4">
-                    {/* User Referral Link */}
-                    <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg shadow-sm">
-                        <DashboardDetailCard title="User Referral Link" value={userReferralLink || "Not available"} />
-                        {userReferralLink && (
-                            <button
-                                onClick={() => copyToClipboard("user")}
-                                className="text-[#DBC166] font-bold hover:text-[#C0AC50] transition-transform transform hover:scale-110"
-                            >
-                                <Copy size={22} strokeWidth={2.5} />
-                            </button>
-                        )}
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* User Profile Section */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="h-16 w-16 rounded-full bg-[#DBC166] flex items-center justify-center text-white text-2xl font-bold">
+                                {myInfo?.name?.charAt(0) || "U"}
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-semibold">{myInfo?.name || "User"}</h2>
+                                <p className="text-sm text-gray-500">{myInfo?.email}</p>
+                                <span className="inline-block mt-1 px-2 py-1 text-xs border border-[#DBC166] text-[#DBC166] rounded-md">
+                                    Member
+                                </span>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="flex justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-500">Phone</span>
+                                <span className="font-medium">{myInfo?.phone || "Not provided"}</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-500">Location</span>
+                                <span className="font-medium">
+                                    {myInfo?.city || "Unknown"}, {myInfo?.province || ""}
+                                </span>
+                            </div>
+                            <div className="flex justify-between py-2">
+                                <span className="text-gray-500">Address</span>
+                                <span className="font-medium text-right">
+                                    {myInfo?.street || "Not specified"}, {myInfo?.postalCode || ""}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Vendor Referral Link */}
-                    <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg shadow-sm">
-                        <DashboardDetailCard title="Vendor Referral Link" value={vendorReferralLink || "Not available"} />
-                        {vendorReferralLink && (
-                            <button
-                                onClick={() => copyToClipboard("vendor")}
-                                className="text-[#DBC166] font-bold hover:text-[#C0AC50] transition-transform transform hover:scale-110"
-                            >
-                                <Copy size={22} strokeWidth={2.5} />
-                            </button>
+                    {/* Referred By Section */}
+                    {referredBy && (
+                        <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-bold">
+                                    {referredBy.name?.charAt(0) || "R"}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold">Referred By</h3>
+                                    <p className="text-sm text-gray-500">{referredBy.name}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Referral Links Section */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* User Referral Card */}
+                        <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 rounded-full bg-blue-50 text-blue-600">
+                                    <User size={20} />
+                                </div>
+                                <h3 className="text-lg font-semibold">User Referral</h3>
+                            </div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="flex-1 truncate text-sm border border-gray-200 rounded-lg p-2 bg-gray-50">
+                                    {userReferralLink || "Not available"}
+                                </div>
+                                <button
+                                    onClick={() => copyToClipboard("user")}
+                                    className="p-2 text-[#DBC166] hover:bg-[#DBC166]/10 rounded-md transition"
+                                >
+                                    <Copy size={18} />
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                                Share this link with your friends and earn points when they sign up!
+                            </p>
+
+                        </div>
+
+                        {/* Vendor Referral Card */}
+                        <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 rounded-full bg-purple-50 text-purple-600">
+                                    <Users size={20} />
+                                </div>
+                                <h3 className="text-lg font-semibold">Vendor Referral</h3>
+                            </div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="flex-1 truncate text-sm border border-gray-200 rounded-lg p-2 bg-gray-50">
+                                    {vendorReferralLink || "Not available"}
+                                </div>
+                                <button
+                                    onClick={() => copyToClipboard("vendor")}
+                                    className="p-2 text-[#DBC166] hover:bg-[#DBC166]/10 rounded-md transition"
+                                >
+                                    <Copy size={18} />
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                                Share this link with your friends and earn points when they sign up!
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Referrals List */}
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 rounded-full bg-green-50 text-green-600">
+                                    <Gift size={20} />
+                                </div>
+                                <h3 className="text-lg font-semibold">Your Referrals</h3>
+                            </div>
+                            <span className="px-3 py-1 text-sm border border-gray-200 rounded-md">
+                                {referrals.length} Total
+                            </span>
+                        </div>
+
+                        {referrals.length > 0 ? (
+                            <div className="space-y-3">
+                                {referrals.map((ref) => (
+                                    ref?.user && (
+                                        <motion.div
+                                            key={ref.user._id || Math.random()}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                                        >
+                                            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                {ref.user.name?.charAt(0) || "U"}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium truncate">{ref.user.name}</p>
+                                                <p className="text-sm text-gray-500 truncate">{ref.user.email}</p>
+                                            </div>
+                                            {ref.referralCode && (
+                                                <span className="text-xs bg-gray-100 px-2 py-1 rounded-md">
+                                                    {ref.referralCode}
+                                                </span>
+                                            )}
+                                        </motion.div>
+                                    )
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                    <Users size={24} className="text-gray-400" />
+                                </div>
+                                <h3 className="font-medium text-gray-700">No referrals yet</h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Share your referral links to invite friends
+                                </p>
+                            </div>
                         )}
                     </div>
                 </div>
-            </motion.div>
-
-
-
-            <motion.div
-                className="bg-white p-4 rounded-lg shadow-md mt-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-            >
-                <h2 className="text-lg font-semibold">User successfully referred</h2>
-                {referrals.length > 0 ? (
-                    <ul>
-                        {referrals.map((ref) => (
-                            ref?.user && (
-                                <motion.li
-                                    key={ref.user._id || Math.random()}
-                                    initial={{ x: -100, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ duration: 0.5 }}
-                                    className="p-2 bg-gray-100 rounded-lg mb-2 shadow"
-                                >
-                                    <p><strong>Name:</strong> {ref.user.name || "No name"}</p>
-                                    <p><strong>Email:</strong> {ref.user.email || "No email"}</p>
-                                    <p><strong>Referral Code:</strong> {ref.referralCode || "No code"}</p>
-                                </motion.li>
-                            )
-                        ))}
-                        <h2>Total users: {referrals.length}</h2>
-                    </ul>
-                ) : (
-                    <p className="text-gray-500">No referrals yet</p>
-                )}
-            </motion.div>
+            </div>
         </div>
     );
 };

@@ -404,7 +404,7 @@ export const registerVendor = async (req, res) => {
             password,
             referralCodeUsed
         } = req.body;
-
+        console.log("this is the wheel offer " , req.body);
 
         const existingVendor = await vendorModel.findOne({ businessEmail });
         if (existingVendor) {
@@ -463,6 +463,7 @@ export const registerVendor = async (req, res) => {
 
         // Process referral code if used
         if (referralCodeUsed) {
+        
             await checkCode(newVendor.referralCodeUsed, newVendor._id);
         }
 
@@ -486,7 +487,7 @@ export const registerVendor = async (req, res) => {
         };
 
         const emailSent = await sendEmail(smtpConfig, newVendor.businessEmail, subject, subject, message);
-
+        console.log("This is the vendor that has been saved in database" , vendorResponse);
         res.status(201).json({
             message: "Vendor created successfully",
             vendor: vendorResponse

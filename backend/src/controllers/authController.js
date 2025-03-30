@@ -55,11 +55,6 @@ export const signUp = async (req, res) => {
             return res.status(409).json({ message: "Email already registered, please log in" });
         }
 
-        const isPhoneExist = await usersModel.findOne({ phone });
-        if (isPhoneExist) {
-            return res.status(409).json({ message: "Phone number already registered, please use a different one" });
-        }
-
         let finalReferralCode = referralCode;
         let referrer = null;
 

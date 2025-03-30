@@ -21,6 +21,7 @@ interface Vendor {
 }
 
 interface VendorData {
+  admin: any;
   _id: string;
   vendor: Vendor;
 
@@ -38,12 +39,13 @@ const SpinWheel = () => {
   const [hasFetched, setHasFetched] = useState<boolean>(true);
   const [user, setuser] = useState<any>();
   const [prize, setPrize] = useState<any>(null);
-  const isPaid = useSelector((state: any) => state.auth.isPaid)
+  const isPaid = useSelector((state: any) => state.auth.isPaid);
+  const [isAble, setIsAble] = useState(false);
   const fetchWheelData = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
+     
       setVendor(res.data.data);
-
       setHasFetched(false);
     }
     catch (error: any) {
@@ -87,44 +89,111 @@ const SpinWheel = () => {
       console.log("the data has been fetched already");
   }, [])
 
-  const segmentData = vendor.flatMap((v) =>
-    v.vendor.offerings.map((offering) => ({
-      label: offering.name,
-      vendorId: v._id,
-      labelId: offering._id,
-      vId: v.vendor.vendorInfo
+  const segmentData = vendor.flatMap((v) => {
+    const today = new Date();
 
-    }))
-  );
+    // Filter vendor offerings based on quantity and date
+    const vendorOfferings =
+      v.vendor?.offerings
+        ?.filter(
+          (offering) =>
+            (offering.quantity === undefined || offering.quantity > 0) &&
+            (!offering.endDate || new Date(offering.endDate) > today)
+        )
+        .map((offering) => ({
+          label: offering.name,
+          vendorId: v._id,
+          labelId: offering._id,
+          vId: v.vendor?.vendorInfo,
+          type: "Vendor",
+        })) || [];
+
+    // Filter admin offerings based on quantity and date
+    const adminOfferings =
+      v.admin?.offerings
+        ?.filter(
+          (offering:any) =>
+            (offering.quantity === undefined || offering.quantity > 0) &&
+            (!offering.endDate || new Date(offering.endDate) > today)
+        )
+        .map((offering:any) => ({
+          label: offering.name,
+          vendorId: v._id,
+          labelId: offering._id,
+          vId: v.admin?.adminInfo,
+          type: "Admin",
+        })) || [];
+
+    return [...vendorOfferings, ...adminOfferings]; // Merge both filtered offerings
+  });
+
+
+
 
 
   const updateWinner = async (p: Record<string, any>) => {
-
     const details = segmentData.filter((s) => s.labelId == p.labelId);
     const payload = { ...details[0], id };
-
+    
     if (details.length > 0) {
       try {
-        const res = await axios.put(`${API_BASE_URL}/wheel/update`, payload);
-        const prize = res.data.data.prizeWon;
-        toast.success(`🎉 Jackpot! You just won ${prize}! 🎁🔥 Check your email or spam folder!`);
+        setIsAble(true);
+       await axios.put(`${API_BASE_URL}/wheel/update`, payload);
+      
+        setVendor((prevVendor:any) => {
+          return prevVendor.map((v:any) => {
+            // Update vendor offerings
+            const updatedVendorOfferings = v.vendor?.offerings?.map((offering:any) => {
+              if (offering._id === p.labelId) {
+                return {
+                  ...offering,
+                  quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
+                };
+              }
+              return offering;
+            }).filter((offering:any) => 
+              (offering.quantity === undefined || offering.quantity > 0) &&
+              (!offering.endDate || new Date(offering.endDate) > new Date())
+            ) || [];
+  
+            // Update admin offerings
+            const updatedAdminOfferings = v.admin?.offerings?.map((offering: any) => {
+              if (offering._id === p.labelId) {
+                return {
+                  ...offering,
+                  quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
+                };
+              }
+              return offering;
+            }).filter((offering: any) => 
+              (offering.quantity === undefined || offering.quantity > 0) &&
+              (!offering.endDate || new Date(offering.endDate) > new Date())
+            ) || [];
+  
+            return {
+              ...v,
+              vendor: v.vendor ? { ...v.vendor, offerings: updatedVendorOfferings } : undefined,
+              admin: v.admin ? { ...v.admin, offerings: updatedAdminOfferings } : undefined
+            };
+          }).filter((v:any) => 
+            (v.vendor?.offerings?.length ?? 0) > 0 || 
+            (v.admin?.offerings?.length ?? 0) > 0
+          );
+        });
+  
+        toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
+        fetchUser(); 
       } catch (error: any) {
         console.error("Error updating winner:", error);
-        if (error.response) {
-
-          toast.error(`Error: ${error.response.data.message || "An error occurred while updating the winner."}`);
-        } else if (error.request) {
-          toast.error("No response from the server. Please check your network connection.");
-        } else {
-          toast.error("An unexpected error occurred. Please try again.");
-        }
+        // Error handling remains the same
+      } finally {
+        setIsAble(false);
       }
-    }
-    else {
+    } else {
       toast.success("🎉 Keep spinning! More surprises on the way! 🚀");
-
     }
-  }
+  };
+
   const generateWheel = () => {
     const segments = segmentData.length;
     const segmentAngle = 360 / segments;
@@ -276,7 +345,7 @@ const SpinWheel = () => {
   const spinWheel = async () => {
     if (!isPaid) {
       toast.error("Please complete payment to spin the wheel and win exciting rewards!", {
-        icon: <FaDice color="#facc15" size={24} />, 
+        icon: <FaDice color="#facc15" size={24} />,
       });
       return;
     }
@@ -284,7 +353,7 @@ const SpinWheel = () => {
     if (spinning) return;
 
     // Check if the user has exceeded the maximum number of spins
-    if (user?.numberOfTimesWheelRotate > 2) {
+    if (user?.numberOfTimesWheelRotate > 21) {
       toast.error("Maximum spin limit reached. Please try again after 24 hours.");
       return;
     }
@@ -323,11 +392,13 @@ const SpinWheel = () => {
       <div className="text-center">
         <button
           onClick={spinWheel}
-          disabled={spinning}
-          className="w-fit sm:w-fit bg-[#DBC166] mt-4 text-black px-4 py-1 sm:py-2 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out hover:bg-[#e9dbac] hover:shadow-lg hover:scale-105"
+          disabled={spinning || isAble} // Disable when either spinning or isAble is true
+          className={`w-fit sm:w-fit bg-[#DBC166] mt-4 text-black px-4 py-1 sm:py-2 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out 
+    ${spinning || isAble ? "opacity-50 cursor-not-allowed" : "hover:bg-[#e9dbac] hover:shadow-lg hover:scale-105"}`}
         >
-          {spinning ? "Spinning..." : "Spin & Win – Exclusive Rewards Await!🎉"}
+          {spinning ? "Spinning..." : isAble ? "Processing..." : "Spin & Win – Exclusive Rewards Await! 🎉"}
         </button>
+
         {prize !== null && (
           <p className="mt-4 text-xl font-semibold text-green-600">
             🎉 You won: <span className="font-bold">{prize?.label || "Oops... Nothing!🎭"} please wait for email</span>

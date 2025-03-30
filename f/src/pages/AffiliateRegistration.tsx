@@ -205,7 +205,39 @@ function AffiliateRegistration() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                <input {...register("phone")} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                                <input
+                                    {...register("phone", {
+                                        pattern: {
+                                            value: /^\+?[0-9]+$/,
+                                            message: "Please enter a valid phone number (only digits and optional + at start)"
+                                        }
+                                    })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                    onKeyDown={(e) => {
+                                        // Allow: backspace, delete, tab, escape, enter
+                                        if ([8, 9, 13, 27, 46].includes(e.keyCode) ||
+                                            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                                            (e.keyCode === 65 && e.ctrlKey === true) ||
+                                            (e.keyCode === 67 && e.ctrlKey === true) ||
+                                            (e.keyCode === 86 && e.ctrlKey === true) ||
+                                            (e.keyCode === 88 && e.ctrlKey === true) ||
+                                            // Allow: home, end, left, right
+                                            (e.keyCode >= 35 && e.keyCode <= 39)) {
+                                            return;
+                                        }
+
+                                        // Allow '+' only at the start when no text is selected
+                                        if (e.key === '+' && e.currentTarget.selectionStart === 0 && !e.currentTarget.value.includes('+')) {
+                                            return;
+                                        }
+
+                                        // Prevent if not a number
+                                        if ((e.key < '0' || e.key > '9') && e.key !== '+') {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                   
+                                />
                                 {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
                             </div>
                         </div>
@@ -527,8 +559,8 @@ function AffiliateRegistration() {
                             type="submit"
                             disabled={!isAgreed || loading}
                             className={`px-8 py-3 text-white rounded-md transition-all duration-200 flex items-center justify-center ${!isAgreed || loading
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-[#C5AD59] hover:bg-[#B89C4A]"
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-[#C5AD59] hover:bg-[#B89C4A]"
                                 }`}
                         >
                             {loading ? (

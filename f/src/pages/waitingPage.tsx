@@ -120,7 +120,7 @@ export default function Home() {
   useEffect(() => {
     const id = localStorage.getItem("id")
     if (isAuthenticated && id) {
-      console.log("User authenticated:", id);
+     
       userId = id;
       navigate(`/users/${id}`);
     } else if (isVendorAuthenticated && id) {

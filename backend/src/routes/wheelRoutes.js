@@ -1,8 +1,8 @@
 import express from 'express'
-import { getAllVendorOnWheel, addVendorOnWheel, removeVendorFromWheel , updateWinner, updateVendorExclusiveOffer,delOffer , addWheelEntry } from '../controllers/wheelController.js'
+import { getAllOnWheel, addVendorOnWheel, removeVendorFromWheel , updateWinner, updateVendorExclusiveOffer,delOffer , addWheelEntry } from '../controllers/wheelController.js'
 import { authenticate, authorization } from '../middlewares/authMiddleware.js'
 const router = express.Router();
-router.get('/', getAllVendorOnWheel);
+router.get('/', getAllOnWheel);
 router.post('/add', authenticate, authorization(['admin']), addVendorOnWheel);
 router.post('/addAdmin', authenticate, authorization(['admin']), addWheelEntry);
 router.put('/update', updateWinner);

@@ -54,27 +54,32 @@ export const addVendorOnWheel = async (req, res) => {
 };
 
 
-
-export const getAllVendorOnWheel = async (req, res) => {
+export const getAllOnWheel = async (req, res) => {
     try {
-        const allVendors = await wheelModel.find().populate("vendor.vendorInfo");
+        console.log("Fetching all vendors and admins on the wheel...");
 
-        if (!allVendors || allVendors.length === 0) {
-            return res.status(404).json({ message: "No vendors found on the wheel" });
+        const allEntries = await wheelModel.find()
+            .populate("vendor.vendorInfo")
+            .populate("admin.adminInfo");
+
+        console.log("Data retrieved from the database:", allEntries);
+
+        if (!allEntries || allEntries.length === 0) {
+            console.log("No vendors or admins found on the wheel.");
+            return res.status(404).json({ message: "No vendors or admins found on the wheel" });
         }
 
-        return res.status(200).json({ message: "Vendors retrieved successfully", data: allVendors });
+        console.log("Successfully retrieved vendors and admins on the wheel.");
+        return res.status(200).json({
+            message: "Vendors and Admins retrieved successfully",
+            data: allEntries
+        });
 
     } catch (error) {
-        console.error("Error fetching vendors:", error);
-        return res.status(500).json({ message: "Unable to fetch vendors! Please try again later" });
+        console.error("Error fetching vendors and admins:", error);
+        return res.status(500).json({ message: "Unable to fetch data! Please try again later" });
     }
 };
-
-
-
-
-
 
 
 export const removeVendorFromWheel = async (req, res) => {
@@ -104,9 +109,6 @@ export const removeVendorFromWheel = async (req, res) => {
 
 
 
-
-
-
 export const delOffer = async (req, res) => {
     const { offerId } = req.params;
 
@@ -115,169 +117,46 @@ export const delOffer = async (req, res) => {
     }
 
     try {
-        // Convert offerId to ObjectId to match the database format
         const objectIdOfferId = new mongoose.Types.ObjectId(offerId);
 
-        // Find the document that contains the offer
-        const wheel = await wheelModel.findOne({ "vendor.offerings._id": objectIdOfferId });
 
-        if (!wheel) {
-            return res.status(404).json({ message: "Offer not found in any Wheel document" });
+        const vendorWheel = await wheelModel.findOne({ "vendor.offerings._id": objectIdOfferId });
+
+        if (vendorWheel) {
+            vendorWheel.vendor.offerings = vendorWheel.vendor.offerings.filter(
+                (offering) => !offering._id.equals(objectIdOfferId)
+            );
+
+            await vendorWheel.save();
+
+            return res.status(200).json({
+                message: "Offer deleted successfully from Vendor",
+                updatedWheel: vendorWheel,
+            });
         }
 
-        // Remove the specific offer from the offerings array
-        wheel.vendor.offerings = wheel.vendor.offerings.filter(
-            (offering) => !offering._id.equals(objectIdOfferId)
-        );
 
-        // Save the updated document
-        await wheel.save();
+        // Check if offer exists in admin
+        const adminWheel = await wheelModel.findOne({ "admin.offerings._id": objectIdOfferId });
 
-        return res.status(200).json({
-            message: "Offer deleted successfully",
-            updatedWheel: wheel,
-        });
+        if (adminWheel) {
+            adminWheel.admin.offerings = adminWheel.admin.offerings.filter(
+                (offering) => !offering._id.equals(objectIdOfferId)
+            );
+
+            await adminWheel.save();
+
+            return res.status(200).json({
+                message: "Offer deleted successfully from Admin",
+                updatedWheel: adminWheel,
+            });
+        }
+
+        return res.status(404).json({ message: "Offer not found in Vendor or Admin" });
+
     } catch (error) {
         console.error("Error deleting offer:", error);
         return res.status(500).json({ message: "Internal server error", error: error.message });
-    }
-};
-
-
-
-
-
-export const updateWinner = async (req, res) => {
-    try {
-        const { label, labelId, vendorId, id, vId } = req.body;
-        console.log("The data from the front end is", req.body);
-
-        // Check if the user exists
-        const userExists = await usersModel.findOne({ _id: id });
-        if (!userExists)
-            return res.status(404).json({ message: "User not found" });
-
-        // Find the wheel and the specific offering
-        const wheel = await wheelModel.findOne(
-            { _id: vendorId, 'vendor.offerings._id': labelId },
-            { 'vendor.offerings.$': 1 }
-        );
-        const offer = wheel.vendor.offerings[0];
-        if (!wheel || !wheel.vendor.offerings || wheel.vendor.offerings.length === 0)
-            return res.status(404).json({ message: "Offer not found" });
-
-        const today = new Date();
-
-
-        if (offer.endDate && today >= new Date(offer.endDate)) {
-            await wheelModel.updateOne(
-                { _id: vendorId },
-                { $pull: { 'vendor.offerings': { _id: labelId } } }
-            );
-            return res.status(200).json({ message: "Offer deleted as it has reached the end date" });
-        }
-
-        if (offer.quantity !== undefined) {
-            if (offer.quantity > 0) {
-                offer.quantity -= 1;
-
-                if (offer.quantity === 0) {
-                    await wheelModel.updateOne(
-                        { _id: vendorId },
-                        { $pull: { 'vendor.offerings': { _id: labelId } } }
-                    );
-                } else {
-                    await wheelModel.updateOne(
-                        { _id: vendorId, 'vendor.offerings._id': labelId },
-                        { $set: { 'vendor.offerings.$': offer } }
-                    );
-                }
-            } else {
-                return res.status(400).json({ message: "Quantity is already zero" });
-            }
-        }
-
-        const update = await usersModel.findByIdAndUpdate(
-            id,
-            { prizeWon: label },
-            { new: true }
-        );
-        const smtpConfig = {
-            host: "mail.themenuportal.co.za",
-            port: 465,
-            user: "support@themenuportal.co.za",
-        };
-
-        const userEmailSubject = "🎉 Congratulations! You've Won a Prize 🎉";
-        const userEmailText = `Dear ${userExists.name}, you have won the prize: ${label}. 🎊🎁`;
-        const userEmailHtml = `
-          <p>Dear ${userExists.name},</p>
-          <p>🎉🎉 <strong>Congratulations!</strong> 🎉🎉</p>
-          <p>You have won the prize: <strong>${label}</strong>. 🎁✨</p>
-          <p>We're so excited for you! 🥳</p>
-          <p>Best regards,<br/>The Menu Team</p>
-        `;
-        await sendEmail(smtpConfig, userExists.email, userEmailSubject, userEmailText, userEmailHtml);
-        userExists.wheelRotatePoint += 10
-        await addPoints(userExists._id, userExists.wheelRotatePoint);
-
-
-        const vendor = await vendorModel.findOne({ _id: vId });
-        if (!vendor) {
-            return res.status(404).json({ message: "Vendor not found" });
-        }
-
-
-        const vendorOfferIndex = vendor.exclusiveOffer.offerings.findIndex((o) => o.name === label);
-        if (vendorOfferIndex === -1) {
-            return res.status(404).json({ message: "Offer not found in vendor's exclusive offerings" });
-        }
-
-        const vendorOffer = vendor.exclusiveOffer.offerings[vendorOfferIndex];
-
-
-        if (vendorOffer.quantity !== undefined) {
-            if (vendorOffer.quantity > 0) {
-                vendorOffer.quantity -= 1;
-
-
-                if (vendorOffer.quantity === 0) {
-                    vendor.exclusiveOffer.offerings.splice(vendorOfferIndex, 1);
-                }
-            } else {
-                return res.status(400).json({ message: "Vendor offer quantity is already zero" });
-            }
-        }
-
-        await vendorModel.findByIdAndUpdate(
-            vId,
-            { exclusiveOffer: vendor.exclusiveOffer },
-            { new: true }
-        );
-
-
-        const smtpConfig2 = {
-            host: "mail.themenuportal.co.za",
-            port: 465,
-            user: "vendors@themenuportal.co.za",
-        };
-
-        const vendorEmailSubject = "A User Has Won a Prize";
-        const vendorEmailText = `A user has won the prize: ${label}. User details: Name: ${userExists.name}, Email: ${userExists.email}, Address: ${userExists.street}, ${userExists.town}, ${userExists.city}, ${userExists.province}, ${userExists.postalCode}.`;
-        const vendorEmailHtml = `<p>A user has won the prize: <strong>${label}</strong>.</p>
-                                 <p>User details:</p>
-                                 <ul>
-                                   <li>Name: ${userExists.name}</li>
-                                   <li>Email: ${userExists.email}</li>
-                                   <li>Address: ${userExists.street}, ${userExists.town}, ${userExists.city}, ${userExists.province}, ${userExists.postalCode}</li>
-                                 </ul>`;
-        await sendEmail(smtpConfig2, vendor.businessEmail, vendorEmailSubject, vendorEmailText, vendorEmailHtml);
-
-
-        return res.status(200).json({ message: "Offer updated successfully", data: update });
-    } catch (error) {
-        console.error("Error updating vendors:", error);
-        return res.status(500).json({ message: "Please try again later" });
     }
 };
 
@@ -316,7 +195,7 @@ export const updateVendorExclusiveOffer = async (req, res) => {
         if (!existingWheel) {
             // Vendor doesn't exist in Wheel model - create new entry
             console.log("Vendor not found in Wheel model, creating new entry...");
-            
+
             const newWheelEntry = new wheelModel({
                 vendor: {
                     vendorInfo: vendorId,
@@ -354,42 +233,33 @@ export const updateVendorExclusiveOffer = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating vendor exclusive offer:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Internal server error',
-            error: error.message 
+            error: error.message
         });
     }
 };
 
 export const addWheelEntry = async (req, res) => {
     try {
-        const { vendorInfo, vendor } = req.body;
-        console.log(vendor.offerings)
-        // Create new wheel entry - vendorInfo is now optional
+        const { admin } = req.body;
+        console.log(admin)
+
         const newWheelEntry = new wheelModel({
-            vendor: {
-                vendorInfo: vendorInfo || null, // Set to null if not provided
-                offerings: vendor.offerings
+            vendor: null,
+            admin: {
+                adminInfo: admin.adminInfo || null, // Set to null if not provided
+                offerings: admin.offerings
             }
         });
-        console.log("new : " ,   newWheelEntry);
-        // Save to database
-        const savedEntry = await newWheelEntry.save();
-        console.log(savedEntry);
-        // Only populate if vendorInfo exists
-        let populatedEntry;
-        if (savedEntry.vendor.vendorInfo) {
-            populatedEntry = await wheelModel.findById(savedEntry._id)
-                .populate('vendor.vendorInfo', '-__v')
-                .exec();
-        } else {
-            populatedEntry = savedEntry;
-        }
-        console.log(populatedEntry);
+
+
+        await newWheelEntry.save();
+
         res.status(201).json({
             success: true,
             message: "New wheel entry added successfully",
-            data: populatedEntry
+            data: newWheelEntry
         });
 
     } catch (error) {
@@ -399,5 +269,175 @@ export const addWheelEntry = async (req, res) => {
             message: "Internal server error",
             error: error.message
         });
+
+    }
+};
+
+export const updateWinner = async (req, res) => {
+    try {
+        const { label, labelId, vendorId, id, vId, adminId } = req.body;
+        console.log("The data from the front end is", req.body);
+
+        // Check if the user exists
+        let updatedVendor;
+        const userExists = await usersModel.findOne({ _id: id });
+        if (!userExists)
+            return res.status(404).json({ message: "User not found" });
+
+        // Find the wheel with vendor and admin data
+        const wheel = await wheelModel.findOne({ _id: vendorId });
+        if (!wheel) return res.status(404).json({ message: "Wheel not found" });
+
+        const today = new Date();
+        let updated = false;
+        let shouldDeleteWheel = false;
+        let vendorOfferingsUpdated = false;
+
+        // ==================== 🛠 VENDOR UPDATE ====================
+        if (wheel.vendor && wheel.vendor.offerings) {
+            const vendorOfferIndex = wheel.vendor.offerings.findIndex(o => o._id.toString() === labelId);
+
+            if (vendorOfferIndex !== -1) {
+                const vendorOffer = wheel.vendor.offerings[vendorOfferIndex];
+                updated = true;
+                vendorOfferingsUpdated = true;
+
+                // Check if offer has expired
+                if (vendorOffer.endDate && today >= new Date(vendorOffer.endDate)) {
+                    wheel.vendor.offerings.splice(vendorOfferIndex, 1);
+                    console.log("Removed expired vendor offer");
+                }
+                // Handle quantity reduction
+                else if (vendorOffer.quantity !== undefined) {
+                    if (vendorOffer.quantity > 0) {
+                        vendorOffer.quantity -= 1;
+                        console.log(`Reduced vendor offer quantity to ${vendorOffer.quantity}`);
+
+                        if (vendorOffer.quantity === 0) {
+                            wheel.vendor.offerings.splice(vendorOfferIndex, 1);
+                            console.log("Removed vendor offer with zero quantity");
+                        }
+                    } else {
+                        return res.status(400).json({ message: "Vendor offer quantity is already zero" });
+                    }
+                }
+
+                if (!wheel.vendor.offerings || wheel.vendor.offerings.length === 0) {
+                    shouldDeleteWheel = true;
+                    console.log("Marked wheel for deletion as vendor offerings became empty");
+                }
+            }
+        }
+
+        // ==================== 🛠 ADMIN UPDATE ====================
+        if (wheel.admin && wheel.admin.offerings) {
+            const adminOfferIndex = wheel.admin.offerings.findIndex(o => o._id.toString() === labelId);
+
+            if (adminOfferIndex !== -1) {
+                const adminOffer = wheel.admin.offerings[adminOfferIndex];
+                updated = true;
+
+                // Check if offer has expired
+                if (adminOffer.endDate && today >= new Date(adminOffer.endDate)) {
+                    wheel.admin.offerings.splice(adminOfferIndex, 1);
+                    console.log("Removed expired admin offer");
+                }
+                // Handle quantity reduction
+                else if (adminOffer.quantity !== undefined) {
+                    if (adminOffer.quantity > 0) {
+                        adminOffer.quantity -= 1;
+                        console.log(`Reduced admin offer quantity to ${adminOffer.quantity}`);
+
+                        if (adminOffer.quantity === 0) {
+                            wheel.admin.offerings.splice(adminOfferIndex, 1);
+                            console.log("Removed admin offer with zero quantity");
+                        }
+                    } else {
+                        return res.status(400).json({ message: "Admin offer quantity is already zero" });
+                    }
+                }
+
+                if (!wheel.admin.offerings || wheel.admin.offerings.length === 0) {
+                    shouldDeleteWheel = true;
+                    console.log("Marked wheel for deletion as admin offerings became empty");
+                }
+            }
+        }
+
+        if (!updated) {
+            return res.status(404).json({ message: "Offer not found in vendor or admin offerings" });
+        }
+
+        if (shouldDeleteWheel) {
+            await wheel.delete();
+            console.log("Deleted wheel document as it became empty");
+        } else {
+            await wheel.save();
+        }
+
+        // ==================== 🛠 VENDOR SCHEMA UPDATE ====================
+        if (vendorOfferingsUpdated && wheel.vendor?.vendorInfo) {
+            updatedVendor = await vendorModel.findByIdAndUpdate(
+                wheel.vendor.vendorInfo,
+                { "wheelOffer.offerings": wheel.vendor.offerings },
+                { new: true }
+            );
+            console.log("Vendor wheel offerings updated:", updatedVendor);
+        }
+
+        // ==================== 🛠 USER UPDATE ====================
+        userExists.wheelRotatePoint += 10;
+        await addPoints(userExists._id, userExists.wheelRotatePoint);
+
+        const update = await usersModel.findByIdAndUpdate(
+            id,
+            { $push: { prizeWon: label } },
+            { new: true }
+        );
+
+        // Email notification
+        const smtpConfig = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "support@themenuportal.co.za",
+        };
+
+        const userEmailSubject = "🎉 Congratulations! You've Won a Prize 🎉";
+        const userEmailText = `Dear ${update.name}, you have won the prize: ${label}. 🎊🎁`;
+        const userEmailHtml = `
+          <p>Dear ${update.name},</p>
+          <p>🎉🎉 <strong>Congratulations!</strong> 🎉🎉</p>
+          <p>You have won the prize: <strong>${label}</strong>. 🎁✨</p>
+          <p>We're so excited for you! 🥳</p>
+          <p>Best regards,<br/>The Menu Team</p>
+        `;
+        await sendEmail(smtpConfig, update.email, userEmailSubject, userEmailText, userEmailHtml);
+        const smtpConfig2 = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "partners@themenuportal.co.za",
+        };
+        if (updatedVendor) {
+            const vendorEmailSubject = "A User Has Won a Prize";
+            const vendorEmailText = `A user has won the prize: ${label}.`;
+            const vendorEmailHtml = `<p>A user has won the prize: <strong>${label}</strong>.</p>
+                                     <p>User details:</p>
+                                     <ul>
+                                       <li>Name: ${update.name}</li>
+                                       <li>Email: ${update.email}</li>
+                                       <li>Address: ${update.street}, ${update.town}, ${update.city}, ${update.province}, ${update.postalCode}</li>
+                                     </ul>`;
+            await sendEmail(smtpConfig2, updatedVendor.businessEmail, vendorEmailSubject, vendorEmailText, vendorEmailHtml);
+        }
+
+
+        return res.status(200).json({
+            message: "Offer updated successfully",
+            data: update
+        });
+
+    } catch (error) {
+        console.error("Error updating vendors/admin:", error);
+        return res.status(500).json({ message: "Please try again later" });
     }
 };

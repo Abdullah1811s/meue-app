@@ -39,7 +39,7 @@ export const incrementUserSpin = async (req, res) => {
 
     setTimeout(async () => {
       await usersModel.findByIdAndUpdate(id, { numberOfTimesWheelRotate: 0 });
-    }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+    }, 24 * 60 * 60 * 1000); 
 
     return res.status(200).json({ user });
   } catch (error) {

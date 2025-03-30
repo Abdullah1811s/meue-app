@@ -228,7 +228,7 @@ const Login = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.3 }}
-                className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#DBC166] mb-4 sm:mb-6 text-center md:text-left"
+                className="text-2xl sm:text-3xl ml-6 lg:text-4xl font-bold text-[#DBC166] mb-4 sm:mb-6 text-center md:text-left"
               >
                 Your exclusive world of benefits awaits
               </motion.h2>

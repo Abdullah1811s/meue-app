@@ -17,14 +17,14 @@ const VendorSchema = new mongoose.Schema({
   businessContactNumber: { type: String, required: true },
   businessEmail: { type: String, required: true, unique: true },
   websiteUrl: { type: String },
-  
+
   socialMediaHandles: {
     facebook: { type: String },
     instagram: { type: String },
     twitter: { type: String },
     tiktok: { type: String }
   },
-  
+
   representativeName: { type: String, required: true },
   representativePosition: { type: String, required: true },
   representativeEmail: { type: String, required: true },
@@ -33,19 +33,19 @@ const VendorSchema = new mongoose.Schema({
 
   // Updated to match frontend structure
   wheelOffer: {
-    type: { 
+    type: {
       type: String,
-      
+
     },
     terms: {
       type: String,
-      
+
     },
     offerings: [
       {
         name: {
           type: String,
-         
+
         },
         quantity: {
           type: Number
@@ -58,13 +58,13 @@ const VendorSchema = new mongoose.Schema({
   },
 
   raffleOffer: {
-    type: { 
+    type: {
       type: String,
-     
+
     },
     terms: {
       type: String,
-     
+
     },
     offerings: [
       {
@@ -89,49 +89,49 @@ const VendorSchema = new mongoose.Schema({
     validate: {
       validator: function (value) {
         return /[A-Z]/.test(value) &&
-               /[a-z]/.test(value) &&
-               /\d/.test(value);
+          /[a-z]/.test(value) &&
+          /\d/.test(value);
       },
       message: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     },
   },
-  
-  vendorTier: { 
-    type: String, 
+
+  vendorTier: {
+    type: String,
     enum: ["bronze", "silver", "gold"],
-    default: "bronze" 
+    default: "bronze"
   },
-  
+
   agreedToTerms: { type: Boolean, required: true },
-  
+
 
   companyRegistrationCertificateURl: {
-    public_id: { type: String, required: true },
-    secure_url: { type: String, required: true }
+    public_id: { type: String },
+    secure_url: { type: String }
   },
-  
+
   vendorIdURl: {
-    public_id: { type: String, required: true },
-    secure_url: { type: String, required: true }
+    public_id: { type: String },
+    secure_url: { type: String }
   },
-  
+
   addressProofURl: {
-    public_id: { type: String, required: true },
-    secure_url: { type: String, required: true }
+    public_id: { type: String },
+    secure_url: { type: String }
   },
-  
+
   confirmationLetterURl: {
-    public_id: { type: String, required: true },
-    secure_url: { type: String, required: true }
+    public_id: { type: String },
+    secure_url: { type: String }
   },
-  
+
   businessPromotionalMaterialURl: {
     public_id: { type: String },
     secure_url: { type: String }
   },
-  
+
   referralCodeUsed: { type: String },
-  
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -157,7 +157,7 @@ VendorSchema.methods.comparePassword = async function (enteredPassword) {
 };
 
 // Update the timestamp on document update
-VendorSchema.pre('save', function(next) {
+VendorSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

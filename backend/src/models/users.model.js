@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema(
         userType: {
             type: String,
             enum: ["R50", "R10"],
-         
+
         },
         R10UserPaidDate:
         {
@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema(
         },
         postalCode: { type: String, required: true, trim: true, match: [/^\d+$/, "Postal code must contain only digits"] },
         isPaid: { type: Boolean, default: false },
-        prizeWon: { type: String },
+        prizeWon: [{ type: String }],
         referralCodeShare: { type: String },
         numberOfTimesWheelRotate: { type: Number, default: 0 }
     },

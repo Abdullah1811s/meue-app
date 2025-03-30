@@ -22,7 +22,7 @@ const WeeklyRaffles = () => {
                 {prizes.map((prize) => (
                     <div
                         key={prize.id}
-                        className="border-4 border-purple-400 rounded-2xl overflow-hidden"
+                        className="border-4 border-[#DBC166] rounded-2xl overflow-hidden"
                     >
                         <img
                             src={prize.img}

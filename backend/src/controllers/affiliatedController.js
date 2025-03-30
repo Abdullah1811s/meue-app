@@ -2,25 +2,59 @@ import affiliateModel from "../models/affiliate.model.js";
 import jwt from "jsonwebtoken";
 import { generateReferralCode } from "../utils/generateReferralCode.js";
 import { sendEmail } from "../utils/emailService.js";
-
+import mongoose from "mongoose";
+import referralModel from "../models/referral.model.js";
 
 export const getAffiliateById = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { id } = req.params;
 
-        if (!email) {
-            return res.status(400).json({ message: "Email is required" });
+        // Validate ID exists and is a valid MongoDB ID if using MongoDB
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "ID parameter is required",
+                error: "Missing ID parameter"
+            });
         }
-        const affiliate = await affiliateModel.findOne({ email });
+
+        // If using MongoDB, validate ID format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid ID format",
+                error: "The provided ID is not valid"
+            });
+        }
+
+        const affiliate = await affiliateModel.findById(id);
+        const refCount = await referralModel.countDocuments({ referrer: id });
+        console.log(`Number of referrals for affiliate ${id}:`, refCount);
 
         if (!affiliate) {
-            return res.status(404).json({ message: "Affiliate not found for this email" });
+            return res.status(404).json({
+                success: false,
+                message: "Affiliate not found",
+                error: `No affiliate found with ID: ${id}`
+            });
         }
 
-        res.status(200).json({ message: "Affiliate found successfully", data: affiliate });
+        res.status(200).json({
+            success: true,
+            message: "Affiliate retrieved successfully",
+            data: {
+                affiliate,
+                refCount
+            }
+        });
+
     } catch (error) {
-        console.error("[AFFILIATE SERVER ERROR]", error);
-        res.status(500).json({ message: "[AFFILIATE SERVER ERROR]", error: error.message });
+        console.error("[AFFILIATE CONTROLLER ERROR]", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error while retrieving affiliate",
+            error: error.message
+        });
     }
 };
 
@@ -173,7 +207,7 @@ export const updateStatus = async (req, res) => {
                 <p>To get started, please <a href="https://themenuportal.co.za/affiliated/login" target="_blank">log in to your account</a>.</p>
                 <p>Best regards, <br> The Menu Team</p>
             `;
-                
+
 
             const smtpConfig = {
                 host: "mail.themenuportal.co.za",

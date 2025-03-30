@@ -190,8 +190,8 @@ const AllPartners = () => {
                           className="h-24 w-24 rounded-full overflow-hidden border-4 border-[#DBC166] mb-4"
                         >
                           <img
-                            src={vendor.businessPromotionalMaterialURl.secure_url}
-                            alt={`${vendor.businessName} logo`}
+                            src={vendor?.businessPromotionalMaterialURl?.secure_url || "https://via.placeholder.com/150"}
+                            alt={`${vendor?.businessName || "Business"} logo`}
                             className="h-full w-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
@@ -199,6 +199,8 @@ const AllPartners = () => {
                               target.src = "https://via.placeholder.com/150";
                             }}
                           />
+
+
                         </motion.div>
                         <div className="text-center">
                           {/* Rest of vendor card details */}
