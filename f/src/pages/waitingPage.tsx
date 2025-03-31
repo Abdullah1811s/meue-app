@@ -120,6 +120,9 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [isMobile]);
+
+
+
   useEffect(() => {
     const id = localStorage.getItem("id")
     if (isAuthenticated && id) {

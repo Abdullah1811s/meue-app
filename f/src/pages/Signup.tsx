@@ -172,9 +172,12 @@ function SignUp() {
       });
 
       localStorage.setItem("UserToken", UserResponse?.data.token);
+      localStorage.setItem("id", UserResponse?.data.user._id);
+      
       setSignupSuccess(true);
-      dispatch(userLogin());
-      console.log(UserResponse?.data.user);
+      dispatch(userLogin()); 
+
+     
       const userId = UserResponse?.data.user._id
       if (selectedPaymentOption == 'r50') {
         handleClickPayNowR50(userId)
