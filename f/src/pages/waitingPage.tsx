@@ -180,7 +180,7 @@ export default function Home() {
 
       // Start timer only if `userType` is "R10"
       if (fetchedUser.userType === "R10") {
-        startTimer(fetchedUser.dailyLoginDate);
+        startTimer(fetchedUser.R10UserPaidDate); 
       }
 
       setVendors(vendorResponse.data);
