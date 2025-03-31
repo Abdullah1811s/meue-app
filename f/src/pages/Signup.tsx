@@ -27,18 +27,18 @@ const signUpSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Please enter a valid email'),
   phone: z.string()
-  .min(1, "Phone number is required")
-  .regex(/^\+?[0-9]*$/, {
-    message: "Must start with + followed by numbers only"
-  })
-  .refine(val => {
-    if (val.startsWith('+')) {
-      return val.length >= 10 && val.length <= 15; // + and 9-14 digits
-    }
-    return val.length >= 8 && val.length <= 15; // 8-15 digits if no +
-  }, {
-    message: "Phone number must be 8-15 digits (9-14 if starts with +)"
-  }),
+    .min(1, "Phone number is required")
+    .regex(/^\+?[0-9]*$/, {
+      message: "Must start with + followed by numbers only"
+    })
+    .refine(val => {
+      if (val.startsWith('+')) {
+        return val.length >= 10 && val.length <= 15; // + and 9-14 digits
+      }
+      return val.length >= 8 && val.length <= 15; // 8-15 digits if no +
+    }, {
+      message: "Phone number must be 8-15 digits (9-14 if starts with +)"
+    }),
   street: z.string().min(1, 'Street address is required'),
   town: z.string().min(1, 'Suburb/Town is required'),
   city: z.string().min(1, 'City is required'),
@@ -159,50 +159,58 @@ function SignUp() {
   }, [referralCode, setValue]);
 
 
-
   const onSubmit = async (data: SignUpForm) => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     try {
-
-      const UserResponse = await axios.post(`${API_BASE_URL}/auth/signUp`, { ...data, captchaToken }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      localStorage.setItem("UserToken", UserResponse?.data.token);
-      localStorage.setItem("id", UserResponse?.data.user._id);
-      
-      setSignupSuccess(true);
-      dispatch(userLogin()); 
-
-     
-      const userId = UserResponse?.data.user._id
-      if (selectedPaymentOption == 'r50') {
-        handleClickPayNowR50(userId)
-      }
-      else {
-        handleClickPayNowR10(userId)
-      }
-
-    } catch (error: any) {
-      console.error('Signup Error:', error?.response?.data?.message || error?.message);
-
-      if (error?.response?.data?.message) {
-        const errorMessage = error.response.data.message;
-        if (errorMessage.includes('duplicate email')) {
-          setErrorMessage('This email is already registered.');
-        } else if (errorMessage.includes('duplicate phone')) {
-          setErrorMessage('This phone number is already registered.');
-        } else {
-          setErrorMessage(errorMessage);
+      const UserResponse = await axios.post(
+        `${API_BASE_URL}/auth/signUp`,
+        { ...data, captchaToken },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
+      );
+
+      console.log("Sign-Up Response:", UserResponse?.data); // Debugging Log
+
+      const token = UserResponse?.data?.token;
+      const userId = UserResponse?.data?.user?._id; // Ensure userId exists
+
+      if (!token || !userId) {
+        throw new Error("Missing user token or ID in the response.");
+      }
+
+      // Set token and user ID in local storage
+      localStorage.setItem("UserToken", token);
+      localStorage.setItem("id", userId);
+
+      console.log("User ID set in localStorage:", localStorage.getItem("id")); // Debugging Log
+
+      dispatch(userLogin());
+
+      setSignupSuccess(true);
+
+      if (selectedPaymentOption === "r50") {
+        handleClickPayNowR50(userId);
       } else {
-        setErrorMessage('An error occurred, please try again later');
+        handleClickPayNowR10(userId);
+      }
+    } catch (error: any) {
+      console.error("Signup Error:", error?.response?.data?.message || error?.message);
+
+      const errorMessage = error?.response?.data?.message || "An error occurred, please try again later";
+      if (errorMessage.includes("duplicate email")) {
+        setErrorMessage("This email is already registered.");
+      } else if (errorMessage.includes("duplicate phone")) {
+        setErrorMessage("This phone number is already registered.");
+      } else {
+        setErrorMessage(errorMessage);
       }
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">
