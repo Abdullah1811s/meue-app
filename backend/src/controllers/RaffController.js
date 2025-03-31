@@ -10,8 +10,10 @@ export const getAllRaff = async (req, res) => {
         // Populate both participants and winner
         const allRaffles = await raffModel.find()
             .populate('participants.user')
-            .populate('winner.user');
+            .populate('winner.user')
+            .exec();
 
+        console.log(allRaffles);
         res.status(200).json({
             message: "All Raff fetched successfully",
             raff: allRaffles
@@ -28,7 +30,7 @@ export const getAllRaff = async (req, res) => {
 export const makeNewRaff = async (req, res) => {
     try {
         const { name, scheduleAt, prizes, vendorId } = req.body;
-       
+
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }
@@ -229,7 +231,7 @@ export const updateRaffleOfferings = async (req, res) => {
     const { id } = req.params;
     const { offerings } = req.body;
 
-    console.log("Updating raffle offerings with data:", offerings);
+  
 
     try {
         // Validate offerings
@@ -498,26 +500,38 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
             throw new Error('Entries must be either 1 or 10');
         }
 
-        const invisibleRaffles = await raffModel.find({ isVisible: false });
-
-        const updatePromises = invisibleRaffles.map(async (raffle) => {
-            const isAlreadyParticipant = raffle.participants.some(
-                participant => participant.user.equals(userId)
-            );
-
-            if (!isAlreadyParticipant) {
-                raffle.participants.push({
-                    user: userId,
-                    entries: entries
-                });
-                return raffle.save();
-            }
-            return raffle;
+        // Find all invisible raffles where the user is NOT already a participant
+        const invisibleRaffles = await raffModel.find({
+            isVisible: false,
+            'participants.user': { $ne: userId }
         });
 
-        return await Promise.all(updatePromises);
+        if (invisibleRaffles.length === 0) {
+            console.log('User is already in all invisible raffles or no raffles exist');
+            return [];
+        }
+
+        // Prepare all updates in a single bulk operation for better performance
+        const updateResult = await raffModel.updateMany(
+            {
+                _id: { $in: invisibleRaffles.map(r => r._id) }
+            },
+            {
+                $push: {
+                    participants: {
+                        user: userId,
+                        entries: entries
+                    }
+                }
+            }
+        );
+
+        console.log(`Added user to ${updateResult.modifiedCount} raffles`);
+        return await raffModel.find({
+            _id: { $in: invisibleRaffles.map(r => r._id) }
+        });
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in addUserToInvisibleRaffles:', error);
         throw error;
     }
 };

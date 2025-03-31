@@ -1,6 +1,6 @@
 import referralModel from "../models/referral.model.js";
 import affiliateModel from "../models/affiliate.model.js";
-
+import mongoose from "mongoose";
 export const getCurrentUserReferral = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -15,7 +15,7 @@ export const getCurrentUserReferral = async (req, res) => {
         if (!user)
             throw new Error("User not found");
         const { referralCode } = user;
-     
+
         res.status(200).json({ referralCode });
 
     } catch (error) {
@@ -130,5 +130,83 @@ export const getAllReferralCodes = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
+export const checkAffiliateStat = async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log("This is teh id" , id);
+        // Check if the ID is valid
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
+
+        // Get all referrals where the referrer is this ID
+        const referrals = await referralModel.find({ referrer: id })
+            .populate({
+                path: 'referredUser',
+                select: 'userType' 
+            });
+            console.log("this is the reffereal" , referrals)
+        // Count total referrals
+        const totalReferrals = referrals.length;
+        console.log("this is the total" , totalReferrals)
+        // Count R10 and R50 referred users
+        let r10Count = 0;
+        let r50Count = 0;
+      
+
+        referrals.forEach(ref => {
+            if (ref.referredUser && ref.referredUser.userType === "R10") {
+                r10Count++;
+            }
+            if (ref.referredUser && ref.referredUser.userType === "R50") {
+                r50Count++;
+            }
+           
+        });
+        console.log("this is the total R10 and R50" , r10Count , r50Count);
+        // Prepare response
+        const response = {
+            totalReferrals: totalReferrals,
+          
+            userReferrals: {
+                r10Count: r10Count,
+                r50Count: r50Count
+            }
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error("Error fetching referral stats:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+
+export const deleteReferrerFromReferrals = async (referrerId) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(referrerId)) {
+            throw new Error("Invalid referrer ID format");
+        }
+
+        // Delete all referrals where this user is the referrer
+        const result = await referralModel.deleteMany({
+            referrer: referrerId
+        });
+
+        return {
+            success: true,
+            deletedCount: result.deletedCount,
+            message: `Removed referrer from ${result.deletedCount} referral(s)`
+        };
+    } catch (error) {
+        console.error("Error deleting referrer from referrals:", error);
+        return {
+            success: false,
+            message: error.message || "Failed to delete referrer from referrals"
+        };
     }
 };

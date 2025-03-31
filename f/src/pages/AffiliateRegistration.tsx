@@ -26,6 +26,18 @@ const AffiliateSchema = z
         companyRegistrationNumber: z.string().optional(),
         vatNumber: z.string().optional(),
         tradingAddress: z.string().optional(),
+        countryCode: z.string(),
+        idNumber:z.string().max(16 , "Enter 16 digit id number").min(2 , "Please enter the correct id number"),
+        bankName: z.string().min(2, "Bank name must be at least 2 characters"),
+        accountHolder: z.string().min(2, "Account holder name must be at least 2 characters"),
+        accountNumber: z.string()
+            .min(5, "Account number must be at least 5 digits")
+            .max(20, "Account number cannot exceed 20 digits")
+            .regex(/^[0-9]+$/, "Account number must contain only numbers"),
+        branchCode: z.string()
+            .min(4, "Branch code must be at least 4 digits")
+            .max(10, "Branch code cannot exceed 10 digits")
+            .regex(/^[0-9]+$/, "Branch code must contain only numbers"),
         province: z.string().optional(),
         city: z.string().optional(),
         businessContactNumber: z.string().optional(),
@@ -35,6 +47,29 @@ const AffiliateSchema = z
         password: z.string().min(6, "Password must be at least 6 characters"),
         confirmPassword: z.string().min(6, "Confirm Password must be at least 6 characters"),
         agreedToTerms: z.literal(true, { errorMap: () => ({ message: "You must agree to the terms" }) }),
+        confirmationLetter: z.any().optional()
+            .refine((fileList) => {
+                // If no file is uploaded, it's valid (optional)
+                if (!fileList || fileList.length === 0) return true;
+
+                const file = fileList[0];
+                const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+                const maxSize = 20 * 1024 * 1024; // 20MB
+
+                // Check file type
+                if (!allowedTypes.includes(file.type)) {
+                    return false;
+                }
+
+                // Check file size
+                if (file.size > maxSize) {
+                    return false;
+                }
+
+                return true;
+            }, {
+                message: "File must be a PDF, PNG, JPG, or JPEG and under 20MB"
+            }),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords must match",
@@ -78,10 +113,12 @@ function AffiliateRegistration() {
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [cities, setCities] = useState<string[]>([]);
+    const [confirmationLetterPreview, setConfirmationLetterPreview] = useState<File | null>(null);
     const {
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors },
     } = useForm<AffiliateFormData>({
         resolver: zodResolver(AffiliateSchema),
@@ -101,13 +138,96 @@ function AffiliateRegistration() {
 
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+    const getSignature = async (folder: string) => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/generateSignature`, { folder });
+            console.log("The signature response is ", response);
+            return response.data;
+        } catch (error) {
+            console.error("Error in getting signature for ", folder);
+            throw error; // Re-throw to handle in calling function
+        }
+    };
+
+    const makeCloudinaryApiCall = async (data: FormData) => {
+        try {
+            const cloudName = import.meta.env.VITE_CLOUD_NAME;
+            const api = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
+
+            const res = await axios.post(api, data, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            const { secure_url, public_id } = res.data;
+            console.log("Uploaded File URL:", res.data);
+
+            return { secure_url, public_id };
+        } catch (error) {
+            console.error("Cloudinary Upload Error:", error);
+            throw error; // Re-throw to handle in calling function
+        }
+    };
+
+    const uploadAffiliateBankConfirmation = async (timestamp: number, signature: string) => {
+        if (!confirmationLetterPreview) {
+            console.error("No bank confirmation letter file selected");
+            return null;
+        }
+
+        const data = new FormData();
+        data.append("file", confirmationLetterPreview);
+        data.append("timestamp", timestamp.toString());
+        data.append("signature", signature);
+        data.append("api_key", import.meta.env.VITE_CLOUD_API);
+        data.append("folder", "BankConfirmationAffiliate");
+
+        console.log("Uploading Bank Confirmation to Cloudinary:", {
+            fileName: confirmationLetterPreview.name,
+            size: confirmationLetterPreview.size,
+            type: confirmationLetterPreview.type
+        });
+
+        try {
+            const result = await makeCloudinaryApiCall(data);
+            console.log("Bank Confirmation Uploaded Successfully:", result);
+            return result; // Return just the URL
+        } catch (error) {
+            console.error("Bank Confirmation Upload Failed:", error);
+            throw error;
+        }
+    };
+
     const onSubmit = async (data: AffiliateFormData) => {
         try {
             setLoading(true);
+            const userExists = await axios.post(`${API_BASE_URL}/affiliated/checkEmail`, {
+                email: data.email
+            }, {
+                headers: { "Content-Type": "application/json" },
+            })
+            console.log(userExists)
+            if (userExists?.data?.data?.exists) {
+                toast.error("Email already register")
+                return;
+            }
             // Ensure password and confirmPassword match
             if (data.password !== data.confirmPassword) {
                 toast.error("Passwords do not match.");
                 return;
+            }
+
+            let bankConfirmationUrl = null;
+            if (data.confirmationLetter && data.confirmationLetter.length > 0) {
+                try {
+                    const { timestamp, signature } = await getSignature("BankConfirmationAffiliate");
+                    bankConfirmationUrl = await uploadAffiliateBankConfirmation(timestamp, signature);
+                } catch (error) {
+                    console.error("Error uploading bank confirmation:", error);
+                    toast.error("Failed to upload bank confirmation. Please try again.");
+                    return;
+                }
             }
 
             // Prepare data to match schema
@@ -116,7 +236,7 @@ function AffiliateRegistration() {
                 surname: data.surname,
                 email: data.email,
                 phoneNumber: data.phone,
-                type: data.affiliateType, // Match schema field name
+                type: data.affiliateType,
                 businessName: data.businessName || null,
                 companyRegistrationNumber: data.companyRegistrationNumber || null,
                 vatNumber: data.vatNumber || null,
@@ -127,26 +247,35 @@ function AffiliateRegistration() {
                 password: data.password,
                 promotionChannels: data.promotionChannels || [],
                 targetAudience: data.targetAudience || null,
+                bankName: data.bankName,
+                accountHolder: data.accountHolder,
+                accountNumber: data.accountNumber,
+                branchCode: data.branchCode,
+                idNumber : data.idNumber,
+                bankConfirmationUrl: bankConfirmationUrl
             };
 
-            // Send request
+
             const response = await axios.post(`${API_BASE_URL}/affiliated/register`, payload, {
                 headers: { "Content-Type": "application/json" },
             });
 
-            if (response.status === 201) {
+            if (response.status === 200) {
                 toast.success("Affiliate registration successful! We will notify you in 48-72 hours.");
                 await sleep(2000);
-                setLoading(false)
                 navigate("/");
             } else {
                 toast.error(response.data.message || "Something went wrong!");
             }
         } catch (error: any) {
             console.error("Error submitting form:", error);
-            toast.error(error.response?.data?.message || "Server error. Please try again later.");
+            const errorMessage = error.response?.data?.message || "Server error. Please try again later.";
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -205,39 +334,58 @@ function AffiliateRegistration() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                <input
-                                    {...register("phone", {
-                                        pattern: {
-                                            value: /^\+?[0-9]+$/,
-                                            message: "Please enter a valid phone number (only digits and optional + at start)"
-                                        }
-                                    })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                                    onKeyDown={(e) => {
-                                        // Allow: backspace, delete, tab, escape, enter
-                                        if ([8, 9, 13, 27, 46].includes(e.keyCode) ||
-                                            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                                            (e.keyCode === 65 && e.ctrlKey === true) ||
-                                            (e.keyCode === 67 && e.ctrlKey === true) ||
-                                            (e.keyCode === 86 && e.ctrlKey === true) ||
-                                            (e.keyCode === 88 && e.ctrlKey === true) ||
-                                            // Allow: home, end, left, right
-                                            (e.keyCode >= 35 && e.keyCode <= 39)) {
-                                            return;
-                                        }
+                                <div className="flex items-center gap-2">
+                                    <select
+                                        {...register("countryCode")}
+                                        className="px-3 py-2 border border-gray-300 rounded-md bg-white"
+                                    >
+                                        <option value="+27">🇿🇦 (+27)</option>
+                                        <option value="+971">🇦🇪 (+971)</option>
+                                        <option value="+7">🇷🇺 (+7)</option>
+                                        <option value="+20">🇪🇬 (+20)</option>
+                                        <option value="+234">🇳🇬 (+234)</option>
+                                        <option value="+255">🇹🇿 (+255)</option>
+                                        <option value="+256">🇺🇬 (+256)</option>
+                                        <option value="+1">🇺🇸 (+1)</option>
+                                        <option value="+44">🇬🇧 (+44)</option>
+                                        <option value="+91">🇮🇳 (+91)</option>
+                                        <option value="+61">🇦🇺 (+61)</option>
+                                        <option value="+49">🇩🇪 (+49)</option>
+                                        <option value="+33">🇫🇷 (+33)</option>
+                                        <option value="+81">🇯🇵 (+81)</option>
+                                        <option value="+55">🇧🇷 (+55)</option>
+                                    </select>
 
-                                        // Allow '+' only at the start when no text is selected
-                                        if (e.key === '+' && e.currentTarget.selectionStart === 0 && !e.currentTarget.value.includes('+')) {
-                                            return;
-                                        }
+                                    <input
+                                        {...register("phone", {
+                                            pattern: {
+                                                value: /^\+?[0-9]+$/,
+                                                message: "Please enter a valid phone number (only digits and optional + at start)"
+                                            }
+                                        })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                        placeholder="Enter phone number"
+                                        onKeyDown={(e) => {
+                                            if ([8, 9, 13, 27, 46].includes(e.keyCode) ||
+                                                (e.keyCode === 65 && e.ctrlKey) ||
+                                                (e.keyCode === 67 && e.ctrlKey) ||
+                                                (e.keyCode === 86 && e.ctrlKey) ||
+                                                (e.keyCode === 88 && e.ctrlKey) ||
+                                                (e.keyCode >= 35 && e.keyCode <= 39)) {
+                                                return;
+                                            }
 
-                                        // Prevent if not a number
-                                        if ((e.key < '0' || e.key > '9') && e.key !== '+') {
-                                            e.preventDefault();
-                                        }
-                                    }}
-                                   
-                                />
+                                            if (e.key === '+' && e.currentTarget.selectionStart === 0 && !e.currentTarget.value.includes('+')) {
+                                                return;
+                                            }
+
+                                            if ((e.key < '0' || e.key > '9') && e.key !== '+') {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                    />
+                                </div>
+
                                 {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
                             </div>
                         </div>
@@ -261,7 +409,31 @@ function AffiliateRegistration() {
                             </div>
                         </div>
                     </motion.div>
-
+                    {affiliateType === "individual" && (
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-lg shadow-md p-6">
+                            <div className="flex items-center mb-4">
+                                <User className="w-6 h-6 text-[#C5AD59] mr-2" />
+                                <h2 className="text-2xl font-semibold text-gray-800">Individual Details</h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
+                                    <input
+                                        {...register("idNumber", {
+                                            required: "ID number is required",
+                                            pattern: {
+                                                value: /^[0-9]{13}$/,
+                                                message: "Please enter a valid 13-digit South African ID number"
+                                            }
+                                        })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                        placeholder="Enter your 13-digit ID number"
+                                    />
+                                    {errors.idNumber && <p className="text-red-500 text-sm mt-1">{errors.idNumber.message}</p>}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
                     {/* Business Details (Conditional Rendering) */}
                     {affiliateType === "business" && (
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-lg shadow-md p-6">
@@ -362,6 +534,112 @@ function AffiliateRegistration() {
                             </div>
                         </div>
                     </motion.div>
+
+
+                    {/* bank detail fields */}
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-lg shadow-md p-6">
+                        <div className="flex items-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#C5AD59] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                            </svg>
+                            <h2 className="text-2xl font-semibold text-gray-800">Banking Details</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Name of Bank</label>
+                                <input
+                                    {...register("bankName")}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                    placeholder="e.g., ABSA, FNB, Standard Bank"
+                                />
+                                {errors.bankName && <p className="text-red-500 text-sm mt-1">{errors.bankName.message}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+                                <input
+                                    {...register("accountHolder")}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                    placeholder="Name as it appears on bank account"
+                                />
+                                {errors.accountHolder && <p className="text-red-500 text-sm mt-1">{errors.accountHolder.message}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                                <input
+                                    {...register("accountNumber")}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                    placeholder="Enter account number"
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                />
+                                {errors.accountNumber && <p className="text-red-500 text-sm mt-1">{errors.accountNumber.message}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Branch Code</label>
+                                <input
+                                    {...register("branchCode")}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                    placeholder="Enter branch code"
+                                    onKeyPress={(e) => {
+                                        if (!/[0-9]/.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                />
+                                {errors.branchCode && <p className="text-red-500 text-sm mt-1">{errors.branchCode.message}</p>}
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Confirmation Letter (Optional)</label>
+                                <div className="relative flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-100 hover:bg-gray-200 transition">
+                                    <input
+                                        type="file"
+                                        id="confirmationLetter"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        {...register("confirmationLetter")}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            setConfirmationLetterPreview(file || null);
+                                        }}
+                                    />
+                                    <span className="text-gray-600">Click to upload or drag & drop</span>
+                                </div>
+
+                                {/* File preview */}
+                                {confirmationLetterPreview && (
+                                    <div className="mt-3 flex items-center space-x-3">
+                                        <span className="text-gray-700">{confirmationLetterPreview.name}</span>
+                                        <a
+                                            href={URL.createObjectURL(confirmationLetterPreview)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 text-sm hover:underline"
+                                        >
+                                            View
+                                        </a>
+                                        <button
+                                            type="button"
+                                            className="text-red-500 text-sm hover:underline"
+                                            onClick={() => {
+                                                setConfirmationLetterPreview(null);
+                                                // Clear the file input
+                                                const fileInput = document.getElementById('confirmationLetter') as HTMLInputElement;
+                                                if (fileInput) fileInput.value = '';
+                                                // Clear from form state
+                                                setValue("confirmationLetter", null);
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+
 
                     {/* Password Section */}
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-lg shadow-md p-6">

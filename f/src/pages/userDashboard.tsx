@@ -53,13 +53,14 @@ const UserDash = () => {
                 if (!id) throw new Error("User ID not found");
 
                 const [ myInfo, referralDetails, allReferredUser] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/users`),
+                    // axios.get(`${API_BASE_URL}/users`),
                     axios.get(`${API_BASE_URL}/users/${id}`),
                     axios.get(`${API_BASE_URL}/referral/${id}/ReferredBy`),
                     axios.get(`${API_BASE_URL}/referral/${id}/referrals`),
                 ].map(p => p.catch(error => ({ data: null, error }))));
 
                 setMyInfo(myInfo.data.user);
+                console.log(myInfo.data.user);
                 setUserReferralLink(`${BASE_SIGNUP_URL}?ref=${myInfo.data.user.referralCodeShare}`);
                 setVendorReferralLink(`${BASE_SIGNUP_URL_vendor}?ref=${myInfo.data.user.referralCodeShare}`);
                 setReferredBy(referralDetails?.data?.referrer || null);

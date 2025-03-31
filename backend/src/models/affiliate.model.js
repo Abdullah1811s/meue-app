@@ -35,7 +35,42 @@ const affiliateSchema = new mongoose.Schema({
   socialMediaPlatforms: [{ type: String }],
   otherPromotionMethod: { type: String, default: null },
   targetAudience: { type: String, default: null },
-  referralCode: { type: String }
+  referralCode: { type: String },
+  bankName: { type: String, required: true },
+  accountHolder: { type: String, required: true },
+  accountNumber: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function (v) {
+        return /^\d{5,20}$/.test(v);
+      },
+      message: 'Account number must be 5-20 digits'
+    }
+  },
+  branchCode: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function (v) {
+        return /^\d{4,10}$/.test(v);
+      },
+      message: 'Branch code must be 4-10 digits'
+    }
+  },
+  bankConfirmationUrl: {
+    public_id: { type: String },
+    secure_url: { type: String }
+  },
+  totalR10: {
+    type: Number
+  },
+  totalR50: {
+    type: Number,
+  },
+  idNumber: {
+    type: String
+  }
 });
 
 

@@ -102,13 +102,16 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState<any>();
   const [vendors, setVendors] = useState<any[]>([]);
   const [currentSlide,] = useState(0);
-  const [, setUser] = useState<any>();
+  const [user, setUser] = useState<any>(null);
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
   const isPaid = useSelector((state: any) => state.auth.isPaid)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showTimer, setShowTimer] = useState(true);
+
+
+
 
   useEffect(() => {
     // Handle mobile timer
@@ -120,7 +123,7 @@ export default function Home() {
   useEffect(() => {
     const id = localStorage.getItem("id")
     if (isAuthenticated && id) {
-     
+
       userId = id;
       navigate(`/users/${id}`);
     } else if (isVendorAuthenticated && id) {
@@ -153,20 +156,30 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  useEffect(() => {
+    // Ensure `user` exists before checking `isPaid`
+    if (user && isPaid && user.userType === "R10") {
+      console.log("User has paid again, restarting timer...");
+      startTimer(new Date().toISOString()); // Assume payment just happened now
+    }
+  }, [isPaid]); // isAdd `user` dependency to ensure it's available
 
   const fetchData = async () => {
     try {
-
       const [userResponse, vendorResponse] = await Promise.all([
         axios.get(`${API_BASE_URL}/users/${userId}`),
         axios.get(`${API_BASE_URL}/vendor`),
       ]);
 
-      // Update states with fetched data
-      setUser(userResponse.data.user);
-      if (userResponse.data.user.userType === "R10") {
-        startTimer(userResponse.data.user.dailyLoginDate);
+      // Update state only after data is fetched
+      const fetchedUser = userResponse.data.user;
+      setUser(fetchedUser);
+
+      // Start timer only if `userType` is "R10"
+      if (fetchedUser.userType === "R10") {
+        startTimer(fetchedUser.dailyLoginDate);
       }
+
       setVendors(vendorResponse.data);
       setHasFetched(true);
     } catch (error) {
@@ -311,6 +324,8 @@ export default function Home() {
 
     return () => clearInterval(timerInterval);
   };
+
+
 
   return (
     <>

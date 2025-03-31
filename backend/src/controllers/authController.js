@@ -36,6 +36,90 @@ export const verifyCaptcha = async (captchaToken) => {
 };
 
 
+
+
+
+export const Login = async (req, res) => {
+    try {
+
+        const { email, password, captchaToken } = req.body;
+        if (!email || !password)
+            return res.status(400).json({ message: "All fields are required" });
+        if (!captchaToken) {
+            return res.status(400).json({ success: false, message: "Captcha required" });
+        }
+
+        const isCaptchaValid = await verifyCaptcha(captchaToken);
+        if (!isCaptchaValid) {
+            return res.status(400).json({ message: "Captcha verification failed please reload and try again" });
+        }
+
+        if (email.endsWith("@adminMenu.com")) {
+            const admin = await Admin.findOne({ email });
+            if (!admin || !(await admin.comparePassword(password))) {
+                return res.status(401).json({ message: "Invalid Admin Credentials" });
+            }
+
+            const adminTokenPayload = {
+                id: admin._id,
+                name: admin.name || "Admin",
+                role: "admin"
+            };
+            const adminToken = generateToken(adminTokenPayload);
+
+            return res.status(200).json({
+                message: "Admin Logged in",
+                admin: {
+                    ...admin.toObject(),
+                    password: undefined
+                },
+                token: adminToken
+            });
+        }
+
+        // Normal User Login
+        const user = await usersModel.findOne({ email });
+        if (!user || !(await user.comparePassword(password)))
+            return res.status(401).json({ message: "Email or Password is wrong" });
+
+        const tokenPayload = {
+            id: user._id,
+            name: user.name,
+            role: user.role
+        };
+        const token = generateToken(tokenPayload);
+
+        const referrals = await referralModel.find({ referrer: user._id });
+        const today = new Date().setHours(0, 0, 0, 0);
+        const lastLogin = user.dailyLoginDate ? new Date(user.dailyLoginDate).setHours(0, 0, 0, 0) : null;
+
+        if (lastLogin !== today) {
+            user.dailyLoginDate = new Date();
+            user.DailyLoginPoint += 10
+            await addPoints(user._id, user.DailyLoginPoint);
+            await user.save();
+        }
+        return res.status(200).json({
+            message: "User Logged in",
+            user: {
+                ...user.toObject(),
+                password: undefined,
+                referralCode: user.referralCode,
+                referrals
+            },
+            token
+        });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "Server error Please try again later",
+            error: error.message
+        });
+    }
+};
+
+
 export const signUp = async (req, res) => {
     try {
         let referrer1;
@@ -134,91 +218,6 @@ export const signUp = async (req, res) => {
         console.error("Error while signing up:", error);
         return res.status(500).json({
             error: error,
-        });
-    }
-};
-
-
-
-
-
-
-export const Login = async (req, res) => {
-    try {
-
-        const { email, password, captchaToken } = req.body;
-        if (!email || !password)
-            return res.status(400).json({ message: "All fields are required" });
-        if (!captchaToken) {
-            return res.status(400).json({ success: false, message: "Captcha required" });
-        }
-
-        const isCaptchaValid = await verifyCaptcha(captchaToken);
-        if (!isCaptchaValid) {
-            return res.status(400).json({ message: "Captcha verification failed please reload and try again" });
-        }
-
-        if (email.endsWith("@adminMenu.com")) {
-            const admin = await Admin.findOne({ email });
-            if (!admin || !(await admin.comparePassword(password))) {
-                return res.status(401).json({ message: "Invalid Admin Credentials" });
-            }
-
-            const adminTokenPayload = {
-                id: admin._id,
-                name: admin.name || "Admin",
-                role: "admin"
-            };
-            const adminToken = generateToken(adminTokenPayload);
-
-            return res.status(200).json({
-                message: "Admin Logged in",
-                admin: {
-                    ...admin.toObject(),
-                    password: undefined
-                },
-                token: adminToken
-            });
-        }
-
-        // Normal User Login
-        const user = await usersModel.findOne({ email });
-        if (!user || !(await user.comparePassword(password)))
-            return res.status(401).json({ message: "Email or Password is wrong" });
-
-        const tokenPayload = {
-            id: user._id,
-            name: user.name,
-            role: user.role
-        };
-        const token = generateToken(tokenPayload);
-
-        const referrals = await referralModel.find({ referrer: user._id });
-        const today = new Date().setHours(0, 0, 0, 0);
-        const lastLogin = user.dailyLoginDate ? new Date(user.dailyLoginDate).setHours(0, 0, 0, 0) : null;
-
-        if (lastLogin !== today) {
-            user.dailyLoginDate = new Date();
-            user.DailyLoginPoint += 10
-            await addPoints(user._id, user.DailyLoginPoint);
-            await user.save();
-        }
-        return res.status(200).json({
-            message: "User Logged in",
-            user: {
-                ...user.toObject(),
-                password: undefined,
-                referralCode: user.referralCode,
-                referrals
-            },
-            token
-        });
-
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({
-            message: "Server error Please try again later",
-            error: error.message
         });
     }
 };

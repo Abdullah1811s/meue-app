@@ -19,7 +19,8 @@ import {
   ShipWheelIcon,
   Check,
   Award,
-  Loader
+  Loader,
+  ChevronDownIcon
 
 } from 'lucide-react';
 import {
@@ -37,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import CustomDatePicker from '@/components/customComponents/Datepicker';
 import { Input } from '@/components/ui/input';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { FaSpinner } from 'react-icons/fa6';
 
 
 export interface IVendor {
@@ -98,6 +100,14 @@ export interface IVendor {
 }
 
 interface Affiliated {
+  idNumber: any;
+  totalR10: number;
+  bankConfirmationUrl: any;
+  accountNumber: any;
+  branchCode: any;
+  affiliate: any;
+  accountHolder: any;
+  bankName: any;
   _id: string;
   fullName: string;
   surname: string;
@@ -222,6 +232,7 @@ const AdminDashboard = () => {
   const [isManageUser, setManageUser] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
   // const [onRaff, setOnRaff] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [isCreateAdminModalOpen, setCreateAdminModalOpen] = useState(false);
@@ -243,6 +254,19 @@ const AdminDashboard = () => {
     quantity: "",
     endDate: "",
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [delAffLoading, setDelAffLoading] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectBtn, setRejectBtn] = useState<{ [key: string]: boolean }>({});
+  const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
+  const [expandedAffiliates, setExpandedAffiliates] = useState<any>({});
+  const [referralStats, setReferralStats] = useState<any>({});
+  // const [rejectDialogOpen1, setRejectDialogOpen1] = useState<any>(false);
+  const [rejectionReason1, setRejectionReason1] = useState<any>('');
+  const [vendorToReject1, setVendorToReject] = useState<any>(null);
+
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     username: '',
     email: '',
@@ -277,16 +301,16 @@ const AdminDashboard = () => {
       prizes: updatedPrizes
     });
   };
-  const addPrizeField = (): void => {
-    setFormData({
-      ...formData,
-      prizes: [...formData.prizes, {
-        name: "",
-        quantity: "",
-        endDate: null
-      }]
-    });
-  };
+  // const addPrizeField = (): void => {
+  //   setFormData({
+  //     ...formData,
+  //     prizes: [...formData.prizes, {
+  //       name: "",
+  //       quantity: "",
+  //       endDate: null
+  //     }]
+  //   });
+  // };
 
   const removePrizeField = (index: number): void => {
     const updatedPrizes = formData.prizes.filter((_, i) => i !== index);
@@ -332,16 +356,14 @@ const AdminDashboard = () => {
         }
       });
 
-      setRaff((prev) => [...prev, response.data.raffle]);
+      // setRaff((prev) => [...prev, response.data.raffle]);
       toast.success(response.data.message);
 
-      // Reset form to initial state
       setFormData({
         name: "",
         scheduledAt: "",
         prizes: [{
           name: "",
-
           quantity: "",
           endDate: null
         }]
@@ -374,13 +396,42 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       const res = await axios.get(`${API_BASE_URL}/affiliated`);
+
+
       setAffiliates(res.data.data);
       setIsLoading(false);
+
     } catch (error: any) {
       setError(error.message || 'Failed to fetch affiliates');
       setIsLoading(false);
       toast.error(error.message);
       console.log(error.message);
+    }
+  };
+
+  const fetchReferralStats = async (affiliateId: any) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/referral/${affiliateId}/stats`);
+      setReferralStats((prev: any) => ({
+        ...prev,
+        [affiliateId]: res.data
+      }));
+    } catch (error) {
+      console.error("Error fetching referral stats:", error);
+      // Handle error as needed
+    }
+  };
+
+  const toggleReferralInfo = async (affiliateId: any) => {
+    // Toggle the expanded state
+    setExpandedAffiliates((prev: any) => ({
+      ...prev,
+      [affiliateId]: !prev[affiliateId]
+    }));
+
+    // If we're expanding and don't have the data yet, fetch it
+    if (!expandedAffiliates[affiliateId] && !referralStats[affiliateId]) {
+      await fetchReferralStats(affiliateId);
     }
   };
 
@@ -404,7 +455,7 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       const res = await axios.get(`${API_BASE_URL}/Raff`);
-      console.log(res.data.raff);
+      console.log("This is the data : ", res.data.raff);
       setRaff(res.data.raff);
 
       setIsLoading(false);
@@ -520,11 +571,11 @@ const AdminDashboard = () => {
   };
 
 
-  const delAffiliate = async (affId: string) => {
+  const delAffiliate = async (affId: string, reason: string) => {
     try {
-
+      setDelAffLoading(true);
       const res = await axios.delete(`${API_BASE_URL}/affiliated/removeAffiliate`, {
-        data: { affId },
+        data: { affId, reason },
         headers: {
           Authorization: `Bearer ${adminToken}`,
           "Content-Type": "application/json",
@@ -533,8 +584,12 @@ const AdminDashboard = () => {
 
       setAffiliates((prev) => prev.filter((item) => item._id !== affId));
       toast.success(res.data.message);
+      setDelAffLoading(false);
     } catch (error) {
       toast.error("Failed to delete =. Try again!");
+    }
+    finally {
+      setDelAffLoading(false);
     }
   }
 
@@ -600,11 +655,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const updateAffiliate = async (id: string, status: string) => {
-    setLoadingStates(prev => ({ ...prev, [id]: true })); // Start loading for this affiliate
+  const updateAffiliate = async (id: string, status: string, reason: string) => {
+    if (status === "approved")
+      setLoadingStates(prev => ({ ...prev, [id]: true }));
+    else if (status === "rejected")
+      setRejectBtn(prev => ({ ...prev, [id]: true }));
     try {
-      const payload = { id, status };
-      const response = await axios.put(
+      const payload = { id, status, reason };
+      await axios.put(
         `${API_BASE_URL}/affiliated/updateStatus`,
         payload,
         {
@@ -625,8 +683,12 @@ const AdminDashboard = () => {
         })
       );
 
-      console.log(response)
       toast.success("Status updated successfully");
+      if (status === "rejected") {
+        toast.success("Rejected affiliate will be removed from the database after 24 hours", {
+          duration: 8000,
+        });
+      }
     } catch (error: any) {
       console.error("Error updating affiliate status:", error.message);
     } finally {
@@ -634,12 +696,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const updatePartnerStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
-    setIsApproving(true);
+  const updatePartnerStatus = async (id: string, status: "pending" | "approved" | "rejected", reason: string) => {
+    if (status === "approved")
+      setIsApproving(true);
+    if (status === "rejected")
+      setIsRejecting(true);
     setLoadingStates(prev => ({ ...prev, [id]: true }));
 
     try {
-      const payload = { id, status };
+      const payload = { id, status, reason };
       const res = await axios.put(
         `${API_BASE_URL}/vendor/updateStatus`,
         payload,
@@ -651,7 +716,7 @@ const AdminDashboard = () => {
         }
       );
 
-      console.log(res);
+
       toast.success("Partner status updated successfully");
       setVendors(prevPartners =>
         prevPartners.map((partner): IVendor => {
@@ -663,7 +728,7 @@ const AdminDashboard = () => {
       );
       try {
 
-        const response = await axios.post(
+        await axios.post(
           `${API_BASE_URL}/wheel/add`,
           {
             vendorInfo: res.data.vendor._id,
@@ -677,10 +742,11 @@ const AdminDashboard = () => {
           }
         );
 
-        console.log("Successfully added wheel offers:", response.data);
+
       } catch (error: any) {
         console.error("Failed to add wheel offers:", error);
-        toast.error(`No offer available from the partner to add to the wheel. Please check and try again.`, { duration: 5000 });
+        if (status === "approved")
+          toast.error(`No offer available from the partner to add to the wheel. Please check and try again.`, { duration: 5000 });
         throw error;
       }
 
@@ -690,7 +756,10 @@ const AdminDashboard = () => {
     } finally {
       setLoadingStates(prev => ({ ...prev, [id]: false })); // Stop loading
     }
-    setIsApproving(false);
+    if (status === "approved")
+      setIsApproving(false);
+    if (status === "rejected")
+      setIsRejecting(false);
   };
 
   const updateTier = async (id: string, vendorTier: any) => {
@@ -1097,69 +1166,197 @@ const AdminDashboard = () => {
                 <div className="bg-red-100 p-4 rounded-md text-red-700">{error}</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {affiliates.map(affiliate => (
-                    <div key={affiliate._id} className="bg-white rounded-lg shadow p-4 md:p-6 text-sm md:text-base flex flex-col">
-                      <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 break-words">{affiliate.fullName} {affiliate.surname}</h3>
+                  {affiliates.map((affiliate) => (
+                    <div key={affiliate._id} className="bg-white rounded-lg shadow p-4 md:p-6 flex flex-col">
+                      <h3 className="text-lg md:text-xl font-bold mb-3 break-words">
+                        {affiliate.fullName} {affiliate.surname}
+                      </h3>
                       <p className="text-gray-600 mb-2 break-words"><strong>Email:</strong> {affiliate.email}</p>
                       <p className="text-gray-600 mb-2"><strong>Phone:</strong> {affiliate.phoneNumber}</p>
                       <p className="text-gray-600 mb-2">
                         <strong>Type:</strong>
-                        <span className={`ml-1 px-2 py-1 rounded-full text-xs ${affiliate.type === 'business' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                        <span className={`ml-1 px-2 py-1 rounded-full text-xs ${affiliate.type === "business" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}>
                           {affiliate.type}
                         </span>
                       </p>
-                      {affiliate.type === 'business' && (
+                      {affiliate.type === "individual" && (
+                        <div className="mt-2">
+                          <p className="text-gray-600 mb-2 break-words"><strong>ID number:</strong> {affiliate.idNumber}</p>
+                        </div>
+                      )}
+                      {affiliate.type === "business" && (
                         <div className="mt-2">
                           <p className="text-gray-600 mb-2 break-words"><strong>Business Name:</strong> {affiliate.businessName}</p>
                           <p className="text-gray-600 mb-2 break-words"><strong>Reg Number:</strong> {affiliate.companyRegistrationNumber}</p>
                           <p className="text-gray-600 mb-2 break-words"><strong>VAT Number:</strong> {affiliate.vatNumber}</p>
                           <p className="text-gray-600 mb-2 break-words"><strong>Address:</strong> {affiliate.tradingAddress}</p>
-                          <p className="text-gray-600 mb-2 break-words"><strong>City:</strong> {affiliate.provinceCity}</p>
-                          <p className="text-gray-600 mb-2 break-words"><strong>Business Phone:</strong> {affiliate.businessContactNumber}</p>
-                          <p className="text-gray-600 mb-2 break-words"><strong>Business Email:</strong> {affiliate.businessEmailAddress}</p>
                         </div>
                       )}
-                      <p className="text-gray-600 mb-2 break-words"><strong>Promotion:</strong> {affiliate.promotionChannels?.join(', ')}</p>
-                      <p className="text-gray-600 mb-2 break-words"><strong>Social Media:</strong> {affiliate.socialMediaPlatforms?.join(', ')}</p>
-                      <p className="text-gray-600 mb-2 break-words"><strong>Other Promotion:</strong> {affiliate.otherPromotionMethod}</p>
-                      <p className="text-gray-600 mb-2 break-words"><strong>Target Audience:</strong> {affiliate.targetAudience}</p>
 
-                      {/* Action Buttons */}
+                      <div className="mt-4">
+                        <h4 className="text-lg font-bold mb-2">Bank Details</h4>
+                        <p className="text-gray-600 mb-2"><strong>Bank Name:</strong> {affiliate.bankName}</p>
+                        <p className="text-gray-600 mb-2"><strong>Account Holder:</strong> {affiliate.accountHolder}</p>
+                        <p className="text-gray-600 mb-2"><strong>Account Number:</strong> {affiliate.accountNumber}</p>
+                        <p className="text-gray-600 mb-2"><strong>Branch Code:</strong> {affiliate.branchCode}</p>
+
+                        {affiliate.bankConfirmationUrl?.secure_url && (
+                          <div className="mt-2">
+                            <strong className="text-gray-700">Bank Confirmation Document:</strong>
+                            {affiliate.bankConfirmationUrl.secure_url.endsWith('.pdf') ? (
+                              <a href={affiliate.bankConfirmationUrl.secure_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline ml-2">
+                                View PDF
+                              </a>
+                            ) : (
+                              <img src={affiliate.bankConfirmationUrl.secure_url} alt="Bank Confirmation" className="mt-2 w-full max-w-xs rounded-lg shadow" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Referral Info Section */}
+                      <div className="mt-4 border-t pt-4">
+                        <button
+                          onClick={() => toggleReferralInfo(affiliate._id)}
+                          className="flex items-center justify-between w-full text-gray-700 hover:text-gray-900 transition-colors"
+                        >
+                          <span className="font-medium">
+                            {expandedAffiliates[affiliate._id] ? 'Hide Referral Stats' : 'Show Referral Stats'}
+                          </span>
+                          <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform ${expandedAffiliates[affiliate._id] ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedAffiliates[affiliate._id] ? 'max-h-96 mt-3' : 'max-h-0'}`}>
+                          {referralStats[affiliate._id] ? (
+                            <div className="space-y-3">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Total Referrals:</span>
+                                <span className="font-medium">{referralStats[affiliate._id].totalReferrals}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">R10 Users:</span>
+                                <span className="font-medium">{referralStats[affiliate._id].userReferrals.r10Count}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">R50 Users:</span>
+                                <span className="font-medium">{referralStats[affiliate._id].userReferrals.r50Count}</span>
+                              </div>
+                            </div>
+                          ) : expandedAffiliates[affiliate._id] ? (
+                            <div className="flex justify-center items-center py-3">
+                              <FaSpinner className="animate-spin text-gray-400" />
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
                       <div className="mt-4 flex flex-wrap gap-2">
                         {affiliate.status === "approved" ? (
                           <span className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md text-sm">Approved</span>
+                        ) : affiliate.status === "rejected" ? (
+                          <span className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md text-sm">Rejected</span>
                         ) : (
-                          <Button
-                            onClick={() => updateAffiliate(affiliate._id, "approved")}
-                            className={`bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 text-sm ${loadingStates[affiliate._id] ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
-                            disabled={loadingStates[affiliate._id]}
-                          >
-                            {loadingStates[affiliate._id] ? "Approving..." : "Approve"}
-                          </Button>
+                          <>
+                            <Button
+                              onClick={() => updateAffiliate(affiliate._id, "approved", "")}
+                              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 text-sm"
+                              disabled={loadingStates[affiliate._id]}
+                            >
+                              {loadingStates[affiliate._id] ? "Approving..." : "Approve"}
+                            </Button>
+
+                            <Button
+                              disabled={rejectBtn[affiliate._id]}
+                              onClick={() => {
+                                setRejectDialogOpen(true);
+                                setSelectedAffiliate(affiliate);
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 text-sm"
+                            >
+                              {rejectBtn[affiliate._id] ? "Rejecting..." : "Reject"}
+                            </Button>
+                          </>
                         )}
 
-                        {affiliate.status !== "approved" && (
-                          <Button
-                            onClick={() => updateAffiliate(affiliate._id, "rejected")}
-                            className={`bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 text-sm ${loadingStates[affiliate._id] ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
-                            disabled={loadingStates[affiliate._id]}
-                          >
-                            {loadingStates[affiliate._id] ? "Rejecting..." : "Reject"}
-                          </Button>
-                        )}
                         <Button
-                          onClick={() => delAffiliate(affiliate._id)}
-                          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 text-sm"
-                          disabled={loadingStates[affiliate._id]}
+                          onClick={() => {
+                            setDeleteDialogOpen(true);
+                            setSelectedAffiliate(affiliate);
+                          }}
+                          disabled={delAffLoading}
+                          className={`${delAffLoading ? "bg-gray-400 cursor-not-allowed" : "bg-gray-500 hover:bg-gray-600"
+                            } text-white px-4 py-2 rounded-lg shadow-md transition-all transform hover:scale-105 text-sm`}
                         >
-                          Delete
+                          {delAffLoading ? "Deleting..." : "Delete"}
                         </Button>
+
                       </div>
                     </div>
                   ))}
+
+                  {/* Reject Confirmation Dialog */}
+                  <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reject Affiliate</DialogTitle>
+                        <DialogDescription>
+                          Provide a reason for rejecting <strong>{selectedAffiliate?.fullName}</strong>.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <textarea
+                        className="w-full border rounded p-2"
+                        placeholder="Enter rejection reason..."
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                      />
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+                        <Button
+                          variant="destructive"
+                          disabled={!rejectionReason.trim()}
+                          onClick={() => {
+                            updateAffiliate(selectedAffiliate._id, "rejected", rejectionReason);
+                            setRejectDialogOpen(false);
+                          }}
+                        >
+                          Confirm Reject
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Delete Confirmation Dialog */}
+                  <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Delete Affiliate</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to delete <strong>{selectedAffiliate?.fullName}</strong>? This action cannot be undone.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <textarea
+                        className="w-full border rounded p-2"
+                        placeholder="Enter cancellation reason..."
+                        value={cancellationReason}
+                        onChange={(e) => setCancellationReason(e.target.value)}
+                      />
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                        <Button
+                          variant="destructive"
+                          disabled={!cancellationReason.trim()}
+                          onClick={() => {
+                            delAffiliate(selectedAffiliate._id, cancellationReason);
+                            setDeleteDialogOpen(false);
+                          }}
+                        >
+                          Confirm Delete
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
+
               )}
             </motion.div>
           )}
@@ -1415,8 +1612,8 @@ const AdminDashboard = () => {
 
                       <div className="mt-4 md:mt-6 flex flex-wrap gap-2">
                         <Button
-                          onClick={() => updatePartnerStatus(vendor._id, "approved")}
-                          disabled={isApproving || vendor.status === "approved" || vendor.status === "rejected"}
+                          onClick={() => updatePartnerStatus(vendor._id, "approved", "")}
+                          disabled={isApproving || vendor.status === "approved"}
                           className={`${vendor.status === "approved"
                             ? "bg-green-400 cursor-not-allowed"
                             : vendor.status === "rejected"
@@ -1429,17 +1626,58 @@ const AdminDashboard = () => {
                         </Button>
 
                         {vendor.status !== "approved" && (
-                          <Button
-                            onClick={() => updatePartnerStatus(vendor._id, "rejected")}
-                            disabled={vendor.status === "rejected"}
-                            className={`${vendor.status === "rejected"
-                              ? "bg-red-400 cursor-not-allowed"
-                              : "bg-red-500 hover:bg-red-600"
-                              } text-white px-4 py-2 rounded-lg shadow-md transition-transform transform ${vendor.status !== "rejected" ? "hover:scale-105" : ""
-                              } text-sm`}
-                          >
-                            {vendor.status === "rejected" ? "Rejected" : "Reject"}
-                          </Button>
+                          <>
+                            <Button
+                              onClick={() => {
+                                if (vendor.status !== "rejected") {
+                                  setVendorToReject(vendor._id);
+                                  setRejectDialogOpen(true);
+                                }
+                              }}
+                              disabled={isRejecting || vendor.status === "rejected"}
+                              className={`${vendor.status === "rejected"
+                                ? "bg-red-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                                } text-white px-4 py-2 rounded-lg shadow-md transition-transform transform ${vendor.status !== "rejected" ? "hover:scale-105" : ""
+                                } text-sm`}
+                            >
+                              {isRejecting ? "rejecting..." : vendor.status === "rejected" ? "Rejected" : "Reject"}
+                            </Button>
+
+                            {/* Rejection Dialog */}
+                            {rejectDialogOpen && (
+                              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                                  <h3 className="text-lg font-medium mb-4">Confirm Rejection</h3>
+                                  <p className="mb-2">Please provide a reason for rejecting this vendor:</p>
+                                  <textarea
+                                    className="w-full p-2 border border-gray-300 rounded mb-4"
+
+                                    value={rejectionReason1}
+                                    onChange={(e) => setRejectionReason1(e.target.value)}
+                                    placeholder="Enter rejection reason..."
+                                  />
+                                  <div className="flex justify-end space-x-3">
+                                    <button
+                                      onClick={() => {
+                                        setRejectDialogOpen(false);
+                                        setRejectionReason('');
+                                      }}
+                                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      onClick={() => { updatePartnerStatus(vendorToReject1, "rejected", rejectionReason1), setRejectDialogOpen(false); setRejectionReason(''); }}
+                                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                    >
+                                      Confirm Reject
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
                         )}
 
                         <Button
@@ -1644,7 +1882,7 @@ const AdminDashboard = () => {
                         />
                       </div>
                       <div className="grid w-full items-center gap-2">
-                        <label htmlFor="date">Date</label>
+                        <label htmlFor="date">Schedule Date</label>
                         <CustomDatePicker
                           selectedDate={selectedDate}
                           setSelectedDate={setSelectedDate}
@@ -1664,40 +1902,45 @@ const AdminDashboard = () => {
                               />
 
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                placeholder="Quantity"
-                                value={prize.quantity}
-                                onChange={(e) => handlePrizeChange(index, 'quantity', e.target.value)}
-                              />
-                              <CustomDatePicker
-                                selectedDate={prize.endDate}
-                                setSelectedDate={(date) => handlePrizeChange(index, 'endDate', date)}
+                            <div className="flex flex-wrap items-center gap-4">
+                              {/* Quantity Field */}
+                              <div className="flex items-center gap-2">
+                                <label htmlFor="quantity" className="font-medium">Quantity:</label>
+                                <Input
+                                  placeholder="Quantity"
+                                  value={prize.quantity}
+                                  onChange={(e) => handlePrizeChange(index, 'quantity', e.target.value)}
+                                  className="w-24"
+                                />
+                              </div>
 
-                              />
+                              {/* End Date Field */}
+                              <div className="flex items-center gap-2">
+                                <label htmlFor="endDate" className="font-medium">End Date:</label>
+                                <CustomDatePicker
+                                  selectedDate={prize.endDate}
+                                  setSelectedDate={(date) => handlePrizeChange(index, 'endDate', date)}
+
+                                />
+                              </div>
+
+                              {/* Remove Button (Only if multiple prizes exist) */}
                               {formData.prizes.length > 1 && (
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removePrizeField(index)}
-                                  className="h-8 w-8 flex-shrink-0"
+                                  className="h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
                                 >
                                   <X size={16} />
                                 </Button>
                               )}
                             </div>
+
                           </div>
                         ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addPrizeField}
-                          className="mt-2"
-                        >
-                          Add Another Prize
-                        </Button>
+
                       </div>
 
                       <DialogFooter className="sm:justify-end">
@@ -1796,13 +2039,13 @@ const AdminDashboard = () => {
                                     </span>
                                   </div>
 
-                                  <div className="text-gray-800 font-semibold">{participant.user.email}</div>
-                                  <div className="text-gray-600">{participant.user.phone}</div>
+                                  <div className="text-gray-800 font-semibold">{participant?.user.email}</div>
+                                  <div className="text-gray-600">{participant?.user.phone}</div>
 
                                   <div className="mt-2 text-gray-600 text-sm">
-                                    <span className="block">{participant.user.street}</span>
-                                    <span className="block">{participant.user.town}, {participant.user.city}</span>
-                                    <span className="block">{participant.user.province}, {participant.user.postalCode}</span>
+                                    <span className="block">{participant?.user.street}</span>
+                                    <span className="block">{participant?.user.town}, {participant?.user.city}</span>
+                                    <span className="block">{participant?.user.province}, {participant?.user.postalCode}</span>
                                   </div>
                                 </li>
 

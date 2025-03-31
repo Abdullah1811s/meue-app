@@ -30,7 +30,7 @@ const RaffSchema = new mongoose.Schema(
         },
         entries: {
           type: Number,
-          enum: [10, 1], // R50 = 10 entries, R10 = 1 entry
+          enum: [10, 1],
 
         },
       },

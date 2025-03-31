@@ -297,7 +297,7 @@ export const vendorTierUpdate = async (req, res) => {
 
 export const updateVendorStatus = async (req, res) => {
     try {
-        const { id, status } = req.body;
+        const { id, status, reason } = req.body;
         console.log(req.body);
 
         if (!id || !status) {
@@ -306,7 +306,7 @@ export const updateVendorStatus = async (req, res) => {
 
 
         const validStatuses = ["pending", "approved", "rejected"];
-       
+
 
         const updatedVendor = await vendorModel.findByIdAndUpdate(
             id,
@@ -334,12 +334,30 @@ export const updateVendorStatus = async (req, res) => {
                 `;
 
             } else if (status === "rejected") {
-                subject = "Your Partner Application Status";
+                subject = "Update on Your Partner Application";
                 message = `
                     <p>Dear ${updatedVendor.businessName},</p>
-                    <p>We appreciate your interest in becoming a vendor on our platform. After review, we regret to inform you that your application has been <strong>rejected</strong>.</p>
-                    <p>If you have any questions or would like to reapply in the future, please feel free to reach out.</p>
-                    <p>Best regards, <br> The Menu Team</p>
+                    <p>Thank you for your interest in partnering with us. After careful consideration, we regret to inform you that we're unable to approve your application at this time.</p>
+                    
+                    ${reason ? `
+                    <p><strong>Reason for rejection:</strong><br>
+                    ${reason}</p>
+                    ` : ''}
+                
+                    <p>This decision was based on our current partnership criteria and business needs. We genuinely appreciate the time and effort you put into your application.</p>
+                
+                    <p>If you would like to:
+                    <ul>
+                        <li>Discuss this decision further</li>
+                        <li>Address the reasons for rejection</li>
+                        <li>Reapply in the future</li>
+                    </ul>
+                    please don't hesitate to contact our partnership team.</p>
+                
+                    <p>We wish you success in your business endeavors and hope we might have the opportunity to collaborate in the future.</p>
+                
+                    <p>Best regards,<br>
+                    The Partnership Team</p>
                 `;
             }
 
@@ -404,7 +422,7 @@ export const registerVendor = async (req, res) => {
             password,
             referralCodeUsed
         } = req.body;
-        console.log("this is the wheel offer " , req.body);
+        console.log("this is the wheel offer ", req.body);
 
         const existingVendor = await vendorModel.findOne({ businessEmail });
         if (existingVendor) {
@@ -463,7 +481,7 @@ export const registerVendor = async (req, res) => {
 
         // Process referral code if used
         if (referralCodeUsed) {
-        
+
             await checkCode(newVendor.referralCodeUsed, newVendor._id);
         }
 
@@ -487,7 +505,7 @@ export const registerVendor = async (req, res) => {
         };
 
         const emailSent = await sendEmail(smtpConfig, newVendor.businessEmail, subject, subject, message);
-        console.log("This is the vendor that has been saved in database" , vendorResponse);
+        console.log("This is the vendor that has been saved in database", vendorResponse);
         res.status(201).json({
             message: "Vendor created successfully",
             vendor: vendorResponse
@@ -517,7 +535,7 @@ export const updateVendorDetails = async (req, res) => {
     try {
         const vendorId = req.params.id;
         const updates = req.body;
-        
+
         // Remove restricted fields
         const restrictedFields = ['password', 'status', 'vendorTier', 'createdAt', '_id'];
         restrictedFields.forEach(field => {

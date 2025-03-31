@@ -138,6 +138,7 @@ function VendorOnboarding() {
       setReferralCode(refCode);
     }
   }, [])
+
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<VendorFormData>({
     defaultValues: {
       socialMediaHandles: {},
@@ -257,17 +258,12 @@ function VendorOnboarding() {
     try {
       const cloudName = import.meta.env.VITE_CLOUD_NAME;
       const api = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
-
-      console.log("Uploading to Cloudinary:", data);
-
       const res = await axios.post(api, data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
       const { secure_url, public_id } = res.data;
-      console.log("Uploaded File URL:", res.data);
 
       return { secure_url, public_id };
     } catch (error) {
@@ -329,7 +325,7 @@ function VendorOnboarding() {
 
   const onSubmit = async (data: VendorFormData) => {
     setLoading(true);
-   
+
     try {
       const {
         companyRegistrationCertificate,
@@ -414,7 +410,7 @@ function VendorOnboarding() {
         businessPromotionalMaterialURl,
       };
 
-     
+
       const response = await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
         headers: {
           "Content-Type": "application/json",
@@ -767,15 +763,21 @@ function VendorOnboarding() {
                           {...register("countryCode", { required: "Select a country code" })}
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                         >
-                          <option value="+1">🇺🇸 +1</option>
-                          <option value="+44">🇬🇧 +44</option>
-                          <option value="+27">🇿🇦 +27</option>
-                          <option value="+91">🇮🇳 +91</option>
-                          <option value="+61">🇦🇺 +61</option>
-                          <option value="+49">🇩🇪 +49</option>
-                          <option value="+33">🇫🇷 +33</option>
-                          <option value="+81">🇯🇵 +81</option>
-                          <option value="+55">🇧🇷 +55</option>
+                          <option value="+27">🇿🇦 (+27)</option>
+                          <option value="+971">🇦🇪 (+971)</option>
+                          <option value="+7">🇷🇺 (+7)</option>
+                          <option value="+20">🇪🇬 (+20)</option>
+                          <option value="+234">🇳🇬 (+234)</option>
+                          <option value="+255">🇹🇿 (+255)</option>
+                          <option value="+256">🇺🇬 (+256)</option>
+                          <option value="+1">🇺🇸 (+1)</option>
+                          <option value="+44">🇬🇧 (+44)</option>
+                          <option value="+91">🇮🇳 (+91)</option>
+                          <option value="+61">🇦🇺 (+61)</option>
+                          <option value="+49">🇩🇪 (+49)</option>
+                          <option value="+33">🇫🇷 (+33)</option>
+                          <option value="+81">🇯🇵 (+81)</option>
+                          <option value="+55">🇧🇷 (+55)</option>
 
 
                         </select>
@@ -1190,7 +1192,7 @@ function VendorOnboarding() {
                   {/* company register detail */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Company Registration Certificate 
+                      Company Registration Certificate
                     </label>
 
                     <div
