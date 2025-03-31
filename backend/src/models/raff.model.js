@@ -78,13 +78,3 @@ RaffSchema.pre('save', function (next) {
 
 export default mongoose.model('RaffModel', RaffSchema);
 
-
-
-/*
-        if they have paid the R50 we make there entries 10
-        if they have paid the R10 we make there entries 1
-
-
-        so for each particpate we have a additonal field entries that we have to edit based on the amount they have paid
-
-    */

@@ -2,7 +2,7 @@ import raffModel from "../models/raff.model.js";
 import usersModel from "../models/users.model.js";
 import vendorModel from "../models/vendor.model.js";
 import { sendEmail } from "../utils/emailService.js";
-
+import mongoose from "mongoose";
 
 
 export const getAllRaff = async (req, res) => {
@@ -30,7 +30,7 @@ export const getAllRaff = async (req, res) => {
 export const makeNewRaff = async (req, res) => {
     try {
         const { name, scheduleAt, prizes, vendorId } = req.body;
-
+        console.log("scheduleAt: " , scheduleAt)
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }
@@ -42,7 +42,7 @@ export const makeNewRaff = async (req, res) => {
         if (scheduleAt) {
 
             scheduledDate = new Date(scheduleAt);
-
+            console.log("scheduledDate : " , scheduledDate)
             if (isNaN(scheduledDate.getTime())) {
                 return res.status(400).json({ message: "Invalid scheduled date format. Please provide a valid date." });
             }
@@ -85,14 +85,14 @@ export const makeNewRaff = async (req, res) => {
         if (R10Users && R10Users.length > 0) {
             R10Users.forEach(user => {
                 const userSignupDateOnly = new Date(user.signupDate).toISOString().split("T")[0];
-
+                console.log("userSignupDateOnly: ", userSignupDateOnly , "scheduledDateOnly: " , scheduledDateOnly);
                 if (userSignupDateOnly === scheduledDateOnly) {
 
                     participants.push({ user: user._id, entries: 1 });
                 }
             });
         }
-
+       
         if (participants.length > 0) {
             const newRaff = await raffModel.create({
                 name,
@@ -231,7 +231,7 @@ export const updateRaffleOfferings = async (req, res) => {
     const { id } = req.params;
     const { offerings } = req.body;
 
-  
+
 
     try {
         // Validate offerings
@@ -491,9 +491,6 @@ export const updateRaffWithWinner = async (req, res) => {
     }
 };
 
-
-
-
 export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
     try {
         if (entries !== 1 && entries !== 10) {
@@ -535,3 +532,23 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
         throw error;
     }
 };
+
+
+export async function removeUserFromAllRaffles(userId) {
+    try {
+        // Validate the userId is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            throw new Error('Invalid user ID');
+        }
+        console.log("This is the user", userId);
+        const result = await raffModel.updateMany(
+            { 'participants.user': userId },
+            { $pull: { participants: { user: userId } } }
+        );
+        console.log("The result after deleteing user" , result)
+        return result;
+    } catch (error) {
+        console.error('Error removing user from raffles:', error);
+        throw error; // Re-throw the error for the caller to handle
+    }
+}

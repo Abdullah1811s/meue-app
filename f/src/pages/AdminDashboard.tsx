@@ -175,11 +175,11 @@ interface Prize {
   endDate: Date | null;
 }
 
-interface RaffFormData {
-  name: string;
-  scheduledAt: string;
-  prizes: Prize[];
-}
+// interface RaffFormData {
+//   name: string;
+//   scheduledAt: string;
+//   prizes: Prize[];
+// }
 
 export interface IUser {
   _id?: string;
@@ -234,7 +234,7 @@ const AdminDashboard = () => {
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   // const [onRaff, setOnRaff] = useState<boolean>(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [, setSelectedDate] = useState<Date | null>(new Date());
   const [isCreateAdminModalOpen, setCreateAdminModalOpen] = useState(false);
   const [hasSelectedOption, setHasSelectedOption] = useState(false)
   const [selectedTier, setSelectedTier] = useState();
@@ -273,7 +273,7 @@ const AdminDashboard = () => {
     password: ''
   });
 
-  const [formData, setFormData] = useState<RaffFormData>({
+  const [formData, setFormData] = useState<any>({
     name: "",
     scheduledAt: "",
     prizes: [{
@@ -313,11 +313,25 @@ const AdminDashboard = () => {
   // };
 
   const removePrizeField = (index: number): void => {
-    const updatedPrizes = formData.prizes.filter((_, i) => i !== index);
+    const updatedPrizes = formData.prizes.filter((_: any, i: any) => i !== index);
     setFormData({
       ...formData,
       prizes: updatedPrizes
     });
+  };
+
+  // Helper function to format date for date input (YYYY-MM-DD)
+  const formatDateForInput = (date: Date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDateOnly = (date: Date) => {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
   };
 
 
@@ -330,12 +344,12 @@ const AdminDashboard = () => {
       setIsSubmitting(true);
 
       // Format the main raffle date
-      const formattedDate = selectedDate
-        ? new Date(selectedDate).toISOString()
+      const formattedDate = formData.scheduledAt
+        ? formatDateOnly(formData.scheduledAt)
         : '';
 
       // Prepare prizes data - ensure required fields are present
-      const preparedPrizes = formData.prizes.map(prize => ({
+      const preparedPrizes = formData.prizes.map((prize: any) => ({
         name: prize.name,
         quantity: prize.quantity || "1", // Default quantity if not provided
         endDate: prize.endDate ? new Date(prize.endDate).toISOString() : null
@@ -343,12 +357,12 @@ const AdminDashboard = () => {
 
       const submissionData = {
         name: formData.name,
-        scheduledAt: formattedDate,
+        scheduleAt: formattedDate, // Now just the date portion
         prizes: preparedPrizes,
-        status: "scheduled", // Default status
-        isVisible: false // Default visibility
+        status: "scheduled",
+        isVisible: false
       };
-
+      console.log("The submission data", submissionData);
       const response = await axios.post(`${API_BASE_URL}/Raff/createRaff`, submissionData, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
@@ -1882,16 +1896,23 @@ const AdminDashboard = () => {
                         />
                       </div>
                       <div className="grid w-full items-center gap-2">
-                        <label htmlFor="date">Schedule Date</label>
-                        <CustomDatePicker
-                          selectedDate={selectedDate}
-                          setSelectedDate={setSelectedDate}
-                          required={true}
+                        <label htmlFor="scheduledAt">Schedule Date</label>
+                        <input
+                          type="date"
+                          id="scheduledAt"
+                          value={formData.scheduledAt ? formatDateForInput(formData.scheduledAt) : ""}
+                          onChange={(e) => {
+                            const date = e.target.value ? new Date(e.target.value) : null;
+                            setFormData((prev:any) => ({ ...prev, scheduledAt: date }));
+                          }}
+                          required
+                          min={new Date().toISOString().split('T')[0]} // This prevents selecting past dates
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
                       <div className="grid w-full items-center gap-2">
                         <label>Prizes</label>
-                        {formData.prizes.map((prize, index) => (
+                        {formData.prizes.map((prize: any, index: any) => (
                           <div key={index} className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Input
@@ -1984,17 +2005,11 @@ const AdminDashboard = () => {
                       >
                         <h3 className="text-lg font-bold truncate">{item.name || "Unnamed Raff"}</h3>
 
-
-
                         {/* Scheduled At */}
                         <p className="text-sm text-gray-600 flex items-center gap-1">
                           <Calendar size={16} className="text-blue-500 flex-shrink-0" />
-                          <p>Schedule at: {new Date(item.scheduledAt).toISOString().split('T')[0]}</p>
-
+                          <span>Schedule at: {new Date(item.scheduledAt).toISOString().split('T')[0]}</span>
                         </p>
-
-
-
 
                         <p className="text-sm text-gray-600 flex items-center gap-1">
                           <Calendar size={16} className="text-red-500 flex-shrink-0" />
@@ -2002,7 +2017,6 @@ const AdminDashboard = () => {
                             <li key={index} className="break-words">
                               End date: {prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : "Not defined"}
                             </li>
-
                           ))}
                         </p>
 
@@ -2011,9 +2025,7 @@ const AdminDashboard = () => {
                           {item.prizes.map((prize: any, index: any) => (
                             <li key={index} className="break-words"> Quantity: {prize.quantity || "Not Defined"}</li>
                           ))}
-
                         </p>
-
 
                         {/* Prizes */}
                         <p className="text-sm font-medium mt-2">🎁 Prizes:</p>
@@ -2039,22 +2051,27 @@ const AdminDashboard = () => {
                                     </span>
                                   </div>
 
-                                  <div className="text-gray-800 font-semibold">{participant?.user.email}</div>
-                                  <div className="text-gray-600">{participant?.user.phone}</div>
+                                  {/* Safe participant.user access */}
+                                  <div className="text-gray-800 font-semibold">{participant?.user?.email || "No email"}</div>
+                                  <div className="text-gray-600">{participant?.user?.phone || "No phone"}</div>
 
                                   <div className="mt-2 text-gray-600 text-sm">
-                                    <span className="block">{participant?.user.street}</span>
-                                    <span className="block">{participant?.user.town}, {participant?.user.city}</span>
-                                    <span className="block">{participant?.user.province}, {participant?.user.postalCode}</span>
+                                    <span className="block">{participant?.user?.street || "N/A"}</span>
+                                    <span className="block">
+                                      {participant?.user?.town || "N/A"}, {participant?.user?.city || "N/A"}
+                                    </span>
+                                    <span className="block">
+                                      {participant?.user?.province || "N/A"}, {participant?.user?.postalCode || "N/A"}
+                                    </span>
                                   </div>
                                 </li>
-
                               ))}
                             </ul>
                           ) : (
                             <p className="text-sm text-gray-500">🚫 No participants yet.</p>
                           )}
                         </div>
+
                         {/* Winner Section */}
                         <p className="text-sm font-medium mt-2 flex items-center gap-1">
                           <Trophy size={16} className="text-yellow-500 flex-shrink-0" /> Winner:
@@ -2077,7 +2094,6 @@ const AdminDashboard = () => {
                           <p className="text-sm text-gray-500">🏆 No winners yet.</p>
                         )}
 
-
                         {/* Delete Button */}
                         <Button
                           variant="destructive"
@@ -2098,7 +2114,6 @@ const AdminDashboard = () => {
                           {loading === item._id ? "⏳ Updating..." : item.isVisible ? "🟢 Active" : "⚫ Inactive"}
                         </Button>
                       </motion.div>
-
                     ))}
                   </div>
                 )}

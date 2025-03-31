@@ -1,6 +1,8 @@
 import usersModel from '../models/users.model.js';
 import { addPoints } from '../utils/pointsService.js'
 import { sendEmail } from '../utils/emailService.js';
+import { removeUserFromAllRaffles } from './RaffController.js'
+
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -39,7 +41,7 @@ export const incrementUserSpin = async (req, res) => {
 
     setTimeout(async () => {
       await usersModel.findByIdAndUpdate(id, { numberOfTimesWheelRotate: 0 });
-    }, 24 * 60 * 60 * 1000); 
+    }, 24 * 60 * 60 * 1000);
 
     return res.status(200).json({ user });
   } catch (error) {
@@ -81,6 +83,7 @@ export const delUser = async (req, res) => {
     const user = await usersModel.findByIdAndDelete(id);
     if (!user)
       return res.status(404).json({ error: "user not found" });
+    await removeUserFromAllRaffles(id);
     const subject = "Your Account Has Been Removed ";
     const message = `
     <p>Dear ${user.name},</p>
