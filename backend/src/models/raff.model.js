@@ -19,7 +19,7 @@ const RaffSchema = new mongoose.Schema(
           endDate: { type: Date },
         },
       ],
-      required: [true, 'List of prizes is required'],
+      required: [true, 'prizes is required'],
     },
     participants: [
       {

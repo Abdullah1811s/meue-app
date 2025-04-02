@@ -32,12 +32,12 @@ function VendorLogin() {
                 toast.error("The application has been rejected");
                 return;
             }   
-            console.log("the response is " , response);
+          
             localStorage.setItem('VendorToken', response.data?.token);
             const vendorId = response.data.vendor.id;
             dispatch(vendorLogin());
             localStorage.setItem('id', vendorId);
-            navigate(`/vendor/${vendorId}`);
+            
         } catch (error: any) {
             console.error('Login Error:', error.response?.data || error.message);
             setLoginError(error.response?.data?.message || 'Login failed. Please try again.');

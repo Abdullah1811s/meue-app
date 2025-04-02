@@ -1,13 +1,8 @@
-fix the email thing 
-phone number len 
+change the env of both frontend and backend and add the deployed url for socket 
+run the deployed site and check if the "User connected with ${id}" appear on backend console
 
 
-
-
-TODO:payment verification
-
-
-
-
-
-FRONTEND_URL=https://themenuportal.co.za
+socket used in
+    adminDashboard.tsx
+    completedRafflesPage.tsx
+    app.js.tsx

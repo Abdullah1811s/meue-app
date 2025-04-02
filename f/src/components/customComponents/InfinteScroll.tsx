@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 
 // Define a type for the vendor object
 interface Vendor {
+  businessName: any;
   businessPromotionalMaterialURl?: {
     secure_url: string;
   };
@@ -50,13 +51,14 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({ vendors }) => {
           <motion.img
             key={`vendor-${index}`}
             src={vendor.businessPromotionalMaterialURl?.secure_url || ""}
-            alt={`Promo ${index}`}
+            alt={`${vendor.businessName || "a vendor"}`}
             width={40}
             height={30}
             className="w-64 h-40 object-contain rounded-lg shadow-lg cursor-pointer shrink-0 hover:scale-105 transition-transform duration-300"
             onClick={() => navigate("/allPartners")}
-            aria-label="Promotional material"
+            aria-label={`View details of ${vendor.businessName || "this vendor"}`}
           />
+
         ))}
       </motion.div>
     </div>

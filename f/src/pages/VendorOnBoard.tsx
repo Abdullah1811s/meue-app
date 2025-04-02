@@ -312,11 +312,11 @@ function VendorOnboarding() {
     data.append("api_key", import.meta.env.VITE_CLOUD_API);
     data.append("folder", folder);
 
-    console.log("Uploading to Cloudinary:", data);
+   
 
     try {
       const result = await makeCloudinaryApiCall(data);
-      console.log("Uploaded File URL:", result);
+     
       return result;
     } catch (error) {
       console.error("Upload failed:", error);

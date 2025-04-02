@@ -169,21 +169,31 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [userResponse, vendorResponse] = await Promise.all([
-        axios.get(`${API_BASE_URL}/users/${userId}`),
-        axios.get(`${API_BASE_URL}/vendor`),
-      ]);
+      // Create an array to store promises
+      const requests = [axios.get(`${API_BASE_URL}/vendor`)];
 
-      // Update state only after data is fetched
-      const fetchedUser = userResponse.data.user;
-      setUser(fetchedUser);
-
-      // Start timer only if `userType` is "R10"
-      if (fetchedUser.userType === "R10") {
-        startTimer(fetchedUser.R10UserPaidDate); 
+      // If userId exists, add the user fetch request
+      if (userId) {
+        requests.push(axios.get(`${API_BASE_URL}/users/${userId}`));
       }
 
-      setVendors(vendorResponse.data);
+      // Execute all requests concurrently
+      const responses = await Promise.all(requests);
+
+      // Vendor data will always be in the first response
+      setVendors(responses[0].data);
+
+      // If userId exists, handle the user response (it's the second response)
+      if (userId) {
+        const fetchedUser = responses[1].data.user;
+        setUser(fetchedUser);
+
+        // Start timer only if `userType` is "R10"
+        if (fetchedUser.userType === "R10") {
+          startTimer(fetchedUser.R10UserPaidDate);
+        }
+      }
+
       setHasFetched(true);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -299,6 +309,9 @@ export default function Home() {
     }
   };
 
+  const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));
+
+
   const startTimer = (paidDate: any) => {
     const paidTime = new Date(paidDate).getTime();
     const expireTime = paidTime + 60 * 60 * 1000; // 1 hour later
@@ -309,6 +322,8 @@ export default function Home() {
 
       if (remainingTime <= 0) {
         setTimeLeft("Your payment session has ended. Please make a payment to continue.");
+        sleep(1000);
+        window.location.reload()
         return;
       }
 
@@ -389,149 +404,153 @@ export default function Home() {
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               ))}
-
             </motion.div>
           </motion.div>
 
           {/* Dark Overlay */}
           <div className="absolute inset-0 bg-black/65 lg:bg-black/65"></div>
 
-          {/* Content */}
-          <div className="relative  flex flex-col justify-center items-center text-center px-4 sm:px-8 md:px-12 lg:px-16 h-full">
-            {/* Title */}
-            <motion.h1
-              variants={fadeInUp}
-              className="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight max-w-3xl"
-            >
-              PAY ONLY R50, GET R500+ IN BENEFITS!{" "}
-              <span className="text-[#DBC166]">BETA ACCESS OPEN!</span>
-            </motion.h1>
+          {/* Content Container with Improved Responsiveness */}
+          <div className="absolute inset-0 flex flex-col justify-center items-center">
+            {/* Inner Content Container with Safe Margins */}
+            <div className="w-[85%] xs:w-[90%] sm:w-[85%] md:w-[80%] lg:w-[75%] mx-auto flex flex-col items-center text-center">
+              {/* Title */}
+              <motion.h1
+                variants={fadeInUp}
+                className="text-white text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+              >
+                PAY ONLY R50, GET R500+ IN BENEFITS!{" "}
+                <span className="text-[#DBC166]">BETA ACCESS OPEN!</span>
+              </motion.h1>
 
+              {/* Subtitle */}
+              <motion.p
+                variants={fadeInUp}
+                className="text-xs xs:text-sm md:text-base text-white mt-2 xs:mt-3 sm:mt-4"
+              >
+                Get in early! Join The Menu and unlock insane vendor perks, premium discounts & bonus giveaway entries
+              </motion.p>
 
-            {/* Subtitle */}
-            <motion.p
-              variants={fadeInUp}
-              className="text-xs sm:text-sm md:text-base text-white mt-3 sm:mt-4 max-w-2xl"
-            >
-              Get in early! Join The Menu and unlock insane vendor perks, premium discounts & bonus giveaway entries
-            </motion.p>
+              {/* Features List */}
+              <motion.ul
+                variants={staggerChildren}
+                className="mt-3 xs:mt-4 space-y-1 flex flex-col justify-center items-center xs:space-y-2 sm:space-y-3 text-left w-full max-w-xs xs:max-w-sm sm:max-w-md md:max-w-lg mx-auto"
+              >
+                {[
+                  { text: "Exclusive Partner deals", image: "/vendor.avif" },
+                  { text: "Gamified rewards", image: "/game.avif" },
+                  { text: "Cash prize giveaways", image: "/cash-prize.avif" },
+                  { text: "Leaderboard & user rankings", image: "/trophy.avif" },
+                ].map((feature, index) => (
+                  <motion.li
+                    key={index}
+                    variants={fadeInUp}
+                    className="flex items-center gap-2 xs:gap-3 md:gap-4 text-white"
+                  >
+                    <img src={feature.image} alt="" className="w-4 xs:w-5 sm:w-6 md:w-7 h-4 xs:h-5 sm:h-6 md:h-7" />
+                    <span className="text-xs xs:text-sm md:text-base">{feature.text}</span>
+                  </motion.li>
+                ))}
+              </motion.ul>
 
-            {/* Features List */}
-            <motion.ul
-              variants={staggerChildren}
-              className="mt-4 space-y-2 sm:space-y-3 text-left max-w-sm sm:max-w-md md:max-w-lg"
-            >
-              {[
-                { text: "Exclusive Partner deals", image: "/vendor.avif" },
-                { text: "Gamified rewards", image: "/game.avif" },
-                { text: "Cash prize giveaways", image: "/cash-prize.avif" },
-                { text: "Leaderboard & user rankings", image: "/trophy.avif" },
-              ].map((feature, index) => (
-                <motion.li
-                  key={index}
-                  variants={fadeInUp}
-                  className="flex items-center gap-2 sm:gap-3 md:gap-4 text-white"
-                >
-                  <img src={feature.image} alt="" className="w-5 sm:w-6 md:w-7 h-5 sm:h-6 md:h-7" />
-                  <span className="text-xs sm:text-sm md:text-base">{feature.text}</span>
-                </motion.li>
-              ))}
-            </motion.ul>
+              {/* CTA Buttons */}
+              {!isPaid && (
+                <div className="w-full flex flex-col items-center mt-3 xs:mt-4 sm:mt-5">
+                  <motion.button
+                    animate={{
+                      rotate: [0, 2, -2, 0],
+                      boxShadow: [
+                        '0 0 0 0 rgba(219, 193, 102, 0.4)',
+                        '0 0 0 15px rgba(219, 193, 102, 0)',
+                      ],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1.2,
+                      ease: "easeInOut",
+                      repeatType: "loop",
+                    }}
+                    whileHover={{
+                      scale: 1.15,
+                      boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)',
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleClick}
+                    disabled={isDisabled}
+                    className={`
+              bg-gradient-to-r from-[#DBC166] via-[#E5C478] to-[#EFD18A]
+              text-black 
+              xs:w-auto
+              px-4 xs:px-6 sm:px-8 md:px-10 
+              py-1.5 xs:py-2 sm:py-3 md:py-4
+              rounded-full 
+              text-xs xs:text-sm md:text-base 
+              font-medium 
+              shadow-lg
+              transition-all 
+              duration-300 
+              ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+            `}
+                  >
+                    💰 Get 90% Off – Join for Just R50!
+                  </motion.button>
 
-            {/* CTA Button */}
-            {!isPaid && (
-              <>
-                <motion.button
-                  animate={{
-                    rotate: [0, 2, -2, 0],
-                    boxShadow: [
-                      '0 0 0 0 rgba(219, 193, 102, 0.4)',
-                      '0 0 0 15px rgba(219, 193, 102, 0)',
-                    ],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 1.2,
-                    ease: "easeInOut",
-                    repeatType: "loop",
-                  }}
-                  whileHover={{
-                    scale: 1.15,
-                    boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)',
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleClick}
-                  disabled={isDisabled}
-                  className={`
-        bg-gradient-to-r from-[#DBC166] via-[#E5C478] to-[#EFD18A]
-        text-black 
-        mt-4 px-6 sm:px-8 md:px-10 py-2 sm:py-3 md:py-4
-        rounded-full 
-        text-xs sm:text-sm md:text-base 
-        font-medium 
-        shadow-lg
-        transition-all 
-        duration-300 
-        ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-      `}
-                >
-                  💰 Get 90% Off – Join for Just R50!
-                </motion.button>
+                  <p className='font-bold text-white mt-2'>OR</p>
 
-                <p className='font-bold text-white mt-2'>OR</p>
-
-                <motion.button
-                  animate={{
-                    rotate: [0, 2, -2, 0],
-                    boxShadow: [
-                      '0 0 0 0 rgba(219, 193, 102, 0.4)',
-                      '0 0 0 10px rgba(219, 193, 102, 0)',
-                    ],
-                  }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 1.2,
-                    ease: "easeInOut",
-                    repeatType: "loop",
-                  }}
-                  whileHover={{
-                    scale: 1.1,
-                    boxShadow: '0 2px 6px rgba(219, 193, 102, 0.2)',
-                  }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleClickR10}
-                  disabled={isDisabled}
-                  className={`
-        bg-gradient-to-r from-[#EFD18A] via-[#E5C478] to-[#DBC166]
-        text-black 
-        mt-2 px-4 sm:px-6 md:px-8 py-1 sm:py-2 md:py-2.5
-        rounded-full 
-        text-xs sm:text-sm 
-        font-medium 
-        shadow-md
-        transition-all 
-        duration-300 
-        ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-      `}
-                >
-                  💰 1-Hour Access – R10!
-                </motion.button>
-              </>
-            )}
-
+                  <motion.button
+                    animate={{
+                      rotate: [0, 2, -2, 0],
+                      boxShadow: [
+                        '0 0 0 0 rgba(219, 193, 102, 0.4)',
+                        '0 0 0 10px rgba(219, 193, 102, 0)',
+                      ],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1.2,
+                      ease: "easeInOut",
+                      repeatType: "loop",
+                    }}
+                    whileHover={{
+                      scale: 1.1,
+                      boxShadow: '0 2px 6px rgba(219, 193, 102, 0.2)',
+                    }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleClickR10}
+                    disabled={isDisabled}
+                    className={`
+              bg-gradient-to-r from-[#EFD18A] via-[#E5C478] to-[#DBC166]
+              text-black
+              xs:w-auto 
+              mt-2 
+              px-3 xs:px-4 sm:px-6 md:px-8 
+              py-1 xs:py-1.5 sm:py-2 md:py-2.5
+              rounded-full 
+              text-xs sm:text-sm 
+              font-medium 
+              shadow-md
+              transition-all 
+              duration-300 
+              ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+            `}
+                  >
+                    💰 1-Hour Access – R10!
+                  </motion.button>
+                </div>
+              )}
+            </div>
           </div>
 
-
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons - More responsive positioning */}
           <button
             onClick={prevSlide}
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
+            className="absolute left-1 xs:left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 p-1 xs:p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
           >
             ◀
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
+            className="absolute right-1 xs:right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 p-1 xs:p-2 sm:p-3 md:p-4 rounded-full shadow z-30"
           >
             ▶
           </button>
@@ -1371,6 +1390,7 @@ export default function Home() {
         </motion.div>
 
       </motion.main >
+
       <motion.div
         className=" w-full p-5 bg-white bg-opacity-90 text-center rounded-lg shadow-lg"
         initial={{ opacity: 0, y: 20 }}

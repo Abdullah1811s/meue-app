@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { Copy, Home, LogOut, User, Users, Gift } from "lucide-react";
+import { Copy, Home, LogOut, User, Users, Gift, Award } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface User {
@@ -14,6 +14,7 @@ interface User {
     province?: string;
     town?: string;
     street?: string;
+    prizeWon?: string[];
     postalCode?: string;
     referralCodeShare?: string;
 }
@@ -52,7 +53,7 @@ const UserDash = () => {
             try {
                 if (!id) throw new Error("User ID not found");
 
-                const [ myInfo, referralDetails, allReferredUser] = await Promise.all([
+                const [myInfo, referralDetails, allReferredUser] = await Promise.all([
                     // axios.get(`${API_BASE_URL}/users`),
                     axios.get(`${API_BASE_URL}/users/${id}`),
                     axios.get(`${API_BASE_URL}/referral/${id}/ReferredBy`),
@@ -248,7 +249,54 @@ const UserDash = () => {
                             </p>
                         </div>
                     </div>
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="flex items-center justify-between gap-4 mb-4">
+                            <div className="flex items-center justify-center gap-3">
+                                <div className="p-3 rounded-full bg-yellow-50 text-yellow-600">
+                                    <Award size={20} />
+                                </div>
+                                <h3 className="text-lg font-semibold">Prizes Won</h3>
+                            </div>
+                            <span className="px-3 py-1 text-sm border border-gray-200 rounded-md">
+                                {myInfo?.prizeWon?.length} Total
+                            </span>
+                        </div>
 
+                        {myInfo?.prizeWon && myInfo.prizeWon.length > 0 ? (
+                            <div className="space-y-3">
+                                {myInfo.prizeWon.map((prize: any, index: any) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                                        className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                                                <Gift size={16} />
+                                            </div>
+                                            <span className="font-medium">{prize}</span>
+                                        </div>
+                                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                                            Claimed
+                                        </span>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 bg-gray-50 rounded-lg">
+                                <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                                    <Gift size={20} className="text-gray-400" />
+                                </div>
+                                <h4 className="font-medium text-gray-700">No prizes yet</h4>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    🎡 Spin the wheel for a chance to win!
+                                    🎟️ Or join the raffle to win big!
+                                </p>
+                            </div>
+                        )}
+                    </div>
                     {/* Referrals List */}
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <div className="flex items-center justify-between mb-6">

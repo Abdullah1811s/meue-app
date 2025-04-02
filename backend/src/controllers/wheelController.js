@@ -30,15 +30,41 @@ export const addVendorOnWheel = async (req, res) => {
         if (!Array.isArray(offerings) || offerings.length === 0) {
             return res.status(400).json({ message: "Please provide at least one offering." });
         }
+        const totalOfferings = await wheelModel.aggregate([
+            {
+                $facet: {
+                    vendorOfferings: [
+                        { $unwind: "$vendor.offerings" },
+                    ],
+                    adminOfferings: [
+                        { $unwind: "$admin.offerings" },
+                    ]
+                }
+            },
+            {
+                $project: {
+                    totalOfferings: {
+                        $add: [{ $size: "$vendorOfferings" }, { $size: "$adminOfferings" }]
+                    }
+                }
+            }
+        ]);
 
-        const currentTotal = await getTotalOfferings();
-        if (currentTotal === null) {
-            return res.status(500).json({ message: "Error fetching total offerings" });
-        }
+        const totalOfferingsCount = totalOfferings[0]?.totalOfferings || 0;
+        console.log("Total offerings count: ", totalOfferingsCount);
 
-        if (currentTotal + offerings.length > max) {
-            return res.status(409).json({ message: `You can only have a maximum of ${max} offerings on the wheel.` });
+        // Check if total offerings are more than 10
+        if (totalOfferingsCount >= 10) {
+            return res.status(400).json({ message: "Wheel limit exceeded! Please remove an entry before adding a new one." });
         }
+        // const currentTotal = await getTotalOfferings();
+        // if (currentTotal === null) {
+        //     return res.status(500).json({ message: "Error fetching total offerings" });
+        // }
+
+        // if (currentTotal + offerings.length > max) {
+        //     return res.status(409).json({ message: `You can only have a maximum of ${max} offerings on the wheel.` });
+        // }
 
         const updatedVendor = await wheelModel.findOneAndUpdate(
             { "vendor.vendorInfo": vendorInfo },
@@ -54,22 +80,81 @@ export const addVendorOnWheel = async (req, res) => {
 };
 
 
+export const addWheelEntry = async (req, res) => {
+    try {
+        const { admin } = req.body;
+
+        // Use aggregation to count the total offerings from both vendor and admin
+        const totalOfferings = await wheelModel.aggregate([
+            {
+                $facet: {
+                    vendorOfferings: [
+                        { $unwind: "$vendor.offerings" },
+                    ],
+                    adminOfferings: [
+                        { $unwind: "$admin.offerings" },
+                    ]
+                }
+            },
+            {
+                $project: {
+                    totalOfferings: {
+                        $add: [{ $size: "$vendorOfferings" }, { $size: "$adminOfferings" }]
+                    }
+                }
+            }
+        ]);
+
+        const totalOfferingsCount = totalOfferings[0]?.totalOfferings || 0;
+        console.log("Total offerings count: ", totalOfferingsCount);
+
+        // Check if total offerings are more than 10
+        if (totalOfferingsCount >= 10) {
+            return res.status(400).json({ message: "Wheel limit exceeded! Please remove an entry before adding a new one." });
+        }
+
+        // Create a new wheel entry
+        const newWheelEntry = new wheelModel({
+            vendor: null,
+            admin: {
+                adminInfo: admin.adminInfo || null, // Set to null if not provided
+                offerings: admin.offerings
+            }
+        });
+
+        await newWheelEntry.save();
+
+        res.status(201).json({
+            success: true,
+            message: "New wheel entry added successfully",
+            data: newWheelEntry
+        });
+
+    } catch (error) {
+        console.error("Error adding wheel entry:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+
+
+
 export const getAllOnWheel = async (req, res) => {
     try {
         console.log("Fetching all vendors and admins on the wheel...");
-
         const allEntries = await wheelModel.find()
             .populate("vendor.vendorInfo")
             .populate("admin.adminInfo");
-
-        console.log("Data retrieved from the database:", allEntries);
 
         if (!allEntries || allEntries.length === 0) {
             console.log("No vendors or admins found on the wheel.");
             return res.status(404).json({ message: "No vendors or admins found on the wheel" });
         }
 
-        console.log("Successfully retrieved vendors and admins on the wheel.");
+
         return res.status(200).json({
             message: "Vendors and Admins retrieved successfully",
             data: allEntries
@@ -240,38 +325,7 @@ export const updateVendorExclusiveOffer = async (req, res) => {
     }
 };
 
-export const addWheelEntry = async (req, res) => {
-    try {
-        const { admin } = req.body;
-        console.log(admin)
 
-        const newWheelEntry = new wheelModel({
-            vendor: null,
-            admin: {
-                adminInfo: admin.adminInfo || null, // Set to null if not provided
-                offerings: admin.offerings
-            }
-        });
-
-
-        await newWheelEntry.save();
-
-        res.status(201).json({
-            success: true,
-            message: "New wheel entry added successfully",
-            data: newWheelEntry
-        });
-
-    } catch (error) {
-        console.error("Error adding wheel entry:", error);
-        res.status(500).json({
-            success: false,
-            message: "Internal server error",
-            error: error.message
-        });
-
-    }
-};
 
 export const updateWinner = async (req, res) => {
     try {

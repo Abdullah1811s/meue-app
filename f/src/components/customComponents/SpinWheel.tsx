@@ -3,9 +3,10 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaDice } from "react-icons/fa"; // You can replace this with any game-related icon
-
+import { FaDice } from "react-icons/fa";
 import { useSelector } from "react-redux";
+
+// Type definitions
 interface Offering {
   _id: string;
   name: string;
@@ -15,40 +16,50 @@ interface Offering {
 }
 
 interface Vendor {
-  _id: any;
+  _id: string;
   vendorInfo: string;
   offerings: Offering[];
 }
 
-interface VendorData {
-  admin: any;
-  _id: string;
-  vendor: Vendor;
-
+interface Admin {
+  adminInfo: string;
+  offerings: Offering[];
 }
 
+interface VendorData {
+  admin?: Admin;
+  _id: string;
+  vendor?: Vendor;
+}
 
-
+interface SegmentData {
+  label: string;
+  vendorId: string;
+  labelId: string;
+  vId: string;
+  type: "Vendor" | "Admin";
+}
 
 const SpinWheel = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const [rotation, setRotation] = useState<any>(0);
-  const [spinning, setSpinning] = useState<any>(false);
+  const [rotation, setRotation] = useState<number>(0);
+  const [spinning, setSpinning] = useState<boolean>(false);
   const [vendor, setVendor] = useState<VendorData[]>([]);
-  const [hasFetched, setHasFetched] = useState<boolean>(true);
-  const [user, setuser] = useState<any>();
-  const [prize, setPrize] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<any>();
+  const [prize, setPrize] = useState<SegmentData | null>(null);
+  const [isAble, setIsAble] = useState<boolean>(false);
+  
   const isPaid = useSelector((state: any) => state.auth.isPaid);
-  const [isAble, setIsAble] = useState(false);
+
+  // Fetch wheel data function
   const fetchWheelData = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
-     
       setVendor(res.data.data);
-      setHasFetched(false);
-    }
-    catch (error: any) {
+    } catch (error: any) {
       console.error("Error fetching wheel data:", error);
       if (error.response) {
         console.error(`Error: ${error.response.data.message || "An error occurred while fetching wheel data."}`);
@@ -57,38 +68,39 @@ const SpinWheel = () => {
       } else {
         toast.error("An unexpected error occurred. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
+  // Fetch user data function
   const fetchUser = async () => {
-    if (id) {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/users/${id}`);
-        setuser(res.data.user);
-      }
-      catch (error: any) {
-        console.error("Error fetching wheel data:", error);
-        if (error.response) {
-          toast.error(`Error: ${error.response.data.message || "An error occurred while fetching wheel data."}`);
-        } else if (error.request) {
-          toast.error("No response from the server. Please check your network connection.");
-        } else {
-          toast.error("An unexpected error occurred. Please try again.");
-        }
+    if (!id) return;
+    
+    try {
+      const res = await axios.get(`${API_BASE_URL}/users/${id}`);
+      setUser(res.data.user);
+    } catch (error: any) {
+      console.error("Error fetching user data:", error);
+      if (error.response) {
+        toast.error(`Error: ${error.response.data.message || "An error occurred while fetching user data."}`);
+      } else if (error.request) {
+        toast.error("No response from the server. Please check your network connection.");
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
       }
     }
+  };
 
-  }
-
+  // Initialize data
   useEffect(() => {
-    if (hasFetched) {
-
-      fetchWheelData()
+    fetchWheelData();
+    if (id) {
+      fetchUser();
     }
-    else
-      console.log("the data has been fetched already");
-  }, [])
+  }, [id]);
 
+  // Process segment data from API response
   const segmentData = vendor.flatMap((v) => {
     const today = new Date();
 
@@ -104,111 +116,104 @@ const SpinWheel = () => {
           label: offering.name,
           vendorId: v._id,
           labelId: offering._id,
-          vId: v.vendor?.vendorInfo,
-          type: "Vendor",
+          vId: v.vendor?.vendorInfo || "",
+          type: "Vendor" as const,
         })) || [];
 
     // Filter admin offerings based on quantity and date
     const adminOfferings =
       v.admin?.offerings
         ?.filter(
-          (offering:any) =>
+          (offering) =>
             (offering.quantity === undefined || offering.quantity > 0) &&
             (!offering.endDate || new Date(offering.endDate) > today)
         )
-        .map((offering:any) => ({
+        .map((offering) => ({
           label: offering.name,
           vendorId: v._id,
           labelId: offering._id,
-          vId: v.admin?.adminInfo,
-          type: "Admin",
+          vId: v.admin?.adminInfo || "",
+          type: "Admin" as const,
         })) || [];
 
     return [...vendorOfferings, ...adminOfferings]; // Merge both filtered offerings
   });
 
+  // Update winner in database and UI
+  const updateWinner = async (p: SegmentData) => {
+    const details = segmentData.filter((s) => s.labelId === p.labelId);
+    if (details.length === 0) {
+      toast.success("🎉 Keep spinning! More surprises on the way! 🚀");
+      return;
+    }
 
-
-
-
-  const updateWinner = async (p: Record<string, any>) => {
-    const details = segmentData.filter((s) => s.labelId == p.labelId);
     const payload = { ...details[0], id };
     
-    if (details.length > 0) {
-      try {
-        setIsAble(true);
-       await axios.put(`${API_BASE_URL}/wheel/update`, payload);
+    try {
+      setIsAble(true);
+      await axios.put(`${API_BASE_URL}/wheel/update`, payload);
       
-        setVendor((prevVendor:any) => {
-          return prevVendor.map((v:any) => {
-            // Update vendor offerings
-            const updatedVendorOfferings = v.vendor?.offerings?.map((offering:any) => {
-              if (offering._id === p.labelId) {
-                return {
-                  ...offering,
-                  quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
-                };
-              }
-              return offering;
-            }).filter((offering:any) => 
-              (offering.quantity === undefined || offering.quantity > 0) &&
-              (!offering.endDate || new Date(offering.endDate) > new Date())
-            ) || [];
-  
-            // Update admin offerings
-            const updatedAdminOfferings = v.admin?.offerings?.map((offering: any) => {
-              if (offering._id === p.labelId) {
-                return {
-                  ...offering,
-                  quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
-                };
-              }
-              return offering;
-            }).filter((offering: any) => 
-              (offering.quantity === undefined || offering.quantity > 0) &&
-              (!offering.endDate || new Date(offering.endDate) > new Date())
-            ) || [];
-  
-            return {
-              ...v,
-              vendor: v.vendor ? { ...v.vendor, offerings: updatedVendorOfferings } : undefined,
-              admin: v.admin ? { ...v.admin, offerings: updatedAdminOfferings } : undefined
-            };
-          }).filter((v:any) => 
-            (v.vendor?.offerings?.length ?? 0) > 0 || 
-            (v.admin?.offerings?.length ?? 0) > 0
-          );
-        });
-  
-        toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
-        fetchUser(); 
-      } catch (error: any) {
-        console.error("Error updating winner:", error);
-        // Error handling remains the same
-      } finally {
-        setIsAble(false);
-      }
-    } else {
-      toast.success("🎉 Keep spinning! More surprises on the way! 🚀");
+      // Update local state to reflect changes
+      setVendor((prevVendor) => {
+        return prevVendor.map((v) => {
+          // Update vendor offerings
+          const updatedVendorOfferings = v.vendor?.offerings?.map((offering) => {
+            if (offering._id === p.labelId) {
+              return {
+                ...offering,
+                quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
+              };
+            }
+            return offering;
+          }).filter((offering) => 
+            (offering.quantity === undefined || offering.quantity > 0) &&
+            (!offering.endDate || new Date(offering.endDate) > new Date())
+          ) || [];
+
+          // Update admin offerings
+          const updatedAdminOfferings = v.admin?.offerings?.map((offering) => {
+            if (offering._id === p.labelId) {
+              return {
+                ...offering,
+                quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
+              };
+            }
+            return offering;
+          }).filter((offering) => 
+            (offering.quantity === undefined || offering.quantity > 0) &&
+            (!offering.endDate || new Date(offering.endDate) > new Date())
+          ) || [];
+
+          return {
+            ...v,
+            vendor: v.vendor ? { ...v.vendor, offerings: updatedVendorOfferings } : undefined,
+            admin: v.admin ? { ...v.admin, offerings: updatedAdminOfferings } : undefined
+          };
+        }).filter((v) => 
+          (v.vendor?.offerings?.length ?? 0) > 0 || 
+          (v.admin?.offerings?.length ?? 0) > 0
+        );
+      });
+
+      toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
+      fetchUser(); 
+    } catch (error: any) {
+      console.error("Error updating winner:", error);
+      toast.error("Failed to update prize. Please try again later.");
+    } finally {
+      setIsAble(false);
     }
   };
 
+  // Generate wheel SVG elements
   const generateWheel = () => {
     const segments = segmentData.length;
-    const segmentAngle = 360 / segments;
-    const centerX = 250;
-    const centerY = 250;
-    const radius = 200; // Reduced radius to make the wheel smaller
-    const wheelSegments = [];
-
-    // Check if there are no segments or no text to show
-    if (segments === 0 || !segmentData.some(segment => segment.label)) {
+    if (segments === 0) {
       return (
         <text
-          x={centerX}
-          y={centerY - 80} // Adjusted to position "Spin for Fun!" on top
-          fill="#7D7D7D" // A neutral gray  
+          x="250"
+          y="170"
+          fill="#7D7D7D"
           fontWeight="bold"
           fontSize="20"
           textAnchor="middle"
@@ -219,7 +224,13 @@ const SpinWheel = () => {
       );
     }
 
-    // Generate wheel segments if there are segments with text
+    const segmentAngle = 360 / segments;
+    const centerX = 250;
+    const centerY = 250;
+    const radius = 230; // Increased radius for a bigger wheel
+    const wheelSegments = [];
+
+    // Generate wheel segments
     segmentData.forEach((segment, index) => {
       const startAngle = index * segmentAngle - 90;
       const endAngle = (index + 1) * segmentAngle - 90;
@@ -249,79 +260,54 @@ const SpinWheel = () => {
         />
       );
 
-      // Add the text label
+      // Add the text label with improved text wrapping
       const textAngle = startAngle + segmentAngle / 2;
       const textRad = (textAngle * Math.PI) / 180;
-      const textX = centerX + (radius * 0.5) * Math.cos(textRad);
-      const textY = centerY + (radius * 0.6) * Math.sin(textRad);
+      
+      // Position text closer to the outer edge for more space
+      const textRadius = radius * 0.65;
+      const textX = centerX + textRadius * Math.cos(textRad);
+      const textY = centerY + textRadius * Math.sin(textRad);
+      
       let textRotation = textAngle;
       if (textAngle > 90 && textAngle < 270) {
         textRotation += 180;
       }
 
-      // Split the label into lines
+      // Word wrapping logic
       const words = segment.label.split(' ');
-      const line1 = words.slice(0, Math.ceil(words.length / 3)).join(' ');
-      const line2 = words.slice(Math.ceil(words.length / 3), Math.ceil((2 * words.length) / 3)).join(' ');
-      const line3 = words.slice(Math.ceil((2 * words.length) / 3)).join(' ');
+      const maxWordsPerLine = Math.max(1, Math.min(3, Math.ceil(words.length / 3)));
+      
+      // Split into lines with more intelligent word distribution
+      const lines = [];
+      for (let i = 0; i < words.length; i += maxWordsPerLine) {
+        lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
+      }
 
-      // Calculate dynamic font size based on text length
-      const maxLength = Math.max(line1.length, line2.length, line3.length);
-      const fontSize = Math.max(10, 16 - (maxLength * 0.5)); // Adjust font size dynamically
+      // Dynamic font sizing based on segment angle and text length
+      // const maxLineLength = Math.max(...lines.map(line => line.length));
+      const fontSize = 10 
+      // Math.max(10, Math.min(16, 24 - (maxLineLength * 0.3) - (segments * 0.2)));
 
-      // Render the text lines
-      wheelSegments.push(
-        <text
-          className="text-wrap"
-          key={`text-${index}-line1`}
-          x={textX}
-          y={textY - 15} // Adjust Y position for the first line
-          fill={isEven ? "#d00" : "#ffde3b"}
-          fontWeight="bold"
-          fontSize={fontSize} // Dynamic font size
-          textAnchor="middle"
-          alignmentBaseline="middle"
-          transform={`rotate(${textRotation}, ${textX}, ${textY})`}
-        >
-          {line1}
-        </text>
-      );
-
-      wheelSegments.push(
-        <text
-          className="text-wrap"
-          key={`text-${index}-line2`}
-          x={textX}
-          y={textY} // Adjust Y position for the second line
-          fill={isEven ? "#d00" : "#ffde3b"}
-          fontWeight="bold"
-          fontSize={fontSize} // Dynamic font size
-          textAnchor="middle"
-          alignmentBaseline="middle"
-          transform={`rotate(${textRotation}, ${textX}, ${textY})`}
-        >
-          {line2}
-        </text>
-      );
-
-      if (line3) {
+      // Render each line with proper spacing
+      lines.forEach((line, lineIndex) => {
+        const lineOffset = (lineIndex - (lines.length - 1) / 2) * fontSize * 1.2;
         wheelSegments.push(
           <text
-            className="text-wrap"
-            key={`text-${index}-line3`}
+            key={`text-${index}-line${lineIndex}`}
             x={textX}
-            y={textY + 15} // Adjust Y position for the third line
+            y={textY + lineOffset}
             fill={isEven ? "#d00" : "#ffde3b"}
             fontWeight="bold"
-            fontSize={fontSize} // Dynamic font size
+            fontSize={fontSize}
             textAnchor="middle"
             alignmentBaseline="middle"
             transform={`rotate(${textRotation}, ${textX}, ${textY})`}
           >
-            {line3}
+            {line}
           </text>
         );
-      }
+      });
     });
 
     // Add outer ring
@@ -331,7 +317,7 @@ const SpinWheel = () => {
         cx={centerX}
         cy={centerY}
         r={radius + 10}
-        fill="#2222"
+        fill="none"
         stroke="#d4af37"
         strokeWidth="20"
       />
@@ -340,8 +326,7 @@ const SpinWheel = () => {
     return wheelSegments;
   };
 
-
-
+  // Handle spin wheel action
   const spinWheel = async () => {
     if (!isPaid) {
       toast.error("Please complete payment to spin the wheel and win exciting rewards!", {
@@ -349,21 +334,32 @@ const SpinWheel = () => {
       });
       return;
     }
-    fetchUser()
-    if (spinning) return;
+    
+    // Refresh user data
+    await fetchUser();
+    
+    if (spinning || isAble) return;
 
     // Check if the user has exceeded the maximum number of spins
-    if (user?.numberOfTimesWheelRotate > 21) {
+    if (user?.numberOfTimesWheelRotate > 2) {
       toast.error("Maximum spin limit reached. Please try again after 24 hours.");
+      return;
+    }
+
+    // Not enough segments to spin
+    if (segmentData.length === 0) {
+      toast.error("No prizes available to win right now. Please check back later!");
       return;
     }
 
     setSpinning(true);
     setPrize(null);
 
-    const randomSpin = Math.floor(Math.random() * 360) + 1800;
+    // Calculate random spin (between 5-8 full rotations plus random position)
+    const randomSpin = Math.floor(Math.random() * 360) + (1800 + Math.floor(Math.random() * 1080));
     setRotation(rotation + randomSpin);
 
+    // Determine winner after animation completes
     setTimeout(async () => {
       const finalDegree = (rotation + randomSpin) % 360;
       const segmentSize = 360 / segmentData.length;
@@ -373,11 +369,18 @@ const SpinWheel = () => {
         winningIndex = 0;
       }
 
-      setPrize(segmentData[winningIndex]);
-      updateWinner(segmentData[winningIndex]);
+      const winningPrize = segmentData[winningIndex];
+      setPrize(winningPrize);
+      
+      // Update winner in database
+      await updateWinner(winningPrize);
+      
+      // Update user spin count
       try {
-        const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`);
-        setuser(updatedUser.data.user);
+        if (id) {
+          const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`);
+          setUser(updatedUser.data.user);
+        }
       } catch (error) {
         console.error("Error updating user spin count:", error);
         toast.error("An error occurred while updating your spin count.");
@@ -392,28 +395,33 @@ const SpinWheel = () => {
       <div className="text-center">
         <button
           onClick={spinWheel}
-          disabled={spinning || isAble} // Disable when either spinning or isAble is true
+          disabled={spinning || isAble || isLoading} 
           className={`w-fit sm:w-fit bg-[#DBC166] mt-4 text-black px-4 py-1 sm:py-2 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out 
-    ${spinning || isAble ? "opacity-50 cursor-not-allowed" : "hover:bg-[#e9dbac] hover:shadow-lg hover:scale-105"}`}
+            ${spinning || isAble || isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#e9dbac] hover:shadow-lg hover:scale-105"}`}
         >
-          {spinning ? "Spinning..." : isAble ? "Processing..." : "Spin & Win – Exclusive Rewards Await! 🎉"}
+          {isLoading ? "Loading..." : 
+           spinning ? "Spinning..." : 
+           isAble ? "Processing..." : 
+           "Spin & Win – Exclusive Rewards Await! 🎉"}
         </button>
 
         {prize !== null && (
           <p className="mt-4 text-xl font-semibold text-green-600">
-            🎉 You won: <span className="font-bold">{prize?.label || "Oops... Nothing!🎭"} please wait for email</span>
+            🎉 You won: <span className="font-bold">{prize?.label || "Oops... Nothing!🎭"}</span>
+            <br />
+            <span className="text-sm font-normal">Please check your email for details</span>
           </p>
         )}
       </div>
 
-      {/* Wheel Container */}
-      <div className="relative w-80 h-80 md:w-96 md:h-96 shadow-none" role="img" aria-label="Spinning wheel game">
+      {/* Wheel Container - Made larger */}
+      <div className="relative w-80 h-80 md:w-[500px] md:h-[500px] shadow-none" role="img" aria-label="Spinning wheel game">
         {/* Pointer */}
         <div
-          className="absolute top-0 left-1/2 transform -translate-x-8.6 -translate-y-1/2 w-0 h-0 z-10"
+          className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
           aria-hidden="true"
         >
-          <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[30px] border-l-transparent border-r-transparent border-t-black-600"></div>
+          <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[30px] border-l-transparent border-r-transparent border-t-red-600"></div>
         </div>
 
         {/* Rotating Wheel */}
@@ -433,9 +441,9 @@ const SpinWheel = () => {
           </svg>
         </motion.div>
 
-        {/* Fixed center image (non-interactive, so aria-hidden) */}
+        {/* Fixed center image */}
         <div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 z-10"
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 z-10"
           aria-hidden="true"
         >
           {/* Black background circle */}
@@ -450,8 +458,14 @@ const SpinWheel = () => {
           />
         </div>
       </div>
+      
+      {/* Spins remaining indicator */}
+      {user && (
+        <div className="text-center mt-2 text-sm text-gray-600">
+          Spins today: {user.numberOfTimesWheelRotate || 0}/21
+        </div>
+      )}
     </div>
-
   );
 };
 

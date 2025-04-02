@@ -209,7 +209,9 @@ export interface IUser {
 }
 
 
-const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
+
+// const socket = io("http://localhost:8000");
+const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET); //here
 
 const AdminDashboard = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -232,6 +234,9 @@ const AdminDashboard = () => {
   const [isManageUser, setManageUser] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [currentOffering, setCurrentOffering] = useState<any>(null);
+  const [currentVendorId, setCurrentVendorId] = useState<string>("");
+  // const [currentExclusiveOffer, setCurrentExclusiveOffer] = useState<string>("");
   const [isRejecting, setIsRejecting] = useState(false);
   // const [onRaff, setOnRaff] = useState<boolean>(false);
   const [, setSelectedDate] = useState<Date | null>(new Date());
@@ -266,7 +271,7 @@ const AdminDashboard = () => {
   // const [rejectDialogOpen1, setRejectDialogOpen1] = useState<any>(false);
   const [rejectionReason1, setRejectionReason1] = useState<any>('');
   const [vendorToReject1, setVendorToReject] = useState<any>(null);
-
+  const [raffleName, setRaffleName] = useState('');
   const [newAdmin, setNewAdmin] = useState<NewAdmin>({
     username: '',
     email: '',
@@ -337,10 +342,10 @@ const AdminDashboard = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("the form data is", formData)
+
     if (isSubmitting) return;
+
     try {
-      e.preventDefault();
       setIsSubmitting(true);
 
       // Format the main raffle date
@@ -351,18 +356,18 @@ const AdminDashboard = () => {
       // Prepare prizes data - ensure required fields are present
       const preparedPrizes = formData.prizes.map((prize: any) => ({
         name: prize.name,
-        quantity: prize.quantity || "1", // Default quantity if not provided
+        quantity: prize.quantity || "1",
         endDate: prize.endDate ? new Date(prize.endDate).toISOString() : null
       }));
 
       const submissionData = {
         name: formData.name,
-        scheduleAt: formattedDate, // Now just the date portion
+        scheduleAt: formattedDate,
         prizes: preparedPrizes,
         status: "scheduled",
         isVisible: false
       };
-      console.log("The submission data", submissionData);
+
       const response = await axios.post(`${API_BASE_URL}/Raff/createRaff`, submissionData, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
@@ -370,9 +375,11 @@ const AdminDashboard = () => {
         }
       });
 
-      // setRaff((prev) => [...prev, response.data.raffle]);
+      setRaff((prevRaff) => [...prevRaff, response.data.raffle]);
+
       toast.success(response.data.message);
 
+      // Reset form
       setFormData({
         name: "",
         scheduledAt: "",
@@ -395,7 +402,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchRaff = async () => {
+    try {
+      setIsLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/Raff`);
+      console.log("This is the data : ", res.data.raff);
+      setRaff(res.data.raff);
 
+      setIsLoading(false);
+    } catch (error: any) {
+      setError(error.message || 'Failed to fetch affiliates');
+      setIsLoading(false);
+      toast.error(error.message);
+      console.log(error.message);
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("AdminToken");
@@ -459,27 +480,13 @@ const AdminDashboard = () => {
       });
 
       setVendors(response.data);
-      console.log("The vendor data is : ", vendors);
+
     } catch (error: any) {
       console.error("Error fetching data:", error.message);
     }
   };
 
-  const fetchRaff = async () => {
-    try {
-      setIsLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/Raff`);
-      console.log("This is the data : ", res.data.raff);
-      setRaff(res.data.raff);
 
-      setIsLoading(false);
-    } catch (error: any) {
-      setError(error.message || 'Failed to fetch affiliates');
-      setIsLoading(false);
-      toast.error(error.message);
-      console.log(error.message);
-    }
-  }
 
   const handleDelVendor = async () => {
     setOpen(true);
@@ -796,97 +803,91 @@ const AdminDashboard = () => {
     }
   }
 
-  const handleShowOnRaff = async (exclusiveOffer: string, offering: any, vendorId: string) => {
+  const handleShowOnRaff = async (offering: any, vendorId: string) => {
     try {
-
       if (!offering) {
-        console.log("No offerings available");
         toast.error("No offerings available");
         return;
       }
 
-      const offeringDates = offering.endDate;
+      // Store current offering and vendor ID
+      setCurrentOffering(offering);
+      setCurrentVendorId(vendorId);
 
-      if (offeringDates) {
-        setMaxOfferDate(new Date(offeringDates));
-
+      // Check end date if exists
+      if (offering.endDate) {
+        setMaxOfferDate(new Date(offering.endDate));
         setIsOpen(true);
+      } else if (offering.quantity > 0) {
+        // If no end date but has quantity, create immediately
+        await createRaffle(offering, vendorId, 'Custom Raffle Name'); // Default name
+        toast.success("Added to Raffle system");
       } else {
-        const quantity = offering.quantity;
-        if (quantity && quantity > 0) {
-          const prize = offering
-            ? [{ name: offering.name, id: offering._id, quantity: quantity }]
-            : [];
-
-
-          await axios.post(
-            `${API_BASE_URL}/Raff/createRaff`,
-            {
-              name: exclusiveOffer,
-              scheduleAt: scheduleDate,
-              prizes: prize,
-              vendorId,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          toast.success("Added to Raffle system");
-
-        } else {
-          toast.error("Invalid quantity");
-        }
+        toast.error("Invalid quantity");
       }
     } catch (error: any) {
-      console.error("Full error:", error);
-
-      if (error.response) {
-        const errorMessage = error.response.data?.message ||
-          error.response.data?.error ||
-          "Failed to add to raffle system";
-        toast.error(errorMessage);
-      } else if (error.request) {
-        toast.error("Network error - please check your connection");
-      } else {
-        toast.error("An unexpected error occurred");
-      }
-
+      handleApiError(error);
     }
   };
 
-  const handleConfirmSchedule = async (exclusiveOffer: string, offering: any, vendorId: string,) => {
-
-    setIsRaffLoading(true);
-    if (!scheduleDate) return;
-
-    if (new Date(scheduleDate) > maxOfferDate) {
-      toast.error("Schedule date cannot be after the exclusive offer date.");
-    } else {
-      const newDate = new Date(maxOfferDate)
-      const prize = offering
-        ? [{ name: offering.name, id: offering._id, endDate: newDate, quantity: offering.quantity }]
-        : [];
-
-      await axios.post(`${API_BASE_URL}/Raff/createRaff`, {
-        name: exclusiveOffer,
-        scheduleAt: scheduleDate,
-        prizes: prize,
-        vendorId
-      }, {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      toast.success("Added on Raffle system")
-      setIsRaffLoading(false);
+  const handleConfirmSchedule = async () => {
+    if (!raffleName.trim() || !scheduleDate || !currentOffering || !currentVendorId) {
+      toast.error("Please fill all fields");
+      return;
     }
 
-    setIsOpen(false);
+    if (maxOfferDate && new Date(scheduleDate) > maxOfferDate) {
+      toast.error("Schedule date cannot be after the exclusive offer date.");
+      return;
+    }
+
+    setIsRaffLoading(true);
+    try {
+      await createRaffle(currentOffering, currentVendorId, raffleName);
+      toast.success("Raffle created successfully");
+      setIsOpen(false);
+      setRaffleName(''); // Reset name
+      setScheduleDate(''); // Reset date
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setIsRaffLoading(false);
+    }
+  };
+
+  const createRaffle = async (offering: any, vendorId: string, name: string) => {
+    const prize = [{
+      name: offering.name,
+      id: offering._id,
+      quantity: offering.quantity,
+      ...(offering.endDate && { endDate: new Date(offering.endDate) })
+    }];
+
+    await axios.post(`${API_BASE_URL}/Raff/createRaff`, {
+      name,
+      scheduleAt: scheduleDate,
+      prizes: prize,
+      vendorId
+    }, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  };
+
+  const handleApiError = (error: any) => {
+    console.error("Error:", error);
+    if (error.response) {
+      const errorMessage = error.response.data?.message ||
+        error.response.data?.error ||
+        "Failed to process raffle";
+      toast.error(errorMessage);
+    } else if (error.request) {
+      toast.error("Network error - please check your connection");
+    } else {
+      toast.error("An unexpected error occurred");
+    }
   };
 
 
@@ -897,15 +898,13 @@ const AdminDashboard = () => {
   const fetchVendorOnWheel = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
-      console.log("This is the data from backend:", res.data.data);
 
-      // 🎯 Filter to include only vendors/admins with offerings
       const filteredData = res.data.data.filter(
         (entry: any) =>
           (entry.vendor?.offerings?.length ?? 0) > 0 ||
           (entry.admin?.offerings?.length ?? 0) > 0
       );
-      console.log("THis is the filter data", filteredData)
+
       setVendorOnWheel(filteredData);
     } catch (error: any) {
       console.error("Error fetching vendor on wheel:", error);
@@ -1012,11 +1011,9 @@ const AdminDashboard = () => {
         throw new Error("Offer name is required");
       }
 
-
       if (offer.endDate && new Date(offer.endDate) < new Date()) {
         throw new Error("End date cannot be in the past");
       }
-
 
       const offerData = {
         admin: {
@@ -1028,6 +1025,8 @@ const AdminDashboard = () => {
           }]
         }
       };
+
+      // Send POST request to add the offer
       const response = await axios.post(`${API_BASE_URL}/wheel/addAdmin`, offerData, {
         headers: {
           'Content-Type': 'application/json',
@@ -1036,25 +1035,29 @@ const AdminDashboard = () => {
       });
 
       if (response.status === 200 || response.status === 201) {
+        toast.success("Offer has been added on wheel!");
 
-        toast.success("Offer has been added on wheel please do a reload to see!")
+        await fetchVendorOnWheel();
+
+
       } else {
         throw new Error(response.data.message || "Failed to create offer");
       }
 
-
+      // Reset form
       setOpen(false);
       setOffer({ name: "", quantity: "", endDate: "" });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting offer:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create offer");
+      toast.error(error?.response?.data.message || error.message);
 
       if (axios.isAxiosError(error)) {
-        console.error("Backend error:", error.response?.data);
+        console.error("Backend error:", error.response?.data.message);
       }
     }
   };
+
 
 
 
@@ -1471,55 +1474,85 @@ const AdminDashboard = () => {
 
                                 {vendor.status === "approved" && (
                                   <>
-                                    <Button
-                                      onClick={() => handleShowOnRaff('raffle', offering, vendor._id)}
+                                    <button
+                                      onClick={() => handleShowOnRaff(offering, vendor._id)}
                                       disabled={isRaffLoading}
                                       className={`mt-2 px-4 py-1 font-semibold rounded-lg shadow-md ${isRaffLoading
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-[#DBC166] hover:bg-[#C2A857] text-white'
                                         }`}
                                     >
-                                      {isRaffLoading ? 'Loading...' : 'Show on Raffles'}
-                                    </Button>
-
+                                      {isRaffLoading ? 'Loading...' : 'Create Raffle'}
+                                    </button>
 
                                     <Dialog open={isOpen} onOpenChange={setIsOpen}>
                                       <DialogContent>
                                         <DialogHeader>
-                                          <DialogTitle>Enter Schedule Date</DialogTitle>
+                                          <DialogTitle>Create New Raffle</DialogTitle>
                                           <DialogDescription>
-                                            Ensure the date is before {maxOfferDate?.toDateString()} and not in the past.
-                                            <div className="text-red-500 font-medium">
-                                              Important: The raffle cannot be created if there are no paid participants
-                                              available.
-                                            </div>
+                                            Please enter a name for the raffle and select a schedule date.
                                           </DialogDescription>
                                         </DialogHeader>
-                                        <Input
-                                          type="date"
-                                          value={scheduleDate}
-                                          onChange={(e) => setScheduleDate(e.target.value)}
-                                          min={new Date().toISOString().split('T')[0]}
-                                          max={maxOfferDate?.toISOString().split('T')[0]}
-                                        />
+
+                                        <div className="space-y-4">
+                                          <div>
+                                            <label htmlFor="raffleName" className="block text-sm font-medium text-gray-700">
+                                              Raffle Name
+                                            </label>
+                                            <input
+                                              id="raffleName"
+                                              type="text"
+                                              value={raffleName}
+                                              onChange={(e) => setRaffleName(e.target.value)}
+                                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                                              placeholder="Enter raffle name"
+                                            />
+                                          </div>
+
+                                          <div>
+                                            <label htmlFor="scheduleDate" className="block text-sm font-medium text-gray-700">
+                                              Schedule Date
+                                            </label>
+                                            <input
+                                              id="scheduleDate"
+                                              type="date"
+                                              value={scheduleDate}
+                                              onChange={(e) => setScheduleDate(e.target.value)}
+                                              min={new Date().toISOString().split('T')[0]}
+                                              max={maxOfferDate?.toISOString().split('T')[0]}
+                                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                                            />
+                                            {maxOfferDate && (
+                                              <p className="mt-1 text-sm text-gray-500">
+                                                Must be before {maxOfferDate.toLocaleDateString()}
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+
                                         <DialogFooter>
                                           <Button
-                                            onClick={() => handleConfirmSchedule('raffle', offering, vendor._id)}
-                                            disabled={
-                                              isRaffLoading ||
-                                              !scheduleDate ||
-                                              new Date(scheduleDate) < new Date() ||
-                                              (maxOfferDate && new Date(scheduleDate) > maxOfferDate)
-                                            }
+                                            onClick={handleConfirmSchedule}
+                                          // disabled={
+                                          //   isRaffLoading ||
+                                          //   !raffleName.trim() ||
+                                          //   !scheduleDate ||
+                                          //   (new Date(scheduleDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)) || // Prevent past dates
+                                          //   (maxOfferDate && new Date(scheduleDate).setHours(0, 0, 0, 0) > new Date(maxOfferDate).setHours(0, 0, 0, 0)) // Prevent schedule date after max offer date
+                                          // }
                                           >
-                                            {isRaffLoading ? "Processing..." : "Confirm"}
+                                            {isRaffLoading ? "Creating..." : "Create Raffle"}
                                           </Button>
+
 
                                         </DialogFooter>
                                       </DialogContent>
                                     </Dialog>
                                   </>
                                 )}
+
+
+
                               </div>
                             ))}
                           </div>
@@ -1903,7 +1936,7 @@ const AdminDashboard = () => {
                           value={formData.scheduledAt ? formatDateForInput(formData.scheduledAt) : ""}
                           onChange={(e) => {
                             const date = e.target.value ? new Date(e.target.value) : null;
-                            setFormData((prev:any) => ({ ...prev, scheduledAt: date }));
+                            setFormData((prev: any) => ({ ...prev, scheduledAt: date }));
                           }}
                           required
                           min={new Date().toISOString().split('T')[0]} // This prevents selecting past dates
@@ -1995,6 +2028,7 @@ const AdminDashboard = () => {
                   <h2 className="text-center text-xl font-semibold text-gray-500">No Raffles Available Please Create a new Raff</h2>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
                     {raff.map((item) => (
                       <motion.div
                         key={item._id}
@@ -2008,30 +2042,44 @@ const AdminDashboard = () => {
                         {/* Scheduled At */}
                         <p className="text-sm text-gray-600 flex items-center gap-1">
                           <Calendar size={16} className="text-blue-500 flex-shrink-0" />
-                          <span>Schedule at: {new Date(item.scheduledAt).toISOString().split('T')[0]}</span>
+                          <span>Scheduled at: {new Date(item.scheduledAt).toISOString().split('T')[0]}</span>
                         </p>
 
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <Calendar size={16} className="text-red-500 flex-shrink-0" />
-                          {item.prizes.map((prize: any, index: any) => (
-                            <li key={index} className="break-words">
-                              End date: {prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : "Not defined"}
-                            </li>
-                          ))}
-                        </p>
+                        {/* End Dates */}
+                        <div className="text-sm text-gray-600">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Calendar size={16} className="text-red-500 flex-shrink-0" />
+                            <span>End dates:</span>
+                          </div>
+                          <ul className="list-disc ml-5">
+                            {item.prizes.map((prize: any, index: number) => (
+                              <li key={`end-date-${index}`} className="break-words">
+                                {prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : "Not defined"}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
 
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <Box size={16} className="text-green-500 flex-shrink-0" />
-                          {item.prizes.map((prize: any, index: any) => (
-                            <li key={index} className="break-words"> Quantity: {prize.quantity || "Not Defined"}</li>
-                          ))}
-                        </p>
+                        {/* Quantities */}
+                        <div className="text-sm text-gray-600 mt-2">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Box size={16} className="text-green-500 flex-shrink-0" />
+                            <span>Quantities:</span>
+                          </div>
+                          <ul className="list-disc ml-5">
+                            {item.prizes.map((prize: any, index: number) => (
+                              <li key={`quantity-${index}`} className="break-words">
+                                {prize.quantity !== undefined ? prize.quantity : "Not Defined"}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
 
                         {/* Prizes */}
                         <p className="text-sm font-medium mt-2">🎁 Prizes:</p>
                         <ul className="list-disc ml-4 text-sm text-gray-700">
-                          {item.prizes.map((prize: any, index: any) => (
-                            <li key={index} className="break-words">{prize?.name}</li>
+                          {item.prizes.map((prize: any, index: number) => (
+                            <li key={`prize-${index}`} className="break-words">{prize?.name || "Unnamed Prize"}</li>
                           ))}
                         </ul>
 
@@ -2043,7 +2091,7 @@ const AdminDashboard = () => {
                           {Array.isArray(item.participants) && item.participants.length > 0 ? (
                             <ul className="list-disc ml-4 text-sm text-gray-700">
                               {item.participants.map((participant, index) => (
-                                <li key={index} className="mb-4 p-3 border rounded-lg shadow-md bg-white">
+                                <li key={`participant-${index}`} className="mb-4 p-3 border rounded-lg shadow-md bg-white">
                                   <div className="flex justify-between items-center mb-2">
                                     <span className="text-gray-700 font-semibold">Total Entries:</span>
                                     <span className={`px-3 py-1 text-sm font-bold rounded-md ${participant.entries === 10 ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>
@@ -2074,47 +2122,85 @@ const AdminDashboard = () => {
 
                         {/* Winner Section */}
                         <p className="text-sm font-medium mt-2 flex items-center gap-1">
-                          <Trophy size={16} className="text-yellow-500 flex-shrink-0" /> Winner:
+                          <Trophy size={16} className="text-yellow-500 flex-shrink-0" /> Winners:
                         </p>
                         {item.winner && item.winner.length > 0 ? (
-                          item.winner.map((winnerItem: any, index: any) => (
-                            <p key={index} className="text-sm text-green-600 break-words">
-                              🎉 <strong>{winnerItem.user?.email || "No Email"}</strong> - {winnerItem.user?.phone || "No Phone"}
-                              <br />
-                              {winnerItem.user?.street || "N/A"},
-                              {winnerItem.user?.town || "N/A"},
-                              {winnerItem.user?.city || "N/A"},
-                              {winnerItem.user?.province || "N/A"},
-                              {winnerItem.user?.postalCode || "N/A"}
-                              <br />
-                              🏆 Prize: <strong>{winnerItem.prize || "No Prize"}</strong>
-                            </p>
-                          ))
+                          <ul className="list-disc ml-4 text-sm text-green-600">
+                            {item.winner.map((winnerItem: any, index: number) => (
+                              <li key={`winner-${index}`} className="break-words">
+                                🎉 <strong>{winnerItem.user?.email || "No Email"}</strong> - {winnerItem.user?.phone || "No Phone"}
+                                <br />
+                                {winnerItem.user?.street || "N/A"}, {winnerItem.user?.town || "N/A"}, {winnerItem.user?.city || "N/A"},
+                                {winnerItem.user?.province || "N/A"}, {winnerItem.user?.postalCode || "N/A"}
+                                <br />
+                                🏆 Prize: <strong>{winnerItem.prize || "No Prize"}</strong>
+                              </li>
+                            ))}
+                          </ul>
                         ) : (
                           <p className="text-sm text-gray-500">🏆 No winners yet.</p>
                         )}
 
-                        {/* Delete Button */}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="mt-4 flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white self-start"
-                          onClick={() => handleDeleteRaff(item._id)}
-                          disabled={loading === item._id}
-                        >
-                          {loading === item._id ? "Deleting..." : <><Trash2 size={16} className="flex-shrink-0" /> Delete</>}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-4 flex items-center gap-2 text-gray-500 border-gray-400 hover:bg-gray-300 hover:text-black self-start"
-                          disabled={loading === item._id}
-                          onClick={() => updateVisibility(item._id)}
-                        >
-                          {loading === item._id ? "⏳ Updating..." : item.isVisible ? "🟢 Active" : "⚫ Inactive"}
-                        </Button>
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 mt-4">
+                          {/* Delete Button */}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white"
+                            onClick={() => handleDeleteRaff(item._id)}
+                            disabled={loading === item._id}
+                          >
+                            {loading === item._id ? "Deleting..." : <><Trash2 size={16} className="flex-shrink-0" /> Delete</>}
+                          </Button>
+
+
+
+                          {Array.isArray(item.prizes) && item.prizes.length > 0 &&
+                            item.prizes.some((prize: any) => {
+                              const today = new Date().toISOString().split('T')[0];
+                              const prizeEndDate = prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : null;
+
+
+                              return prize.quantity <= 0 || (prizeEndDate && prizeEndDate === today);
+                            }) ? (
+                            <p className="text-sm text-red-500 font-semibold">⚠️ This raffle is no longer available.</p>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2 text-gray-500 border-gray-400 hover:bg-gray-300 hover:text-black"
+                              disabled={loading === item._id}
+                              onClick={() => updateVisibility(item._id)}
+                            >
+                              {loading === item._id ? (
+                                "⏳ Updating..."
+                              ) : (
+                                (() => {
+                                  const today = new Date().toISOString().split("T")[0];
+                                  const canBeActiveAgain = item.prizes.some(
+                                    (prize: any) => prize.quantity > 1 && (!prize.endDate || new Date(prize.endDate).toISOString().split("T")[0] !== today)
+                                  );
+
+                                  return item.isVisible
+                                    ? "🟢 Open Raffles"
+                                    : canBeActiveAgain
+                                      ? "⚫ Closed Raffles "
+                                      : "⚫ Closed Raffles";
+                                })()
+                              )}
+                            </Button>
+                          )}
+
+
+
+
+
+                        </div>
                       </motion.div>
                     ))}
+
+
                   </div>
                 )}
 

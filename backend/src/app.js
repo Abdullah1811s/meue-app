@@ -42,6 +42,7 @@ app.use(express.json())
 
 const io = new Server(server, {
     cors: {
+        
         origin: FRONTEND_URL,
         methods: ["GET", "POST", "PUT"]
     }

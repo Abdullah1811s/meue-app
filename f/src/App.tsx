@@ -10,7 +10,7 @@ function App() {
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isVendorDashboard = location.pathname.includes('/dashboard');
   const isDocPage = location.pathname.includes('doc');
-
+  
   const hideNavAndFooter = isAdminRoute || isVendorDashboard || isDocPage;
 
   return (
