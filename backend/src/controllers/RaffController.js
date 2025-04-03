@@ -716,7 +716,11 @@ export const toggleVisibility = async (req, res, io) => {
                         <p><b>The Menu Team</b></p>`
                 };
 
-               
+                const smtpConfig = {
+                    host: "mail.themenuportal.co.za",
+                    port: 465,
+                    user: "support@themenuportal.co.za",
+                };
                 try {
                     // Send email to winner
                     await sendEmail(
@@ -774,5 +778,31 @@ export const toggleVisibility = async (req, res, io) => {
             message: "An internal error occurred while updating the raffle.",
             error: error.message
         });
+    }
+};
+
+
+export const deleteRafflesByVendor = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        
+        if (!id) {
+            return res.status(400).json({ success: false, message: "Vendor ID is required" });
+        }
+
+        const deletedRaffles = await raffModel.deleteMany({ vendorId: id });
+        
+        if (deletedRaffles.deletedCount === 0) {
+            return res.status(404).json({ success: false, message: "No raffles found for the given vendor ID" });
+        }
+        
+        return res.status(200).json({
+            success: true,
+            message: "All raffles for the vendor have been deleted successfully",
+            deletedCount: deletedRaffles.deletedCount,
+        });
+    } catch (error) {
+        console.error("Error deleting raffles:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };

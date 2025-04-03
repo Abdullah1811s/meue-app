@@ -577,13 +577,19 @@ const AdminDashboard = () => {
       });
 
       // Remove the vendor from the wheel (if they are on the wheel)
-      const response2 = await axios.delete(`${API_BASE_URL}/wheel/remove`, {
+       await axios.delete(`${API_BASE_URL}/wheel/remove`, {
         data: { vendorInfo: id },
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      console.log("Response from wheel removal:", response2);
+      
+      await axios.delete(`${API_BASE_URL}/Raff/remove/${id}`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
+    
       setVendors((prevVendors) => prevVendors.filter((vendor) => vendor._id !== id));
       toast.success(response.data.message);
     } catch (error: any) {

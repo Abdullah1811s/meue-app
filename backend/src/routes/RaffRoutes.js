@@ -7,7 +7,8 @@ import {
     toggleVisibility,
     updateRaffWithWinner,
     updateRaffleOfferings,
-    delRef
+    delRef,
+    deleteRafflesByVendor
 } from '../controllers/RaffController.js';
 import { authenticate, authorization } from '../middlewares/authMiddleware.js';
 
@@ -25,6 +26,7 @@ router.put('/changeVisibility', (req, res) => {
 });
 router.put('/updateRaff', updateRaffWithWinner);
 router.put('/updateOfferings/:id', updateRaffleOfferings);
+router.delete('/remove/:id', authenticate, authorization(["admin" , "superadmin"]), deleteRafflesByVendor);
 router.delete('/delRaff', authenticate, authorization(["admin" , "superadmin"]), delRef);
 
 export default router;

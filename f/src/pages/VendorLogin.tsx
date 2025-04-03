@@ -24,6 +24,7 @@ function VendorLogin() {
         try {
             setLoginError('');
             const response = await axios.post(`${API_BASE_URL}/vendor/login`, data);
+            console.log(response)
             if (response.data.vendor.status === "pending") {
                 toast.error("Please wait for approval")
                 return;
@@ -37,6 +38,7 @@ function VendorLogin() {
             const vendorId = response.data.vendor.id;
             dispatch(vendorLogin());
             localStorage.setItem('id', vendorId);
+            navigate(`/vendor/${vendorId}/dashboard`)
             
         } catch (error: any) {
             console.error('Login Error:', error.response?.data || error.message);
