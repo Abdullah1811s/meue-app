@@ -158,14 +158,19 @@ export default function Home() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const [timerActive, setTimerActive] = useState(false);
 
   useEffect(() => {
-    // Ensure `user` exists before checking `isPaid`
-    if (user && isPaid && user.userType === "R10") {
-      console.log("User has paid again, restarting timer...");
-      startTimer(new Date().toISOString()); // Assume payment just happened now
+    if (user && isPaid && user.userType === "R10" && !timerActive) {
+      console.log("User has paid, starting timer...");
+      setTimerActive(true);
+      const cleanupTimer = startTimer(new Date().toISOString());
+      return () => {
+        cleanupTimer(); // Cleanup on unmount or if dependencies change
+        setTimerActive(false);
+      };
     }
-  }, [isPaid]); // isAdd `user` dependency to ensure it's available
+  }, [isPaid]); 
 
   const fetchData = async () => {
     try {
