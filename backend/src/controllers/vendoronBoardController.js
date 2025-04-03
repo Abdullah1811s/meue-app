@@ -222,12 +222,32 @@ export const delVendor = async (req, res) => {
                 console.error("Failed to send cancellation email:", emailError);
             }
         }
+        
+        // Assuming vendor object contains the URLs for the files
+        if (vendor.addressProofURl?.public_id) {
+            console.log(vendor.addressProofURl.public_id);
+            deleteFile(vendor.addressProofURl.public_id);
+        }
 
-        deleteFile(vendor.addressProofURl.public_id);
-        deleteFile(vendor.companyRegistrationCertificateURl.public_id);
-        deleteFile(vendor.vendorIdURl.public_id);
-        deleteFile(vendor.confirmationLetterURl.public_id);
-        deleteFile(vendor.businessPromotionalMaterialURl.public_id);
+        if (vendor.companyRegistrationCertificateURl?.public_id) {
+            console.log(vendor.companyRegistrationCertificateURl.public_id);
+            deleteFile(vendor.companyRegistrationCertificateURl.public_id);
+        }
+
+        if (vendor.vendorIdURl?.public_id) {
+            console.log(vendor.vendorIdURl.public_id);
+            deleteFile(vendor.vendorIdURl.public_id);
+        }
+
+        if (vendor.confirmationLetterURl?.public_id) {
+            console.log(vendor.confirmationLetterURl.public_id);
+            deleteFile(vendor.confirmationLetterURl.public_id);
+        }
+
+        if (vendor.businessPromotionalMaterialURl?.public_id) {
+            console.log(vendor.businessPromotionalMaterialURl.public_id);
+            deleteFile(vendor.businessPromotionalMaterialURl.public_id);
+        }
 
         const result = await vendorModel.deleteOne({ _id: id });
 
@@ -615,6 +635,38 @@ export const updateVendorDetails = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to update vendor details",
+            error: error.message
+        });
+    }
+};
+
+
+export const checkVendorEmailExists = async (req, res) => {
+    try {
+        const { businessEmail } = req.query;
+
+        if (!businessEmail) {
+            return res.status(400).json({
+                success: false,
+                message: "Business email is required as a query parameter"
+            });
+        }
+
+        const vendor = await vendorModel.findOne({ businessEmail });
+
+        return res.status(200).json({
+            success: true,
+            exists: !!vendor,
+            message: vendor
+                ? "Vendor with this email already exists"
+                : "Email is available"
+        });
+
+    } catch (error) {
+        console.error("Error checking vendor email:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
             error: error.message
         });
     }

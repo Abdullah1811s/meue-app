@@ -57,7 +57,6 @@ const Login = () => {
           navigate(`/admin/dashboard/${admin._id}`);
         } else if (user) {
           localStorage.setItem("UserToken", token);
-
           dispatch(userLogin());
           localStorage.setItem("id", user._id);
           navigate(`/users/${user._id}`);

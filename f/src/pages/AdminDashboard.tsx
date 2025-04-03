@@ -20,7 +20,8 @@ import {
   Check,
   Award,
   Loader,
-  ChevronDownIcon
+  ChevronDownIcon,
+  Trash
 
 } from 'lucide-react';
 import {
@@ -129,11 +130,7 @@ interface Affiliated {
   targetAudience?: string | null;
 }
 
-interface NewAdmin {
-  username: string;
-  email: string;
-  password: string;
-}
+
 
 interface RaffleItem {
   endDate: any;
@@ -221,11 +218,13 @@ const AdminDashboard = () => {
   const [vendors, setVendors] = useState<IVendor[]>([]);
   const [raff, setRaff] = useState<RaffleItem[]>([])
   const [users, setUsers] = useState<IUser[]>([])
+  const [admins, setAdmin] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [isManageAffiliate, setManageAffiliate] = useState(false);
+  const [isManageAdmin, setManageAdmin] = useState(false);
   const [isManageWheel, setManageWheel] = useState(false);
   const [isManagePartner, setManagePartner] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
@@ -272,12 +271,85 @@ const AdminDashboard = () => {
   const [rejectionReason1, setRejectionReason1] = useState<any>('');
   const [vendorToReject1, setVendorToReject] = useState<any>(null);
   const [raffleName, setRaffleName] = useState('');
-  const [newAdmin, setNewAdmin] = useState<NewAdmin>({
-    username: '',
-    email: '',
-    password: ''
+  const [newAdmin, setNewAdmin] = useState({
+    whoMadeHimEmail: '',  // Email of the admin creating this new admin
+    name: '',             // Name of the new admin
+    newEmail: '',         // Email of the new admin
+    password: ''          // Password for the new admin
   });
 
+  const handleCreateAdminSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Show loading toast
+
+    if (!newAdmin.whoMadeHimEmail.includes("super")) {
+
+      toast.error("You are not super admin.");
+      return;
+    }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(newAdmin.password)) {
+      alert("Password must contain at least one uppercase letter, one lowercase letter, and one number.");
+      return;
+    }
+    const toastId = toast.loading('Creating admin...');
+    try {
+      // Validate email ends with @adminMenu.com
+      if (!newAdmin.newEmail.endsWith('@adminMenu.com')) {
+        toast.error('Email must end with @adminMenu.com', { id: toastId });
+        return;
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/admin/createAdmin`, {
+        whoMadeHimEmail: newAdmin.whoMadeHimEmail,
+        newEmail: newAdmin.newEmail,
+        password: newAdmin.password,
+        name: newAdmin.name
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        }
+      });
+
+      if (response.data) {
+        toast.success('Admin created successfully! Do reload to see changes', { id: toastId });
+        setCreateAdminModalOpen(false);
+        setNewAdmin({
+          whoMadeHimEmail: '',
+          name: '',
+          newEmail: '',
+          password: ''
+        });
+       
+      }
+    } catch (error: any) {
+      console.error('Error creating admin:', error);
+
+      if (error.response) {
+        // Handle different error statuses
+        console.log(error.response.data.error);
+        toast.error(error.response.data.error, {
+          id: toastId,
+          duration: 5000 // Show for longer duration
+        });
+        switch (error.response.status) {
+          case 400:
+            toast.error(error.response.data.error || 'Validation failed', { id: toastId });
+            break;
+
+          case 409:
+            toast.error('Admin with this email already exists', { id: toastId });
+            break;
+          default:
+            toast.error('An error occurred while creating admin', { id: toastId });
+        }
+      } else {
+        toast.error('Network error. Please try again.', { id: toastId });
+      }
+    }
+  };
   const [formData, setFormData] = useState<any>({
     name: "",
     scheduledAt: "",
@@ -617,14 +689,26 @@ const AdminDashboard = () => {
   const fetchUser = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/users/`);
-      console.log(res.data);
+
       setUsers(res.data.users);
     } catch (error) {
       toast.error("Failed to fetch user  =. Try again!");
     }
   }
+  const fetchAdmin = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/admin`);
+      console.log(res.data);
+      setAdmin(res.data.admins);
+      console.log("this ", admins);
+    } catch (error) {
+      toast.error("Failed to fetch user  =. Try again!");
+    }
+  }
 
-  const switchTab = (tab: 'affiliate' | 'partner' | 'weeklyReferral' | 'wheelManage' | 'manageUser') => {
+
+
+  const switchTab = (tab: 'affiliate' | 'partner' | 'weeklyReferral' | 'wheelManage' | 'manageUser' | 'manageAdmin') => {
     if (tab === 'affiliate') {
       setManageUser(false);
       setManageAffiliate(true);
@@ -632,6 +716,7 @@ const AdminDashboard = () => {
       setManageWeeklyReferral(false);
       setHasSelectedOption(true);
       setManageWheel(false);
+      setManageAdmin(false);
       setSidebarOpen(false);
       fetchAffiliate();
     } else if (tab === 'partner') {
@@ -641,6 +726,7 @@ const AdminDashboard = () => {
       setManageWeeklyReferral(false);
       setHasSelectedOption(true);
       setSidebarOpen(false);
+      setManageAdmin(false);
       setManageWheel(false);
       fetchVendor();
     } else if (tab == 'weeklyReferral') {
@@ -651,6 +737,7 @@ const AdminDashboard = () => {
       setHasSelectedOption(true);
       setSidebarOpen(false);
       setManageWheel(false);
+      setManageAdmin(false);
       fetchRaff();
     }
     else if (tab == 'manageUser') {
@@ -661,9 +748,10 @@ const AdminDashboard = () => {
       setHasSelectedOption(true);
       setSidebarOpen(false);
       setManageWheel(false);
+      setManageAdmin(false);
       fetchUser();
     }
-    else {
+    else if (tab === 'wheelManage') {
       setManageUser(false);
       setManageAffiliate(false);
       setManagePartner(false);
@@ -671,8 +759,19 @@ const AdminDashboard = () => {
       setManageWheel(true);
       setHasSelectedOption(true);
       setSidebarOpen(false);
+      setManageAdmin(false);
       fetchVendorOnWheel();
-
+    }
+    else {
+      setManageAdmin(true);
+      setManageUser(false);
+      setManageAffiliate(false);
+      setManagePartner(false);
+      setManageWeeklyReferral(false);
+      setManageWheel(false);
+      setHasSelectedOption(true);
+      setSidebarOpen(false);
+      fetchAdmin();
     }
   };
 
@@ -1059,13 +1158,30 @@ const AdminDashboard = () => {
   };
 
 
-
-
-
   const handleChange1 = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setOffer(prev => ({ ...prev, [name]: value }));
   };
+
+  function handleDeleteAdmin(email: string): void {
+    const res = axios.delete(`${API_BASE_URL}/admin/removeAdmin`, {
+      data: { removeEmail: email },
+      headers: {
+        'Authorization': `Bearer ${adminToken}` // Assuming you store the token in localStorage
+      }
+    })
+
+      .then(response => {
+        console.log('Admin deleted successfully:', response.data.message);
+        toast.success("Admin deleted");
+        setAdmin((prevAdmins:any) => prevAdmins.filter((admin:any) => admin.email !== email));
+      })
+      .catch(error => {
+        console.error('Error deleting admin:', error.response?.data?.message || error.message);
+        toast.error("error in deleting admin");
+      });
+    console.log(res);
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -1116,6 +1232,13 @@ const AdminDashboard = () => {
           >
             <ShipWheelIcon size={20} className="mr-3 flex-shrink-0" />
             <span className="truncate">Manage Wheel</span>
+          </div>
+          <div
+            className={`px-4 py-3 flex items-center cursor-pointer ${isManageAdmin ? 'bg-[#DBC166] text-white' : 'hover:bg-gray-100'}`}
+            onClick={() => switchTab('manageAdmin')}
+          >
+            <Users size={20} className="mr-3 flex-shrink-0" />
+            <span className="truncate">Manage Admins</span>
           </div>
 
         </nav>
@@ -2171,7 +2294,7 @@ const AdminDashboard = () => {
                               size="sm"
                               className="flex items-center gap-2 text-gray-500 border-gray-400 hover:bg-gray-300 hover:text-black"
                               disabled={loading === item._id}
-                              onClick={() => updateVisibility(item._id)}
+                              onClick={() => updateVisibility(item._id,)}
                             >
                               {loading === item._id ? (
                                 "⏳ Updating..."
@@ -2417,26 +2540,37 @@ const AdminDashboard = () => {
             </div>
 
             {/* create new admin form */}
-            <form onSubmit={() => { }}>
+            <form onSubmit={handleCreateAdminSubmit}>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Admin Email (Creator)</label>
                 <input
-                  type="text"
+                  type="email"
                   className="w-full p-2 border rounded-md"
-                  value={newAdmin.username}
-                  onChange={(e) => setNewAdmin({ ...newAdmin, username: e.target.value })}
+                  value={newAdmin.whoMadeHimEmail}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, whoMadeHimEmail: e.target.value })}
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Admin Name</label>
+                <input
+                  type="text"
+                  className="w-full p-2 border rounded-md"
+                  value={newAdmin.name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Admin Email</label>
                 <input
                   type="email"
                   className="w-full p-2 border rounded-md"
-                  value={newAdmin.email}
-                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                  value={newAdmin.newEmail}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, newEmail: e.target.value })}
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Must end with @adminMenu.com</p>
               </div>
               <div className="mb-4 md:mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
@@ -2446,7 +2580,11 @@ const AdminDashboard = () => {
                   value={newAdmin.password}
                   onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
                   required
+                  autoComplete="new-password" // Prevent browser autofill
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Password must be at least 8 characters with uppercase, lowercase, and number
+                </p>
               </div>
               <div className="flex justify-end">
                 <button
@@ -2464,9 +2602,61 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+
           </motion.div>
         </div>
       )}
+
+
+
+      {isManageAdmin && (
+        <motion.div
+          initial={{ y: -50, opacity: 0 }} // Start from the top
+          animate={{ y: 0, opacity: 1 }} // Move to normal position
+          transition={{ duration: 0.5, ease: "easeOut" }} // Smooth transition
+          className=" absolute top-20 m-4"
+        >
+          <h2 className="text-2xl font-bold mb-4">Manage admin</h2>
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0, y: -50 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { staggerChildren: 0.1, ease: "easeOut" },
+              },
+            }}
+          >
+            {admins?.map((admin) => (
+              <div key={admin._id} className="bg-white shadow-lg rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <div>
+                    <h3 className="text-xl font-semibold">{admin.name}</h3>
+                    <p className="text-sm text-gray-500">{admin.email}</p>
+                    <p className="text-xs text-gray-400">Created on: {new Date(admin.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  {admin.role !== 'superadmin' && (
+                    <button
+                      onClick={() => handleDeleteAdmin(admin.email)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </motion.div>
+      )}
+
+
+
+
+
     </div>
   );
 };

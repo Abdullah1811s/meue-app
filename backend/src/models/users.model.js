@@ -47,6 +47,14 @@ const userSchema = new mongoose.Schema(
         {
             type: Date
         },
+        // R10SessionStart: {
+        //     type: Date,
+        //     required: false
+        // },
+        // remainingTime: {
+        //     type: Number, 
+        //     default: 60 * 60 * 1000 // 1 hour
+        // },
         postalCode: { type: String, required: true, trim: true, match: [/^\d+$/, "Postal code must contain only digits"] },
         isPaid: { type: Boolean, default: false },
         prizeWon: [{ type: String }],

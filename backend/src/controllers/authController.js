@@ -63,7 +63,7 @@ export const Login = async (req, res) => {
             const adminTokenPayload = {
                 id: admin._id,
                 name: admin.name || "Admin",
-                role: "admin"
+                role: admin.role
             };
             const adminToken = generateToken(adminTokenPayload);
 

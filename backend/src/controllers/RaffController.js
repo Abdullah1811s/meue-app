@@ -197,43 +197,6 @@ export const delRef = async (req, res) => {
     }
 };
 
-export const toggleVisibility = async (req, res, io) => {
-    try {
-        const { refId } = req.body;
-
-        if (!refId) {
-            return res.status(400).json({ error: "Raffle ID is required." });
-        }
-
-        const raffle = await raffModel.findById(refId);
-
-        if (!raffle) {
-            return res.status(404).json({ error: "Raffle not found." });
-        }
-
-
-        const updatedRaffle = await raffModel.findByIdAndUpdate(
-            refId,
-            { isVisible: !raffle.isVisible },
-            { new: true }
-        ).populate('participants.user');
-
-
-        console.log("this is the raffle : ", updatedRaffle);
-        io.emit("visibilityChanged", { refId: updatedRaffle._id, updatedRaffle: updatedRaffle });
-        res.status(200).json({
-            message: `Raffle visibility updated to ${updatedRaffle.isVisible}`,
-            raffle: updatedRaffle
-        });
-
-    } catch (error) {
-        console.error("Error toggling visibility of raffle:", error);
-        res.status(500).json({
-            message: "An internal error occurred while updating the raffle.",
-            error: error.message
-        });
-    }
-};
 
 
 export const updateRaffleOfferings = async (req, res) => {
@@ -312,6 +275,55 @@ export async function removeUserFromAllRaffles(userId) {
 
 
 
+
+
+
+export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
+    try {
+        if (entries !== 1 && entries !== 10) {
+            throw new Error('Entries must be either 1 or 10');
+        }
+
+        // Find all invisible raffles where the user is NOT already a participant
+        const invisibleRaffles = await raffModel.find({
+            isVisible: false,
+            'participants.user': { $ne: userId }
+        });
+
+        if (invisibleRaffles.length === 0) {
+            console.log('User is already in all invisible raffles or no raffles exist');
+            return [];
+        }
+
+        // Update raffles ensuring user is added only once
+        const updateResult = await raffModel.updateMany(
+            {
+                _id: { $in: invisibleRaffles.map(r => r._id) }
+            },
+            {
+                $addToSet: {
+                    participants: {
+                        user: userId,
+                        entries: entries  // Ensures unique user, but may not prevent duplicate entries count
+                    }
+                }
+            }
+        );
+
+        console.log(`Added user to ${updateResult.modifiedCount} raffles`);
+        return await raffModel.find({
+            _id: { $in: invisibleRaffles.map(r => r._id) }
+        });
+    } catch (error) {
+        console.error('Error in addUserToInvisibleRaffles:', error);
+        throw error;
+    }
+};
+
+
+
+
+
 export const updateRaffWithWinner = async (req, res) => {
     try {
         console.log("========================UPDATING WINNER=====================================");
@@ -386,17 +398,17 @@ export const updateRaffWithWinner = async (req, res) => {
         });
 
         // Decrease the user's entries in the participants array
-        const participantIndex = raffle.participants.findIndex(
-            p => p.user.toString() === winner._id.toString()
-        );
+        // const participantIndex = raffle.participants.findIndex(
+        //     p => p.user.toString() === winner._id.toString()
+        // );
 
-        if (participantIndex !== -1) {
-            raffle.participants[participantIndex].entries = Math.max(0, raffle.participants[participantIndex].entries - 1);
+        // if (participantIndex !== -1) {
+        //     raffle.participants[participantIndex].entries = Math.max(0, raffle.participants[participantIndex].entries - 1);
 
-            if (raffle.participants[participantIndex].entries === 0) {
-                raffle.participants.splice(participantIndex, 1);
-            }
-        }
+        //     if (raffle.participants[participantIndex].entries === 0) {
+        //         raffle.participants.splice(participantIndex, 1);
+        //     }
+        // }
 
         const updatedRaff = await raffModel.findByIdAndUpdate(
             refId,
@@ -479,9 +491,9 @@ export const updateRaffWithWinner = async (req, res) => {
                 );
                 await sendEmail(
                     smtpConfig,
-                        winnerEmail,
-                        "🎉 Congratulations! You're a Winner!",
-                        `Dear ${winnerEmail.split('@')[0]},
+                    winnerEmail,
+                    "🎉 Congratulations! You're a Winner!",
+                    `Dear ${winnerEmail.split('@')[0]},
 
                         We are excited to inform you that you have won **${prize.name}!** 🎁  
 
@@ -494,14 +506,14 @@ export const updateRaffWithWinner = async (req, res) => {
                         Best regards,  
                         The Menu Portal Team`,
 
-                        `<p>Dear <b>${winnerEmail.split('@')[0]}</b>,</p>
+                    `<p>Dear <b>${winnerEmail.split('@')[0]}</b>,</p>
                         <p>We are excited to inform you that you have won <b>${prize.name}!</b> 🎁</p>
                         <p>To claim your prize, please check your email for further details.</p>
                         <p>If you don't see our email in your inbox, kindly check your <b>spam</b> or <b>promotions</b> folder.</p>
                         <p>🎉 Congratulations once again!</p>
                         <p>Best regards,</p>
                         <p><b>The Menu Team</b></p>`
-                 );
+                );
                 console.log("Email sent successfully");
             } else {
                 console.log(`Email already sent to ${winnerEmail} for prize ${prize.name}`);
@@ -522,44 +534,245 @@ export const updateRaffWithWinner = async (req, res) => {
 };
 
 
-export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
+
+
+export const toggleVisibility = async (req, res, io) => {
     try {
-        if (entries !== 1 && entries !== 10) {
-            throw new Error('Entries must be either 1 or 10');
+        const { refId } = req.body;
+
+        if (!refId) {
+            return res.status(400).json({ error: "Raffle ID is required." });
         }
 
-        // Find all invisible raffles where the user is NOT already a participant
-        const invisibleRaffles = await raffModel.find({
-            isVisible: false,
-            'participants.user': { $ne: userId }
-        });
+        const raffle = await raffModel.findById(refId)
+            .populate('participants.user')
+            .populate('prizes')
+            .populate('winner.user'); // Added populate for winner.user
 
-        if (invisibleRaffles.length === 0) {
-            console.log('User is already in all invisible raffles or no raffles exist');
-            return [];
+        if (!raffle) {
+            return res.status(404).json({ error: "Raffle not found." });
         }
 
-        // Update raffles ensuring user is added only once
-        const updateResult = await raffModel.updateMany(
-            {
-                _id: { $in: invisibleRaffles.map(r => r._id) }
-            },
-            {
-                $addToSet: {
-                    participants: {
-                        user: userId,
-                        entries: entries  // Ensures unique user, but may not prevent duplicate entries count
+        const newVisibility = !raffle.isVisible;
+
+        // Check conditions before making it visible
+        if (newVisibility) {
+            if (raffle.participants.length === 0) {
+                return res.status(400).json({
+                    error: "Cannot make raffle visible without participants"
+                });
+            }
+
+            if (raffle.prizes.length === 0) {
+                return res.status(400).json({
+                    error: "Cannot make raffle visible without prizes"
+                });
+            }
+        }
+
+        let winner = null;
+        let prizeName = "Grand Prize";
+        let prizeId = "";
+
+        // Conduct the draw if visibility is being turned on
+        if (newVisibility) {
+            const entryPool = [];
+            raffle.participants.forEach(participant => {
+                for (let i = 0; i < participant.entries; i++) {
+                    entryPool.push(participant.user);
+                }
+            });
+
+            // Select winner from the pool
+            const winnerIndex = Math.floor(Math.random() * entryPool.length);
+            winner = entryPool[winnerIndex];
+
+            if (raffle.prizes.length > 0) {
+                const prizeIndex = Math.floor(Math.random() * raffle.prizes.length);
+                const selectedPrize = raffle.prizes[prizeIndex];
+                prizeName = selectedPrize.name || "Unnamed Prize";
+                prizeId = selectedPrize._id || "";
+
+                // Update prize quantity if it exists
+                if (selectedPrize.quantity && !isNaN(selectedPrize.quantity)) {
+                    const newQuantity = parseInt(selectedPrize.quantity) - 1;
+                    selectedPrize.quantity = newQuantity.toString();
+                }
+
+                // Check if endDate is today
+                if (selectedPrize.endDate) {
+                    const today = new Date();
+                    const endDate = new Date(selectedPrize.endDate);
+
+                    if (endDate.toDateString() === today.toDateString()) {
+                        // Remove the prize if end date is today
+                        raffle.prizes = raffle.prizes.filter(prize => prize._id.toString() !== selectedPrize._id.toString());
                     }
                 }
             }
-        );
 
-        console.log(`Added user to ${updateResult.modifiedCount} raffles`);
-        return await raffModel.find({
-            _id: { $in: invisibleRaffles.map(r => r._id) }
+            // Create new winner object and push to winners array
+            const newWinner = {
+                user: winner._id,
+                prize: prizeName,
+                isEmailSent: false,
+            };
+
+            raffle.winner.push(newWinner);
+            await raffle.save();
+            const vendor = await vendorModel.findOne({ _id: raffle.vendorId });
+
+            if (vendor) {
+                if (vendor.raffleOffer && vendor.raffleOffer.offerings) {
+                    const offerIndex = vendor.raffleOffer.offerings.findIndex(
+                        (offer) => offer.name === prizeName
+                    );
+
+                    if (offerIndex !== -1) {
+                        const offer = vendor.raffleOffer.offerings[offerIndex];
+
+                        if (offer.quantity !== undefined && offer.quantity !== null) {
+                            if (offer.quantity <= 0) {
+                                return res.status(400).json({ error: "Offer quantity is already zero." });
+                            }
+
+                            offer.quantity -= 1;
+
+                            if (offer.quantity === 0) {
+                                vendor.raffleOffer.offerings.splice(offerIndex, 1);
+                            }
+
+                            await vendorModel.findByIdAndUpdate(
+                                raffle.vendorId,
+                                { raffleOffer: vendor.raffleOffer },
+                                { new: true }
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Update the winner's prizeWon array in User schema
+            await mongoose.model('User').findByIdAndUpdate(
+                winner._id,
+                { $push: { prizeWon: prizeName } },
+                { new: true }
+            );
+        }
+
+        const updatedRaffle = await raffModel.findByIdAndUpdate(
+            refId,
+            { isVisible: newVisibility },
+            { new: true }
+        )
+            .populate('participants.user')
+            .populate('prizes')
+            .populate('winner.user');
+
+        // Get all winners for response
+        const winnersInfo = updatedRaffle.winner.map(winner => ({
+            name: winner.user?.name || 'Unknown',
+            prize: winner.prize || 'No prize'
+        }));
+
+        // Emit visibility change & winner details
+        if (newVisibility && winner) {
+            io.emit("visibilityChanged", {
+                refId: updatedRaffle._id,
+                updatedRaffle: updatedRaffle,
+                winner: winner ? { id: winner._id, name: winner.name } : null,
+                prize: prizeName
+            });
+
+            // Send emails only if we have a winner
+            if (winner) {
+                const winnerEmail = winner.email;
+                const vendor = await vendorModel.findOne({ _id: raffle.vendorId });
+                const vendorEmail = vendor?.businessEmail;
+
+                // Prepare email content
+                const winnerEmailContent = {
+                    subject: "🎉 Congratulations! You're a Winner!",
+                    text: `Dear ${winnerEmail.split('@')[0]},\n\nWe are excited to inform you that you have won **${prizeName}!** 🎁\n\nTo claim your prize, please check your email for further details.\n\nIf you don't see our email in your inbox, kindly check your spam or promotions folder.\n\nOnce again, congratulations! 🎉\n\nBest regards,\nThe Menu Portal Team`,
+                    html: `<p>Dear <b>${winnerEmail.split('@')[0]}</b>,</p>
+                        <p>We are excited to inform you that you have won <b>${prizeName}!</b> 🎁</p>
+                        <p>To claim your prize, please check your email for further details.</p>
+                        <p>If you don't see our email in your inbox, kindly check your <b>spam</b> or <b>promotions</b> folder.</p>
+                        <p>🎉 Congratulations once again!</p>
+                        <p>Best regards,</p>
+                        <p><b>The Menu Team</b></p>`
+                };
+
+                const vendorEmailContent = {
+                    subject: "🎉 A Winner Has Been Selected For Your Raffle",
+                    text: `Dear Partner,\n\nWe're pleased to inform you that a winner has been selected for your raffle "${raffle.name}".\n\nWinner: ${winnerEmail}\nPrize: ${prizeName}\n\nThe winner has been notified via email. Please be prepared to fulfill the prize as described in your raffle terms.\n\nThank you for using our platform!\n\nBest regards,\nThe Menu Portal Team`,
+                    html: `<p>Dear Partner,</p>
+                        <p>We're pleased to inform you that a winner has been selected for your raffle.</p>
+                        <p><b>Winner:</b> ${winnerEmail}</p>
+                        <p><b>Prize:</b> ${prizeName}</p>
+                        <p>The winner has been notified via email. Please be prepared to fulfill the prize as described in your raffle terms.</p>
+                        <p>Thank you for using our platform!</p>
+                        <p>Best regards,</p>
+                        <p><b>The Menu Team</b></p>`
+                };
+
+               
+                try {
+                    // Send email to winner
+                    await sendEmail(
+                        smtpConfig,
+                        winnerEmail,
+                        winnerEmailContent.subject,
+                        winnerEmailContent.text,
+                        winnerEmailContent.html
+                    );
+
+                    // Send email to vendor if email exists
+                    if (vendorEmail) {
+                        await sendEmail(
+                            smtpConfig,
+                            vendorEmail,
+                            vendorEmailContent.subject,
+                            vendorEmailContent.text,
+                            vendorEmailContent.html
+                        );
+                    }
+
+                    // Update isEmailSent to true
+                    await raffModel.findByIdAndUpdate(
+                        raffle._id,
+                        {
+                            $set: {
+                                "winner.$[elem].isEmailSent": true
+                            }
+                        },
+                        {
+                            arrayFilters: [{ "elem.user": winner._id }],
+                            new: true
+                        }
+                    );
+                } catch (error) {
+                    console.error("Error sending emails:", error);
+                }
+            }
+        } else {
+            io.emit("visibilityChanged", {
+                refId: updatedRaffle._id,
+                updatedRaffle: updatedRaffle
+            });
+        }
+
+        res.status(200).json({
+            message: `Raffle visibility updated to ${updatedRaffle.isVisible}`,
+            raffle: updatedRaffle,
+            winners: winnersInfo
         });
+
     } catch (error) {
-        console.error('Error in addUserToInvisibleRaffles:', error);
-        throw error;
+        console.error("Error toggling visibility of raffle:", error);
+        res.status(500).json({
+            message: "An internal error occurred while updating the raffle.",
+            error: error.message
+        });
     }
 };

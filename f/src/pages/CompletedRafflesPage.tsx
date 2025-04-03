@@ -7,6 +7,7 @@ import { CalendarIcon, Gift, Trophy, User, MapPin, Mail } from "lucide-react";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
 
+
 interface User {
   _id: string;
   name: string;
@@ -76,7 +77,7 @@ export default function UserDashboard() {
     toast.dismiss();
     type === 'success' ? toast.success(message) : toast.error(message);
   }, []);
-  
+
 
   const fetchCompletedRaffles = useCallback(async () => {
     try {
@@ -113,13 +114,17 @@ export default function UserDashboard() {
       setUpcomingLoading(false);
     }
   }, [API_BASE_URL, showToast]);
-  
+
   // Add polling effect
   useEffect(() => {
     fetchUpcomingRaffles(); // Initial fetch
     const interval = setInterval(fetchUpcomingRaffles, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval); // Cleanup
   }, [fetchUpcomingRaffles]);
+
+
+
+
 
   const handleVisibilityChange = useCallback((data: any) => {
     const updatedRaffle = data.updatedRaffle;
@@ -134,11 +139,11 @@ export default function UserDashboard() {
     }
 
     if (newVisibility && updatedRaffle.participants?.length > 0 && !isDrawingRef.current) {
-      startDrawAnimation(updatedRaffle);
+      startDrawAnimation(updatedRaffle, data.winner, data.prize);
     }
   }, [selectedRaffle]);
 
-  const startDrawAnimation = useCallback((raffle: UpcomingRaffle) => {
+  const startDrawAnimation = useCallback((raffle: UpcomingRaffle, winner: any, prize: any) => {
     if (isDrawingRef.current || !raffle.participants || raffle.participants.length === 0) return;
 
     isDrawingRef.current = true;
@@ -174,66 +179,51 @@ export default function UserDashboard() {
 
       if (count >= maxShuffles) {
         clearInterval(shuffleInterval.current!);
-        finalizeDraw(raffle, entryPool);
+        finalizeDraw(winner, prize);
       }
     }, currentSpeed);
   }, []);
 
-  const finalizeDraw = useCallback((raffle: UpcomingRaffle, entryPool: User[]) => {
-    const winnerIndex = Math.floor(Math.random() * entryPool.length);
-    const winner = entryPool[winnerIndex];
-    let prizeName = "Grand Prize";
-    let prizeId = "";
-
-    if (raffle.prizes?.length > 0) {
-      const prizeIndex = Math.floor(Math.random() * raffle.prizes.length);
-      const selectedPrize = raffle.prizes[prizeIndex];
-      if (typeof selectedPrize === 'object') {
-        prizeName = selectedPrize.name || "Unnamed Prize";
-        prizeId = selectedPrize._id || "";
-       
-      } else {
-        prizeName = selectedPrize;
-      }
-    }
-
+  const finalizeDraw = useCallback((winner: any, prize: any) => {
     setTimeout(() => {
       setCurrentParticipant(winner);
-      setCurrentPrize(prizeName);
+      setCurrentPrize(prize.name);
       setWinnerSelected(true);
       setShowConfetti(true);
       setIsDrawing(false);
       isDrawingRef.current = false;
 
-      showToast(`🎉 ${winner.name} won ${prizeName}!`, 'success');
-      updateWinner(raffle._id, winner.email, { id: prizeId, name: prizeName })
-        .finally(() => {
-          setTimeout(() => {
-            fetchCompletedRaffles();
-            fetchUpcomingRaffles();
-            setDrawingRaffle(null);
-            setShowConfetti(false);
-          }, 5000);
-        });
+      showToast(`🎉 ${winner.name} won ${prize}!`, 'success');
+
+      setTimeout(() => {
+        fetchCompletedRaffles();
+        fetchUpcomingRaffles();
+        setDrawingRaffle(null);
+        setShowConfetti(false);
+      }, 5000);
     }, 500);
   }, [fetchCompletedRaffles, fetchUpcomingRaffles, showToast]);
 
-  const updateWinner = async (refId: string, winnerEmail: string, prize: any) => {
-    const payload = {
-      refId,
-      winnerEmail,
-      prizeId: prize.id
-    };
- 
-    try {
-      const res = await axios.put(`${API_BASE_URL}/Raff/updateRaff`, payload);
-      console.log(res.data);
-      if (res.status !== 200) throw new Error("Failed to update winner");
-    } catch (error) {
-      console.error("Error updating winner:", error);
-      throw error;
-    }
-  };
+
+
+
+
+  // const updateWinner = async (refId: string, winnerEmail: string, prize: any) => {
+  //   const payload = {
+  //     refId,
+  //     winnerEmail,
+  //     prizeId: prize.id
+  //   };
+
+  //   try {
+  //     const res = await axios.put(`${API_BASE_URL}/Raff/updateRaff`, payload);
+  //     // console.log(res.data);
+  //     if (res.status !== 200) throw new Error("Failed to update winner");
+  //   } catch (error) {
+  //     console.error("Error updating winner:", error);
+  //     throw error;
+  //   }
+  // };
 
   useEffect(() => {
     socket.on("visibilityChanged", handleVisibilityChange);

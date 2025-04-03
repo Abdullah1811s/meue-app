@@ -16,7 +16,7 @@ const router = express.Router();
 router.get('/', getAllRaff);
 router.get('/ready', getCompletedRaff);
 router.get('/notReady', getScheduledRaff);
-router.post('/createRaff', authenticate, authorization(["admin"]), makeNewRaff);
+router.post('/createRaff', authenticate, authorization(["admin" , "superadmin"]), makeNewRaff);
 router.put('/changeVisibility', (req, res) => {
     if (!req.app.locals.io) {
         return res.status(500).json({ error: "Socket.IO not available" });
@@ -25,6 +25,6 @@ router.put('/changeVisibility', (req, res) => {
 });
 router.put('/updateRaff', updateRaffWithWinner);
 router.put('/updateOfferings/:id', updateRaffleOfferings);
-router.delete('/delRaff', authenticate, authorization(["admin"]), delRef);
+router.delete('/delRaff', authenticate, authorization(["admin" , "superadmin"]), delRef);
 
 export default router;

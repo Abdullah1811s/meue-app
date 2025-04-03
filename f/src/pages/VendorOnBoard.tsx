@@ -312,11 +312,11 @@ function VendorOnboarding() {
     data.append("api_key", import.meta.env.VITE_CLOUD_API);
     data.append("folder", folder);
 
-   
+
 
     try {
       const result = await makeCloudinaryApiCall(data);
-     
+
       return result;
     } catch (error) {
       console.error("Upload failed:", error);
@@ -327,103 +327,113 @@ function VendorOnboarding() {
     setLoading(true);
 
     try {
-      const {
-        companyRegistrationCertificate,
-        vendorId,
-        addressProof,
-        confirmationLetter,
-        businessPromotionalMaterial,
-        ...filterData
-      } = data;
-      const {
-        signature: companyRegistrationSignature,
-        timestamp: companyRegistrationTimestamp
-      } = await getSignature("companyRegistrationCertificate");
-
-      const {
-        signature: vendorIdSignature,
-        timestamp: vendorIdTimestamp
-      } = await getSignature("vendorId");
-
-      const {
-        signature: addressProofSignature,
-        timestamp: addressProofTimestamp
-      } = await getSignature("addressProof");
-
-      const {
-        signature: confirmationLetterSignature,
-        timestamp: confirmationLetterTimestamp
-      } = await getSignature("confirmationLetter");
-
-      const {
-        signature: businessPromotionalMaterialSignature,
-        timestamp: businessPromotionalMaterialTimestamp
-      } = await getSignature("businessPromotionalMaterial");
-
-      const companyRegistrationCertificateURl = companyRegistrationTimestamp && companyRegistrationSignature
-        ? await uploadFile(
-          "companyRegistrationCertificate",
-          companyRegistrationTimestamp,
-          companyRegistrationSignature
-        )
-        : null;
-
-      const vendorIdURl = vendorIdTimestamp && vendorIdSignature
-        ? await uploadFile(
-          "vendorId",
-          vendorIdTimestamp,
-          vendorIdSignature
-        )
-        : null;
-
-      const addressProofURl = addressProofTimestamp && addressProofSignature
-        ? await uploadFile(
-          "addressProof",
-          addressProofTimestamp,
-          addressProofSignature
-        )
-        : null;
-
-      const confirmationLetterURl = confirmationLetterTimestamp && confirmationLetterSignature
-        ? await uploadFile(
-          "confirmationLetter",
-          confirmationLetterTimestamp,
-          confirmationLetterSignature
-        )
-        : null;
-
-      const businessPromotionalMaterialURl = businessPromotionalMaterialTimestamp && businessPromotionalMaterialSignature
-        ? await uploadFile(
-          "businessPromotionalMaterial",
-          businessPromotionalMaterialTimestamp,
-          businessPromotionalMaterialSignature
-        )
-        : null;
-
-      // Add all URLs to the filtered data object
-      const updatedData = {
-        ...filterData,
-        companyRegistrationCertificateURl,
-        vendorIdURl,
-        addressProofURl,
-        confirmationLetterURl,
-        businessPromotionalMaterialURl,
-      };
-
-
-      const response = await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
-        headers: {
-          "Content-Type": "application/json",
-        }
+      const response1 = await axios.get(`${API_BASE_URL}/vendor/check-email`, {
+        params: { businessEmail: data.businessEmail }
       });
-      console.log(response);
-      setLoading(false);
-      toast.success("Registration completed successfully! Please wait for approval.");
-      navigate('/');
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }, 100); // Adding a slight delay to ensure navigation completes first
-      reset();
+      console.log(response1);
+      if (response1.data.exists) {
+        toast.error("This email is already registered ");
+        setLoading(false);
+        return ;
+      } else {
+        const {
+          companyRegistrationCertificate,
+          vendorId,
+          addressProof,
+          confirmationLetter,
+          businessPromotionalMaterial,
+          ...filterData
+        } = data;
+        const {
+          signature: companyRegistrationSignature,
+          timestamp: companyRegistrationTimestamp
+        } = await getSignature("companyRegistrationCertificate");
+
+        const {
+          signature: vendorIdSignature,
+          timestamp: vendorIdTimestamp
+        } = await getSignature("vendorId");
+
+        const {
+          signature: addressProofSignature,
+          timestamp: addressProofTimestamp
+        } = await getSignature("addressProof");
+
+        const {
+          signature: confirmationLetterSignature,
+          timestamp: confirmationLetterTimestamp
+        } = await getSignature("confirmationLetter");
+
+        const {
+          signature: businessPromotionalMaterialSignature,
+          timestamp: businessPromotionalMaterialTimestamp
+        } = await getSignature("businessPromotionalMaterial");
+
+        const companyRegistrationCertificateURl = companyRegistrationTimestamp && companyRegistrationSignature
+          ? await uploadFile(
+            "companyRegistrationCertificate",
+            companyRegistrationTimestamp,
+            companyRegistrationSignature
+          )
+          : null;
+
+        const vendorIdURl = vendorIdTimestamp && vendorIdSignature
+          ? await uploadFile(
+            "vendorId",
+            vendorIdTimestamp,
+            vendorIdSignature
+          )
+          : null;
+
+        const addressProofURl = addressProofTimestamp && addressProofSignature
+          ? await uploadFile(
+            "addressProof",
+            addressProofTimestamp,
+            addressProofSignature
+          )
+          : null;
+
+        const confirmationLetterURl = confirmationLetterTimestamp && confirmationLetterSignature
+          ? await uploadFile(
+            "confirmationLetter",
+            confirmationLetterTimestamp,
+            confirmationLetterSignature
+          )
+          : null;
+
+        const businessPromotionalMaterialURl = businessPromotionalMaterialTimestamp && businessPromotionalMaterialSignature
+          ? await uploadFile(
+            "businessPromotionalMaterial",
+            businessPromotionalMaterialTimestamp,
+            businessPromotionalMaterialSignature
+          )
+          : null;
+
+        // Add all URLs to the filtered data object
+        const updatedData = {
+          ...filterData,
+          companyRegistrationCertificateURl,
+          vendorIdURl,
+          addressProofURl,
+          confirmationLetterURl,
+          businessPromotionalMaterialURl,
+        };
+
+
+        const response = await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        });
+
+        setLoading(false);
+        toast.success("Registration completed successfully! Please wait for approval.");
+        navigate('/');
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 100); // Adding a slight delay to ensure navigation completes first
+        reset();
+      }
     }
     catch (error: any) {
       setLoading(false);

@@ -11,7 +11,7 @@ export const createAdmin = async (req, res) => {
         }
         const whoMadeHim = await Admin.findOne({ email: whoMadeHimEmail });
         if (!whoMadeHim) {
-            return res.status(403).json({ message: "Unauthorized! Creator admin not found" });
+            return res.status(403).json({ message: "Unauthorized! only super admin can make new admin" });
         }
         const existingAdmin = await Admin.findOne({ email: newEmail });
         if (existingAdmin) {
@@ -102,3 +102,20 @@ export const createSuperAdmin = async (req, res) => {
     }
 };
 
+export const getAllAdmins = async (req, res) => {
+    try {
+        // Fetch all admins, excluding their password field for security
+        const admins = await Admin.find().select('-password');
+        
+        if (!admins || admins.length === 0) {
+            return res.status(404).json({ message: "No admins found" });
+        }
+
+        return res.status(200).json({ admins });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Server error [GET ALL ADMINS CONTROLLER]",
+            error: error.message,
+        });
+    }
+};

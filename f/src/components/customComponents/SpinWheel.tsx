@@ -462,7 +462,7 @@ const SpinWheel = () => {
       {/* Spins remaining indicator */}
       {user && (
         <div className="text-center mt-2 text-sm text-gray-600">
-          Spins today: {user.numberOfTimesWheelRotate || 0}/21
+          Spins today: {user.numberOfTimesWheelRotate || 0}/2
         </div>
       )}
     </div>

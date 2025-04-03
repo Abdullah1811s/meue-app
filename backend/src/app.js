@@ -17,19 +17,20 @@ import paymentRoute from './routes/PaymentRoute.js'
 
 import raffRoute from './routes/RaffRoutes.js'
 import wheelRoute from './routes/wheelRoutes.js'
-import timeRoutes from "./routes/timeRoute.js"; 
+import timeRoutes from "./routes/timeRoute.js";
 import { handleWebhook } from "./controllers/PaymentController.js";
+import { resetExpiredR10Users } from './utils/R10check.js'
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 const app = express();
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1);
 
 const server = http.createServer(app);
 
 app.post(
-  '/api/payment/webhook',
-  express.raw({ type: 'application/json' }),
-  handleWebhook
+    '/api/payment/webhook',
+    express.raw({ type: 'application/json' }),
+    handleWebhook
 );
 // app.use(cors());
 
@@ -40,9 +41,10 @@ app.use(cors({
 
 app.use(express.json())
 
+resetExpiredR10Users();
+
 const io = new Server(server, {
     cors: {
-        
         origin: FRONTEND_URL,
         methods: ["GET", "POST", "PUT"]
     }
@@ -64,7 +66,7 @@ app.use('/api/generateSignature', generateSig);
 app.use('/api/payment', paymentRoute);
 app.use('/api/Raff', raffRoute);
 app.use('/api/wheel', wheelRoute);
-app.use("/api/time", timeRoutes); 
+app.use("/api/time", timeRoutes);
 io.on("connection", (socket) => {
     try {
         console.log("User connected: ", socket.id);

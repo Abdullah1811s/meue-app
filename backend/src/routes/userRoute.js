@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Route to get all users
 router.get("/", getAllUsers);
-router.delete('/del-user', authenticate, authorization(["admin"]), delUser)
+router.delete('/del-user', authenticate, authorization(["admin" , "superadmin"]), delUser)
 // Route to get a user by ID
 router.get("/:id", getUserById);
 

@@ -8,6 +8,6 @@ router.post('/checkEmail', checkUserExists);
 router.post("/login", RateLimiter, loginAffiliate);
 router.post("/register", RateLimiter, registerAffiliate);
 router.get("/get/:id", getAffiliateById);
-router.put("/updateStatus", authenticate, authorization(["admin"]), updateStatus);
-router.delete("/removeAffiliate", authenticate, authorization(["admin"]), removeAffiliateById);
+router.put("/updateStatus", authenticate, authorization(["admin" , "superadmin"]), updateStatus);
+router.delete("/removeAffiliate", authenticate, authorization(["admin" , "superadmin"]), removeAffiliateById);
 export default router;
