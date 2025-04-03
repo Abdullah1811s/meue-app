@@ -309,21 +309,21 @@ export default function Home() {
     }
   };
 
-  const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));
-
-
   const startTimer = (paidDate: any) => {
     const paidTime = new Date(paidDate).getTime();
     const expireTime = paidTime + 60 * 60 * 1000; // 1 hour later
+    let hasReloaded = false; // Flag to track if reload has been triggered
 
     const updateTimer = () => {
       const currentTime = new Date().getTime();
       const remainingTime = expireTime - currentTime;
 
-      if (remainingTime <= 0) {
+      if (remainingTime <= 0 && !hasReloaded) {
         setTimeLeft("Your payment session has ended. Please make a payment to continue.");
-        sleep(1000);
-        window.location.reload()
+        hasReloaded = true; // Set flag to true
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
         return;
       }
 
@@ -340,9 +340,10 @@ export default function Home() {
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
 
-    return () => clearInterval(timerInterval);
+    return () => {
+      clearInterval(timerInterval);
+    };
   };
-
 
 
   return (
