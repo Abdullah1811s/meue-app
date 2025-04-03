@@ -57,7 +57,7 @@ const RankCard: React.FC = () => {
         const response = await axios.get<{ scheduled: Raffle[] }>(
           `${API_BASE_URL}/Raff/notReady`
         );
-       console.log("This is the response " , response);
+     
         if (response.data.scheduled.length > 0) {
 
           const filteredRaffles = response.data.scheduled

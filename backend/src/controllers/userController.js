@@ -28,27 +28,41 @@ export const getUserById = async (req, res) => {
 export const incrementUserSpin = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("coming")
-    const user = await usersModel.findByIdAndUpdate(
-      id,
-      { $inc: { numberOfTimesWheelRotate: 1 } },
-      { new: true }
-    );
+    console.log("coming");
+
+    // Find the user first
+    const user = await usersModel.findById(id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // If firstSpinTime is not set, update it
+    const updateFields = { $inc: { numberOfTimesWheelRotate: 1 } };
+    if (!user.firstSpinTime) {
+      updateFields.$set = { firstSpinTime: new Date() };
+    }
+
+    // Update user with incremented count and first spin time if applicable
+    const updatedUser = await usersModel.findByIdAndUpdate(id, updateFields, {
+      new: true,
+    });
+
+    // Reset the spin count after 24 hours
     setTimeout(async () => {
-      await usersModel.findByIdAndUpdate(id, { numberOfTimesWheelRotate: 0 });
+      await usersModel.findByIdAndUpdate(id, {
+        numberOfTimesWheelRotate: 0,
+        firstSpinTime: null, // Reset firstSpinTime after 24 hours if needed
+      });
     }, 24 * 60 * 60 * 1000);
 
-    return res.status(200).json({ user });
+    return res.status(200).json({ user: updatedUser });
   } catch (error) {
     console.error("Error incrementing user spin count:", error);
     return res.status(500).json({ message: "Please try again later" });
   }
 };
+
 
 export const updatePoint = async (req, res) => {
   try {

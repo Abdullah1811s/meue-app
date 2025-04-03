@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaDice } from "react-icons/fa";
+import { FaClock, FaDice } from "react-icons/fa";
 import { useSelector } from "react-redux";
 
 // Type definitions
@@ -50,7 +50,8 @@ const SpinWheel = () => {
   const [user, setUser] = useState<any>();
   const [prize, setPrize] = useState<SegmentData | null>(null);
   const [isAble, setIsAble] = useState<boolean>(false);
-  
+  const [nextSpinTime, setNextSpinTime] = useState<Date | null>(null);
+  const [timeLeft, setTimeLeft] = useState<string>("");
   const isPaid = useSelector((state: any) => state.auth.isPaid);
 
   // Fetch wheel data function
@@ -73,12 +74,42 @@ const SpinWheel = () => {
     }
   };
 
+
+  useEffect(() => {
+    if (!nextSpinTime) return;
+
+    const timer = setInterval(() => {
+      const now = new Date();
+      const diff = nextSpinTime.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeLeft("");
+        clearInterval(timer);
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [nextSpinTime]);
+
   // Fetch user data function
   const fetchUser = async () => {
     if (!id) return;
-    
+
     try {
       const res = await axios.get(`${API_BASE_URL}/users/${id}`);
+    
+      if (res.data.user.numberOfTimesWheelRotate === 1 && res.data.user.firstSpinTime) {
+        const nextSpin = new Date(res.data.user.firstSpinTime);
+        nextSpin.setHours(nextSpin.getHours() + 8);
+        setNextSpinTime(nextSpin);
+      }
       setUser(res.data.user);
     } catch (error: any) {
       console.error("Error fetching user data:", error);
@@ -148,11 +179,11 @@ const SpinWheel = () => {
     }
 
     const payload = { ...details[0], id };
-    
+
     try {
       setIsAble(true);
       await axios.put(`${API_BASE_URL}/wheel/update`, payload);
-      
+
       // Update local state to reflect changes
       setVendor((prevVendor) => {
         return prevVendor.map((v) => {
@@ -165,7 +196,7 @@ const SpinWheel = () => {
               };
             }
             return offering;
-          }).filter((offering) => 
+          }).filter((offering) =>
             (offering.quantity === undefined || offering.quantity > 0) &&
             (!offering.endDate || new Date(offering.endDate) > new Date())
           ) || [];
@@ -179,7 +210,7 @@ const SpinWheel = () => {
               };
             }
             return offering;
-          }).filter((offering) => 
+          }).filter((offering) =>
             (offering.quantity === undefined || offering.quantity > 0) &&
             (!offering.endDate || new Date(offering.endDate) > new Date())
           ) || [];
@@ -189,14 +220,17 @@ const SpinWheel = () => {
             vendor: v.vendor ? { ...v.vendor, offerings: updatedVendorOfferings } : undefined,
             admin: v.admin ? { ...v.admin, offerings: updatedAdminOfferings } : undefined
           };
-        }).filter((v) => 
-          (v.vendor?.offerings?.length ?? 0) > 0 || 
+        }).filter((v) =>
+          (v.vendor?.offerings?.length ?? 0) > 0 ||
           (v.admin?.offerings?.length ?? 0) > 0
         );
       });
 
       toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
-      fetchUser(); 
+      setTimeout(()=>
+      {
+        window.location.reload();
+      } , 400)
     } catch (error: any) {
       console.error("Error updating winner:", error);
       toast.error("Failed to update prize. Please try again later.");
@@ -263,12 +297,12 @@ const SpinWheel = () => {
       // Add the text label with improved text wrapping
       const textAngle = startAngle + segmentAngle / 2;
       const textRad = (textAngle * Math.PI) / 180;
-      
+
       // Position text closer to the outer edge for more space
       const textRadius = radius * 0.65;
       const textX = centerX + textRadius * Math.cos(textRad);
       const textY = centerY + textRadius * Math.sin(textRad);
-      
+
       let textRotation = textAngle;
       if (textAngle > 90 && textAngle < 270) {
         textRotation += 180;
@@ -277,7 +311,7 @@ const SpinWheel = () => {
       // Word wrapping logic
       const words = segment.label.split(' ');
       const maxWordsPerLine = Math.max(1, Math.min(3, Math.ceil(words.length / 3)));
-      
+
       // Split into lines with more intelligent word distribution
       const lines = [];
       for (let i = 0; i < words.length; i += maxWordsPerLine) {
@@ -286,7 +320,7 @@ const SpinWheel = () => {
 
       // Dynamic font sizing based on segment angle and text length
       // const maxLineLength = Math.max(...lines.map(line => line.length));
-      const fontSize = 10 
+      const fontSize = 10
       // Math.max(10, Math.min(16, 24 - (maxLineLength * 0.3) - (segments * 0.2)));
 
       // Render each line with proper spacing
@@ -334,15 +368,22 @@ const SpinWheel = () => {
       });
       return;
     }
-    
+
     // Refresh user data
     await fetchUser();
-    
-    if (spinning || isAble) return;
 
+    if (spinning || isAble) return;
+    if (nextSpinTime && new Date() < nextSpinTime) {
+      toast.error(`Please wait ${timeLeft} before spinning again.`, {
+        icon: <FaClock className="text-yellow-500" />,
+      });
+      return;
+    }
     // Check if the user has exceeded the maximum number of spins
-    if (user?.numberOfTimesWheelRotate > 2) {
-      toast.error("Maximum spin limit reached. Please try again after 24 hours.");
+    if (user?.numberOfTimesWheelRotate >= 21) {
+      toast.error("You've reached your daily spin limit. Try again tomorrow!", {
+        icon: <FaClock className="text-yellow-500" />,
+      });
       return;
     }
 
@@ -371,20 +412,39 @@ const SpinWheel = () => {
 
       const winningPrize = segmentData[winningIndex];
       setPrize(winningPrize);
-      
+
       // Update winner in database
       await updateWinner(winningPrize);
-      
+
       // Update user spin count
       try {
         if (id) {
           const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`);
           setUser(updatedUser.data.user);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error updating user spin count:", error);
-        toast.error("An error occurred while updating your spin count.");
+
+        if (error.response) {
+          // Handle specific error messages from the backend
+          const errorMessage = error.response.data.message;
+
+          if (errorMessage.includes("Please wait") && errorMessage.includes("hour(s) before spinning again")) {
+            // 8-hour delay message
+            toast.error(errorMessage);
+          } else if (errorMessage.includes("You've reached your daily limit")) {
+            // 24-hour reset message
+            toast.error("Maximum spin limit reached. Please try again after 24 hours.");
+          } else {
+            // Generic error
+            toast.error("An error occurred while updating your spin count.");
+          }
+        } else {
+          // Network or other errors
+          toast.error("An error occurred while updating your spin count.");
+        }
       }
+
 
       setSpinning(false);
     }, 3000);
@@ -395,14 +455,14 @@ const SpinWheel = () => {
       <div className="text-center">
         <button
           onClick={spinWheel}
-          disabled={spinning || isAble || isLoading} 
+          disabled={spinning || isAble || isLoading}
           className={`w-fit sm:w-fit bg-[#DBC166] mt-4 text-black px-4 py-1 sm:py-2 text-base sm:text-lg rounded-full font-medium transition-all duration-300 ease-in-out 
             ${spinning || isAble || isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#e9dbac] hover:shadow-lg hover:scale-105"}`}
         >
-          {isLoading ? "Loading..." : 
-           spinning ? "Spinning..." : 
-           isAble ? "Processing..." : 
-           "Spin & Win – Exclusive Rewards Await! 🎉"}
+          {isLoading ? "Loading..." :
+            spinning ? "Spinning..." :
+              isAble ? "Processing..." :
+                "Spin & Win – Exclusive Rewards Await! 🎉"}
         </button>
 
         {prize !== null && (
@@ -458,7 +518,7 @@ const SpinWheel = () => {
           />
         </div>
       </div>
-      
+
       {/* Spins remaining indicator */}
       {user && (
         <div className="text-center mt-2 text-sm text-gray-600">

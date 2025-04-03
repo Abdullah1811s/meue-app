@@ -59,7 +59,8 @@ const userSchema = new mongoose.Schema(
         isPaid: { type: Boolean, default: false },
         prizeWon: [{ type: String }],
         referralCodeShare: { type: String },
-        numberOfTimesWheelRotate: { type: Number, default: 0 }
+        numberOfTimesWheelRotate: { type: Number, default: 0 },
+        firstSpinTime:{type:Date}
     },
     { timestamps: true }
 );

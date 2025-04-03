@@ -280,48 +280,73 @@ export async function removeUserFromAllRaffles(userId) {
 
 export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
     try {
-        if (entries !== 1 && entries !== 10) {
+        // Validate entries
+        if (![1, 10].includes(entries)) {
             throw new Error('Entries must be either 1 or 10');
         }
 
-        // Find all invisible raffles where the user is NOT already a participant
+        // 1. Find all invisible raffles where user isn't a participant
         const invisibleRaffles = await raffModel.find({
             isVisible: false,
             'participants.user': { $ne: userId }
-        });
+        }).lean();
 
         if (invisibleRaffles.length === 0) {
-            console.log('User is already in all invisible raffles or no raffles exist');
+            console.log('No eligible raffles found for user');
             return [];
         }
 
-        // Update raffles ensuring user is added only once
-        const updateResult = await raffModel.updateMany(
-            {
-                _id: { $in: invisibleRaffles.map(r => r._id) }
-            },
-            {
-                $addToSet: {
-                    participants: {
-                        user: userId,
-                        entries: entries  // Ensures unique user, but may not prevent duplicate entries count
-                    }
-                }
-            }
-        );
+        // 2. Create a unique index to prevent duplicates at database level
+        await raffModel.collection.createIndex(
+            { _id: 1, 'participants.user': 1 },
+            { unique: true, partialFilterExpression: { 'participants.user': { $exists: true } } }
+        ).catch(() => {}); // Ignore error if index already exists
 
-        console.log(`Added user to ${updateResult.modifiedCount} raffles`);
-        return await raffModel.find({
-            _id: { $in: invisibleRaffles.map(r => r._id) }
-        });
+        // 3. Atomic update with transaction
+        const session = await raffModel.startSession();
+        let results = [];
+        
+        try {
+            await session.withTransaction(async () => {
+                const bulkOps = invisibleRaffles.map(raffle => ({
+                    updateOne: {
+                        filter: { 
+                            _id: raffle._id,
+                            'participants.user': { $ne: userId } // Final verification
+                        },
+                        update: {
+                            $push: {
+                                participants: {
+                                    user: userId,
+                                    entries: entries,
+                                    _id: new mongoose.Types.ObjectId() // Unique ID for each entry
+                                }
+                            }
+                        }
+                    }
+                }));
+
+                const bulkResult = await raffModel.bulkWrite(bulkOps, { session });
+                console.log(`Attempted to add to ${bulkOps.length} raffles, succeeded for ${bulkResult.modifiedCount}`);
+
+                // Get only successfully updated raffles
+                const updatedRaffles = await raffModel.find({
+                    _id: { $in: invisibleRaffles.map(r => r._id) },
+                    'participants.user': userId
+                }).session(session);
+
+                results = updatedRaffles;
+            });
+        } finally {
+            await session.endSession();
+        }
+
+        return results;
     } catch (error) {
         console.error('Error in addUserToInvisibleRaffles:', error);
         throw error;
     }
-};
-
-
-
+};  
 
 
 export const updateRaffWithWinner = async (req, res) => {

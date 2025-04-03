@@ -49,7 +49,7 @@ const io = new Server(server, {
         methods: ["GET", "POST", "PUT"]
     }
 });
-;
+
 app.locals.io = io
 
 connectDB();
