@@ -27,8 +27,9 @@ const Lapboard = () => {
 
   // Function to handle "View More" button click
   const handleViewMore = () => {
-    setVisibleUsers((prev) => prev + 5); // Increase visible users by 5
+    setVisibleUsers((prev) => Math.min(prev + 5, 10)); // Max 10 users
   };
+  
   return (
     <div className="bg-white mt-6 border shadow-sm rounded-lg overflow-hidden w-full max-w-4xl mx-auto">
       {/* Header */}

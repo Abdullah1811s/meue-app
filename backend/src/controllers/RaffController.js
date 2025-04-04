@@ -7,17 +7,55 @@ import mongoose from "mongoose";
 
 export const getAllRaff = async (req, res) => {
     try {
-        // Populate both participants and winner
+        // Fetch all raffles and populate full user details
         const allRaffles = await raffModel.find()
-            .populate('participants.user')
+            .populate('participants.user') // gets full user object
             .populate('winner.user')
             .exec();
 
+        let updatedRaffles = [];
+
+        for (let raffle of allRaffles) {
+            const emailSet = new Set();
+
+            // Filter participants: remove duplicates and check R10 users
+            raffle.participants = raffle.participants.filter(participant => {
+                const user = participant.user;
+                if (!user) return true; // Keep if user data is missing
+
+                const { email, userType, signupDate } = user;
+                const raffleScheduleDate = raffle.scheduledAt;
+
+                // Remove duplicate emails
+                if (email) {
+                    if (emailSet.has(email)) return false;
+                    emailSet.add(email);
+                }
+
+                // Remove R10 users if their signup date does NOT match the raffle schedule date
+                if (userType === "R10" && signupDate && raffleScheduleDate) {
+                    const signupDateStr = new Date(signupDate).toISOString().split('T')[0]; // Format YYYY-MM-DD
+                    const raffleDateStr = new Date(raffleScheduleDate).toISOString().split('T')[0];
+
+                    if (signupDateStr !== raffleDateStr) {
+                        console.log(`Removing R10 user ${email} from raffle ${raffle._id} due to date mismatch.`);
+                        return false; // Remove user
+                    }
+                }
+
+                return true; // Keep user
+            });
+
+            // Save changes to the raffle
+            await raffle.save();
+            updatedRaffles.push(raffle);
+        }
 
         res.status(200).json({
-            message: "All Raff fetched successfully",
-            raff: allRaffles
+            message: "All raffles fetched successfully (duplicates by email removed, R10 users checked)",
+            raff: updatedRaffles
         });
+
     } catch (error) {
         console.error("Error fetching raffles:", error);
         res.status(500).json({
@@ -26,6 +64,7 @@ export const getAllRaff = async (req, res) => {
         });
     }
 };
+
 
 export const makeNewRaff = async (req, res) => {
     try {
@@ -280,15 +319,39 @@ export async function removeUserFromAllRaffles(userId) {
 
 export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
     try {
-        // Validate entries
         if (![1, 10].includes(entries)) {
             throw new Error('Entries must be either 1 or 10');
         }
 
-        // 1. Find all invisible raffles where user isn't a participant
+        // First, get the user's information
+        const user = await usersModel.findById(userId);
+        console.log("user: " , user);
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Determine the date filter based on user type
+        let dateFilter = {};
+        if (user.userType === "R10" && user.signupDate) {
+        
+            const paidDate = new Date(user.signupDate);
+            paidDate.setHours(0, 0, 0, 0);
+            
+            const nextDay = new Date(paidDate);
+            nextDay.setDate(paidDate.getDate() + 1); 
+            
+            dateFilter = {
+                scheduledAt: {
+                    $gte: paidDate,
+                    $lt: nextDay
+                }
+            };
+        }
+
         const invisibleRaffles = await raffModel.find({
             isVisible: false,
-            'participants.user': { $ne: userId }
+            'participants.user': { $ne: userId },
+            ...dateFilter // Apply the date filter
         }).lean();
 
         if (invisibleRaffles.length === 0) {
@@ -296,30 +359,29 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
             return [];
         }
 
-        // 2. Create a unique index to prevent duplicates at database level
+        // Create index to help with uniqueness
         await raffModel.collection.createIndex(
             { _id: 1, 'participants.user': 1 },
             { unique: true, partialFilterExpression: { 'participants.user': { $exists: true } } }
-        ).catch(() => {}); // Ignore error if index already exists
+        ).catch(() => {}); // ignore if already exists
 
-        // 3. Atomic update with transaction
         const session = await raffModel.startSession();
         let results = [];
-        
+
         try {
             await session.withTransaction(async () => {
                 const bulkOps = invisibleRaffles.map(raffle => ({
                     updateOne: {
-                        filter: { 
+                        filter: {
                             _id: raffle._id,
-                            'participants.user': { $ne: userId } // Final verification
+                            'participants.user': { $ne: userId }
                         },
                         update: {
                             $push: {
                                 participants: {
                                     user: userId,
                                     entries: entries,
-                                    _id: new mongoose.Types.ObjectId() // Unique ID for each entry
+                                    _id: new mongoose.Types.ObjectId()
                                 }
                             }
                         }
@@ -329,13 +391,33 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
                 const bulkResult = await raffModel.bulkWrite(bulkOps, { session });
                 console.log(`Attempted to add to ${bulkOps.length} raffles, succeeded for ${bulkResult.modifiedCount}`);
 
-                // Get only successfully updated raffles
-                const updatedRaffles = await raffModel.find({
+                // Cleanup: Deduplicate entries for the user in each raffle
+                const affectedRaffles = await raffModel.find({
                     _id: { $in: invisibleRaffles.map(r => r._id) },
                     'participants.user': userId
                 }).session(session);
 
-                results = updatedRaffles;
+                for (const raffle of affectedRaffles) {
+                    const userEntries = raffle.participants.filter(p => p.user.toString() === userId.toString());
+
+                    if (userEntries.length > 1) {
+                        // Keep only the first entry
+                        const [firstEntry, ...duplicateEntries] = userEntries;
+                        const duplicateIds = duplicateEntries.map(e => e._id);
+
+                        await raffModel.updateOne(
+                            { _id: raffle._id },
+                            { $pull: { participants: { _id: { $in: duplicateIds } } } },
+                            { session }
+                        );
+                        console.log(`Removed ${duplicateIds.length} duplicate entries from raffle ${raffle._id}`);
+                    }
+                }
+
+                results = await raffModel.find({
+                    _id: { $in: invisibleRaffles.map(r => r._id) },
+                    'participants.user': userId
+                }).session(session);
             });
         } finally {
             await session.endSession();
@@ -346,7 +428,8 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
         console.error('Error in addUserToInvisibleRaffles:', error);
         throw error;
     }
-};  
+};
+
 
 
 export const updateRaffWithWinner = async (req, res) => {
@@ -809,18 +892,18 @@ export const toggleVisibility = async (req, res, io) => {
 
 export const deleteRafflesByVendor = async (req, res) => {
     try {
-        const { id } = req.params; 
-        
+        const { id } = req.params;
+
         if (!id) {
             return res.status(400).json({ success: false, message: "Vendor ID is required" });
         }
 
         const deletedRaffles = await raffModel.deleteMany({ vendorId: id });
-        
+
         if (deletedRaffles.deletedCount === 0) {
             return res.status(404).json({ success: false, message: "No raffles found for the given vendor ID" });
         }
-        
+
         return res.status(200).json({
             success: true,
             message: "All raffles for the vendor have been deleted successfully",

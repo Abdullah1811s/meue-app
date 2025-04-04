@@ -110,9 +110,6 @@ export default function Home() {
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showTimer, setShowTimer] = useState(true);
 
-
-
-
   useEffect(() => {
     // Handle mobile timer
     if (isMobile) {
@@ -158,17 +155,13 @@ export default function Home() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const [timerActive, setTimerActive] = useState(false);
 
   useEffect(() => {
-    if (user && isPaid && user.userType === "R10" && !timerActive) {
-      console.log("User has paid, starting timer...");
-      setTimerActive(true);
-      const cleanupTimer = startTimer(new Date().toISOString());
-      return () => {
-        cleanupTimer(); // Cleanup on unmount or if dependencies change
-        setTimerActive(false);
-      };
+    // Ensure `user` exists before checking `isPaid`
+    if (user && isPaid && user.userType === "R10") {
+      console.log("User has paid again, restarting timer...");
+      localStorage.removeItem("hasRefreshed");
+      startTimer(new Date().toISOString()); // Assume payment just happened now
     }
   }, [isPaid]); 
 
@@ -314,21 +307,33 @@ export default function Home() {
     }
   };
 
+  // const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));
+
+
   const startTimer = (paidDate: any) => {
     const paidTime = new Date(paidDate).getTime();
-    const expireTime = paidTime + 60 * 60 * 1000; // 1 hour later
-    let hasReloaded = false; // Flag to track if reload has been triggered
+    const expireTime = paidTime + 60 * 60 * 1000; 
 
     const updateTimer = () => {
       const currentTime = new Date().getTime();
       const remainingTime = expireTime - currentTime;
 
-      if (remainingTime <= 0 && !hasReloaded) {
+      if (remainingTime <= 0) {
+        // Show message that the session has ended
         setTimeLeft("Your payment session has ended. Please make a payment to continue.");
-        hasReloaded = true; // Set flag to true
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+  
+        // Check if the page has already been refreshed
+        const hasRefreshed = localStorage.getItem("hasRefreshed");
+  
+        if (!hasRefreshed) {
+          // Set the flag in localStorage to indicate the page has been refreshed
+          localStorage.setItem("hasRefreshed", "true");
+  
+          // Refresh the page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000); // Wait for 2 seconds before refreshing
+        }
         return;
       }
 
@@ -345,10 +350,9 @@ export default function Home() {
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
 
-    return () => {
-      clearInterval(timerInterval);
-    };
+    return () => clearInterval(timerInterval);
   };
+
 
 
   return (

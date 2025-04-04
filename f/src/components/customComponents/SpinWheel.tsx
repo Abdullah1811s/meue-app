@@ -380,7 +380,7 @@ const SpinWheel = () => {
       return;
     }
     // Check if the user has exceeded the maximum number of spins
-    if (user?.numberOfTimesWheelRotate >= 21) {
+    if (user?.numberOfTimesWheelRotate >= 2) {
       toast.error("You've reached your daily spin limit. Try again tomorrow!", {
         icon: <FaClock className="text-yellow-500" />,
       });

@@ -633,9 +633,10 @@ const AdminDashboard = () => {
     );
 
     try {
+     
       const response = await axios.put(`${API_BASE_URL}/Raff/changeVisibility`, { refId });
 
-      toast.success("Raffle visibility updated!");
+      toast.success("Raffle visibility updated! Please do a reload");
 
       // Emit visibility change event
       socket.emit("visibilityChanged", { refId, isVisible: true });
