@@ -334,7 +334,7 @@ function VendorOnboarding() {
       if (response1.data.exists) {
         toast.error("This email is already registered ");
         setLoading(false);
-        return ;
+        return;
       } else {
         const {
           companyRegistrationCertificate,
@@ -420,7 +420,7 @@ function VendorOnboarding() {
         };
 
 
-        const response = await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
+        await axios.post(`${API_BASE_URL}/vendor/register`, updatedData, {
           headers: {
             "Content-Type": "application/json",
           }
@@ -1131,14 +1131,21 @@ function VendorOnboarding() {
                                       <input
                                         type="date"
                                         value={offering.endDate || ""}
-                                        min={new Date().toISOString().split("T")[0]}
+                                        required
+                                        // Set min to tomorrow's date
+                                        min={(() => {
+                                          const tomorrow = new Date();
+                                          tomorrow.setDate(tomorrow.getDate() + 1);
+                                          return tomorrow.toISOString().split("T")[0];
+                                        })()}
                                         onChange={(e) => {
                                           const selectedDate = new Date(e.target.value);
                                           const today = new Date();
                                           today.setHours(0, 0, 0, 0);
 
-                                          if (selectedDate < today) {
-                                            alert("End date cannot be in the past");
+                                          // Disallow today or past dates
+                                          if (selectedDate <= today) {
+                                            alert("End date must be in the future (not today or earlier).");
                                             return;
                                           }
 
@@ -1147,6 +1154,7 @@ function VendorOnboarding() {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                                       />
                                     </div>
+
                                     {/* <button
                                       type="button"
                                       onClick={() => handleToggleQuantityDate(index, 'raffle')}

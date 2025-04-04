@@ -28,41 +28,64 @@ export const getUserById = async (req, res) => {
 export const incrementUserSpin = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("coming");
 
     // Find the user first
     const user = await usersModel.findById(id);
-
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // If firstSpinTime is not set, update it
+    // Check if user is in cooldown period (after first spin but before 8 hours)
+    if (user.firstSpinTime) {
+      const firstSpinTime = new Date(user.firstSpinTime);
+      const cooldownEnd = new Date(firstSpinTime);
+      cooldownEnd.setHours(cooldownEnd.getHours() + 8);
+      
+      if (new Date() < cooldownEnd && user.numberOfTimesWheelRotate === 1) {
+        const timeLeft = Math.ceil((cooldownEnd - new Date()) / (1000 * 60 * 60));
+        return res.status(400).json({ 
+          message: `Please wait ${timeLeft} more hour(s) before spinning again`,
+          cooldownEnd,
+          firstSpinTime: user.firstSpinTime
+        });
+      }
+    }
+
+    // Prepare update
     const updateFields = { $inc: { numberOfTimesWheelRotate: 1 } };
+    
+    // Set firstSpinTime if this is the first spin
     if (!user.firstSpinTime) {
       updateFields.$set = { firstSpinTime: new Date() };
     }
 
-    // Update user with incremented count and first spin time if applicable
+    // Update user
     const updatedUser = await usersModel.findByIdAndUpdate(id, updateFields, {
       new: true,
     });
 
-    // Reset the spin count after 24 hours
-    setTimeout(async () => {
-      await usersModel.findByIdAndUpdate(id, {
-        numberOfTimesWheelRotate: 0,
-        firstSpinTime: null, // Reset firstSpinTime after 24 hours if needed
-      });
-    }, 24 * 60 * 60 * 1000);
+    // Reset spin count after 24 hours from first spin
+    if (updatedUser.numberOfTimesWheelRotate === 1) {
+      setTimeout(async () => {
+        await usersModel.findByIdAndUpdate(id, {
+          numberOfTimesWheelRotate: 0,
+          firstSpinTime: null,
+        });
+      }, 24 * 60 * 60 * 1000);
+    }
 
-    return res.status(200).json({ user: updatedUser });
+    return res.status(200).json({ 
+      user: updatedUser,
+      canSpinAgain: updatedUser.numberOfTimesWheelRotate < 2
+    });
   } catch (error) {
     console.error("Error incrementing user spin count:", error);
-    return res.status(500).json({ message: "Please try again later" });
+    return res.status(500).json({ 
+      message: "Please try again later",
+      error: error.message 
+    });
   }
 };
-
 
 export const updatePoint = async (req, res) => {
   try {

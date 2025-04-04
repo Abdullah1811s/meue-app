@@ -59,7 +59,38 @@ const SpinWheel = () => {
     setIsLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
-      setVendor(res.data.data);
+     
+      const processedData = res.data.data.map((entry: any) => {
+        // Process vendor offerings
+        const filteredVendorOfferings = entry.vendor?.offerings?.filter((offering: any) => {
+          if (!offering.endDate) return true; // Keep if no end date
+          const today = new Date().toISOString().split('T')[0];
+          const endDate = new Date(offering.endDate).toISOString().split('T')[0];
+          return endDate !== today;
+        }) || [];
+  
+        // Process admin offerings
+        const filteredAdminOfferings = entry.admin?.offerings?.filter((offering: any) => {
+          if (!offering.endDate) return true; // Keep if no end date
+          const today = new Date().toISOString().split('T')[0];
+          const endDate = new Date(offering.endDate).toISOString().split('T')[0];
+          return endDate !== today;
+        }) || [];
+  
+        return {
+          ...entry,
+          vendor: entry.vendor ? {
+            ...entry.vendor,
+            offerings: filteredVendorOfferings
+          } : null,
+          admin: entry.admin ? {
+            ...entry.admin,
+            offerings: filteredAdminOfferings
+          } : null
+        };
+      });
+  
+      setVendor(processedData);
     } catch (error: any) {
       console.error("Error fetching wheel data:", error);
       if (error.response) {
@@ -420,6 +451,11 @@ const SpinWheel = () => {
       try {
         if (id) {
           const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`);
+          if (updatedUser.data.message && updatedUser.data.message.includes('Please wait')) {
+            // Handle cooldown message
+            toast.error(updatedUser.data.message);
+            return;
+          }
           setUser(updatedUser.data.user);
         }
       } catch (error: any) {

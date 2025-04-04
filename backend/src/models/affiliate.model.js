@@ -70,7 +70,9 @@ const affiliateSchema = new mongoose.Schema({
   },
   idNumber: {
     type: String
-  }
+  },
+  resetPasswordToken: { type: String },
+  resetPasswordExpire: { type: Date },
 });
 
 

@@ -32,14 +32,14 @@ function VendorLogin() {
             else if (response.data.vendor.status === "rejected") {
                 toast.error("The application has been rejected");
                 return;
-            }   
-          
+            }
+
             localStorage.setItem('VendorToken', response.data?.token);
             const vendorId = response.data.vendor.id;
             dispatch(vendorLogin());
             localStorage.setItem('id', vendorId);
             navigate(`/vendor/${vendorId}/dashboard`)
-            
+
         } catch (error: any) {
             console.error('Login Error:', error.response?.data || error.message);
             setLoginError(error.response?.data?.message || 'Login failed. Please try again.');
@@ -135,6 +135,13 @@ function VendorLogin() {
                             )}
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate("/vendor/forgot-password")}
+                        className="text-sm text-[#C5AD59] hover:underline font-medium hover:text-[#b39a4d] transition-colors"
+                    >
+                        Forgot Password?
+                    </button>
 
                     <div>
                         <button

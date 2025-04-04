@@ -21,7 +21,8 @@ import {
   Award,
   Loader,
   ChevronDownIcon,
-  Trash
+  Trash,
+  AlertTriangle
 
 } from 'lucide-react';
 import {
@@ -36,7 +37,7 @@ import {
 
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import CustomDatePicker from '@/components/customComponents/Datepicker';
+
 import { Input } from '@/components/ui/input';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { FaSpinner } from 'react-icons/fa6';
@@ -322,7 +323,7 @@ const AdminDashboard = () => {
           newEmail: '',
           password: ''
         });
-       
+
       }
     } catch (error: any) {
       console.error('Error creating admin:', error);
@@ -406,12 +407,6 @@ const AdminDashboard = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const formatDateOnly = (date: Date) => {
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-  };
-
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -420,17 +415,62 @@ const AdminDashboard = () => {
     try {
       setIsSubmitting(true);
 
-      // Format the main raffle date
+      // Helper function to normalize dates without timezone issues
+      const normalizeDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      };
+
+      // Validate that scheduledAt is after all prize endDates
+      const isValidScheduleDate = formData.prizes.every((prize: any) => {
+        if (prize.endDate) {
+          const prizeEndDate = normalizeDate(prize.endDate);
+          const scheduledDate = normalizeDate(formData.scheduledAt);
+
+          
+          return scheduledDate >= prizeEndDate;
+        }
+        return true;
+      });
+
+      if (isValidScheduleDate) {
+        toast.error("Schedule date must be before the prize's end date.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Format the main raffle date correctly (without timezone shift)
+      const formatDateForSubmission = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Get the date components in local time
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}T00:00:00.000Z`; // Midnight UTC
+      };
+
       const formattedDate = formData.scheduledAt
-        ? formatDateOnly(formData.scheduledAt)
+        ? formatDateForSubmission(formData.scheduledAt)
         : '';
 
+   
+
       // Prepare prizes data - ensure required fields are present
-      const preparedPrizes = formData.prizes.map((prize: any) => ({
-        name: prize.name,
-        quantity: prize.quantity || "1",
-        endDate: prize.endDate ? new Date(prize.endDate).toISOString() : null
-      }));
+      const preparedPrizes = formData.prizes.map((prize: any) => {
+        const prizeObject: any = {
+          name: prize.name,
+          endDate: prize.endDate ? formatDateForSubmission(prize.endDate) : null
+        };
+
+        // Add quantity only if it's not zero
+        if (prize.quantity && prize.quantity !== 0) {
+          prizeObject.quantity = prize.quantity;
+        }
+
+        return prizeObject;
+      });
+
 
       const submissionData = {
         name: formData.name,
@@ -440,6 +480,8 @@ const AdminDashboard = () => {
         isVisible: false
       };
 
+     
+
       const response = await axios.post(`${API_BASE_URL}/Raff/createRaff`, submissionData, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
@@ -448,7 +490,6 @@ const AdminDashboard = () => {
       });
 
       setRaff((prevRaff) => [...prevRaff, response.data.raffle]);
-
       toast.success(response.data.message);
 
       // Reset form
@@ -474,11 +515,12 @@ const AdminDashboard = () => {
     }
   };
 
+
   const fetchRaff = async () => {
     try {
       setIsLoading(true);
       const res = await axios.get(`${API_BASE_URL}/Raff`);
-      console.log("This is the data : ", res.data.raff);
+   
       setRaff(res.data.raff);
 
       setIsLoading(false);
@@ -577,19 +619,19 @@ const AdminDashboard = () => {
       });
 
       // Remove the vendor from the wheel (if they are on the wheel)
-       await axios.delete(`${API_BASE_URL}/wheel/remove`, {
+      await axios.delete(`${API_BASE_URL}/wheel/remove`, {
         data: { vendorInfo: id },
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      
+
       await axios.delete(`${API_BASE_URL}/Raff/remove/${id}`, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-    
+
       setVendors((prevVendors) => prevVendors.filter((vendor) => vendor._id !== id));
       toast.success(response.data.message);
     } catch (error: any) {
@@ -633,14 +675,27 @@ const AdminDashboard = () => {
     );
 
     try {
-     
-      const response = await axios.put(`${API_BASE_URL}/Raff/changeVisibility`, { refId });
 
+      const response = await axios.put(`${API_BASE_URL}/Raff/changeVisibility`, { refId });
+     
       toast.success("Raffle visibility updated! Please do a reload");
 
       // Emit visibility change event
       socket.emit("visibilityChanged", { refId, isVisible: true });
-
+      const updatedRaffle1 = response.data.raffle;
+     
+      setRaff((prevRaffles) =>
+        prevRaffles.map((raffle) =>
+          raffle._id === refId
+            ? {
+              ...raffle,
+              isVisible: updatedRaffle1.isVisible,
+              winner: updatedRaffle1.winner,
+              prizes: updatedRaffle1.prizes, // includes updated quantity and endDate
+            }
+            : raffle
+        )
+      );
       // Fetch updated raffle data (assuming response contains updated raffle info)
       const updatedRaffle = response.data;
 
@@ -705,9 +760,9 @@ const AdminDashboard = () => {
   const fetchAdmin = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/admin`);
-      console.log(res.data);
+     
       setAdmin(res.data.admins);
-      console.log("this ", admins);
+    
     } catch (error) {
       toast.error("Failed to fetch user  =. Try again!");
     }
@@ -855,7 +910,7 @@ const AdminDashboard = () => {
       );
       try {
 
-        await axios.post(
+         await axios.post(
           `${API_BASE_URL}/wheel/add`,
           {
             vendorInfo: res.data.vendor._id,
@@ -868,6 +923,7 @@ const AdminDashboard = () => {
             }
           }
         );
+
 
 
       } catch (error: any) {
@@ -1019,7 +1075,7 @@ const AdminDashboard = () => {
 
   const handleDeleteOffering = async (offerId: string) => {
     try {
-      console.log("This is the offering:", offerId);
+
 
       const res = await axios.delete(`${API_BASE_URL}/wheel/offers/${offerId}`, {
         headers: {
@@ -1118,7 +1174,7 @@ const AdminDashboard = () => {
       }
 
       if (offer.endDate && new Date(offer.endDate) < new Date()) {
-        throw new Error("End date cannot be in the past");
+        throw new Error("End date cannot be today or in past");
       }
 
       const offerData = {
@@ -1171,7 +1227,7 @@ const AdminDashboard = () => {
   };
 
   function handleDeleteAdmin(email: string): void {
-    const res = axios.delete(`${API_BASE_URL}/admin/removeAdmin`, {
+     axios.delete(`${API_BASE_URL}/admin/removeAdmin`, {
       data: { removeEmail: email },
       headers: {
         'Authorization': `Bearer ${adminToken}` // Assuming you store the token in localStorage
@@ -1181,13 +1237,13 @@ const AdminDashboard = () => {
       .then(response => {
         console.log('Admin deleted successfully:', response.data.message);
         toast.success("Admin deleted");
-        setAdmin((prevAdmins:any) => prevAdmins.filter((admin:any) => admin.email !== email));
+        setAdmin((prevAdmins: any) => prevAdmins.filter((admin: any) => admin.email !== email));
       })
       .catch(error => {
         console.error('Error deleting admin:', error.response?.data?.message || error.message);
         toast.error("error in deleting admin");
       });
-    console.log(res);
+   
   }
 
   return (
@@ -1694,11 +1750,28 @@ const AdminDashboard = () => {
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Social Media:</h3>
                       <div className="flex flex-wrap gap-2">
-                        <a href={vendor.socialMediaHandles?.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Facebook</a>
-                        <a href={vendor.socialMediaHandles?.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Instagram</a>
-                        <a href={vendor.socialMediaHandles?.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Twitter</a>
-                        <a href={vendor.socialMediaHandles?.tiktok} target="_blank" rel="noopener noreferrer" className="text-black underline">TikTok</a>
+                        {vendor.socialMediaHandles?.facebook && (
+                          <a href={vendor.socialMediaHandles?.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                            Facebook
+                          </a>
+                        )}
+                        {vendor.socialMediaHandles?.instagram && (
+                          <a href={vendor.socialMediaHandles?.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">
+                            Instagram
+                          </a>
+                        )}
+                        {vendor.socialMediaHandles?.twitter && (
+                          <a href={vendor.socialMediaHandles?.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+                            Twitter
+                          </a>
+                        )}
+                        {vendor.socialMediaHandles?.tiktok && (
+                          <a href={vendor.socialMediaHandles?.tiktok} target="_blank" rel="noopener noreferrer" className="text-black underline">
+                            TikTok
+                          </a>
+                        )}
                       </div>
+
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Documents:</h3>
                       <div className="bg-white rounded-xl py-2 mb-2">
@@ -2065,14 +2138,35 @@ const AdminDashboard = () => {
                           id="scheduledAt"
                           value={formData.scheduledAt ? formatDateForInput(formData.scheduledAt) : ""}
                           onChange={(e) => {
-                            const date = e.target.value ? new Date(e.target.value) : null;
-                            setFormData((prev: any) => ({ ...prev, scheduledAt: date }));
+                            const selectedDate = new Date(e.target.value);
+                            selectedDate.setHours(0, 0, 0, 0);
+
+                            // Check if selectedDate is after any prize end date
+                            const isAfterAnyEndDate = formData.prizes.some((prize: any) => {
+                              if (prize.endDate) {
+                                const prizeEnd = new Date(prize.endDate);
+                                prizeEnd.setHours(0, 0, 0, 0);
+                                return selectedDate > prizeEnd;
+                              }
+                              return false;
+                            });
+
+                            if (isAfterAnyEndDate) {
+                              toast.error("Schedule date cannot be after end date.");
+                              return;
+                            }
+
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              scheduledAt: selectedDate
+                            }));
                           }}
                           required
-                          min={new Date().toISOString().split('T')[0]} // This prevents selecting past dates
+                          min={new Date().toISOString().split('T')[0]} // Prevent past dates
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </div>
+
                       <div className="grid w-full items-center gap-2">
                         <label>Prizes</label>
                         {formData.prizes.map((prize: any, index: any) => (
@@ -2101,12 +2195,31 @@ const AdminDashboard = () => {
                               {/* End Date Field */}
                               <div className="flex items-center gap-2">
                                 <label htmlFor="endDate" className="font-medium">End Date:</label>
-                                <CustomDatePicker
-                                  selectedDate={prize.endDate}
-                                  setSelectedDate={(date) => handlePrizeChange(index, 'endDate', date)}
+                                <input
+                                  type="date"
+                                  value={prize.endDate || ""}
+                                  onChange={(e) => {
+                                    const selectedDate = new Date(e.target.value);
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
 
+                                    if (selectedDate <= today) {
+                                      alert("End date must be in the future (not today or earlier).");
+                                      return;
+                                    }
+
+                                    handlePrizeChange(index, "endDate", e.target.value);
+                                  }}
+                                  min={(() => {
+                                    const tomorrow = new Date();
+                                    tomorrow.setDate(tomorrow.getDate() + 1);
+                                    return tomorrow.toISOString().split("T")[0];
+                                  })()}
+                                  className="px-3 py-2 border rounded-md border-gray-300 text-sm focus:ring-2 focus:ring-[#C5AD59] focus:outline-none"
                                 />
                               </div>
+
+
 
                               {/* Remove Button (Only if multiple prizes exist) */}
                               {formData.prizes.length > 1 && (
@@ -2182,13 +2295,20 @@ const AdminDashboard = () => {
                             <span>End dates:</span>
                           </div>
                           <ul className="list-disc ml-5">
-                            {item.prizes.map((prize: any, index: number) => (
-                              <li key={`end-date-${index}`} className="break-words">
-                                {prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : "Not defined"}
-                              </li>
-                            ))}
+                            {item.prizes && item.prizes.length > 0 ? (
+                              item.prizes.map((prize: any, index: number) => (
+                                <li key={`end-date-${index}`} className="break-words">
+                                  {prize?.endDate
+                                    ? new Date(prize.endDate).toISOString().split('T')[0]
+                                    : "Not defined"}
+                                </li>
+                              ))
+                            ) : (
+                              <li className="break-words">No End Dates Available</li>
+                            )}
                           </ul>
                         </div>
+
 
                         {/* Quantities */}
                         <div className="text-sm text-gray-600 mt-2">
@@ -2197,21 +2317,46 @@ const AdminDashboard = () => {
                             <span>Quantities:</span>
                           </div>
                           <ul className="list-disc ml-5">
-                            {item.prizes.map((prize: any, index: number) => (
-                              <li key={`quantity-${index}`} className="break-words">
-                                {prize.quantity !== undefined ? prize.quantity : "Not Defined"}
-                              </li>
-                            ))}
+                            {item.prizes.length > 0 ? (
+                              item?.prizes.map((prize: any, index: number) => {
+                              
+                                if (prize === null || prize.quantity === null) {
+                                  return (
+                                    <li key={`quantity-${index}`} className="break-words">
+                                      No Prize Information Available
+                                    </li>
+                                  );
+                                }
+
+                                return (
+                                  <li key={`quantity-${index}`} className="break-words">
+                                    {prize.quantity > 0 ? prize.quantity : "No Quantity"}
+                                  </li>
+                                );
+                              })
+                            ) : (
+                              <li className="break-words">No Quantity Available </li>
+                            )}
                           </ul>
                         </div>
+
+
+
 
                         {/* Prizes */}
                         <p className="text-sm font-medium mt-2">🎁 Prizes:</p>
                         <ul className="list-disc ml-4 text-sm text-gray-700">
-                          {item.prizes.map((prize: any, index: number) => (
-                            <li key={`prize-${index}`} className="break-words">{prize?.name || "Unnamed Prize"}</li>
-                          ))}
+                          {item.prizes.length > 0 ? (
+                            item.prizes.map((prize: any, index: number) => (
+                              <li key={`prize-${index}`} className="break-words">
+                                {prize?.name ? prize.name : "No Prize"}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="break-words">No Prizes Available</li>
+                          )}
                         </ul>
+
 
                         {/* Participants */}
                         <p className="text-sm font-medium mt-2 flex items-center gap-1">
@@ -2286,41 +2431,59 @@ const AdminDashboard = () => {
 
 
 
-                          {Array.isArray(item.prizes) && item.prizes.length > 0 &&
-                            item.prizes.some((prize: any) => {
-                              const today = new Date().toISOString().split('T')[0];
-                              const prizeEndDate = prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : null;
-
-
-                              return prize.quantity <= 0 || (prizeEndDate && prizeEndDate === today);
-                            }) ? (
-                            <p className="text-sm text-red-500 font-semibold">⚠️ This raffle is no longer available.</p>
+                          {!Array.isArray(item.prizes) || item.prizes.length === 0 ? (
+                            <p className="text-sm text-red-500 font-semibold">
+                              ⚠️ This raffle is no longer available. Reason: No prizes assigned.
+                            </p>
+                          ) : item.prizes.every((prize: any) => {
+                            const today = new Date().toISOString().split('T')[0];
+                            const prizeEndDate = prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : null;
+                            // Prize is invalid if either:
+                            // 1. Quantity is zero, OR
+                            // 2. End date is today
+                            return prize.quantity <= 0 || (prizeEndDate && prizeEndDate === today);
+                          }) ? (
+                            <p className="text-sm text-red-500 font-semibold">
+                              ⚠️ This raffle is no longer available. Reason:{" "}
+                              {item.prizes.every((prize: any) => prize.quantity <= 0)
+                                ? "All prizes are given away."
+                                : item.prizes.every((prize: any) => {
+                                  const today = new Date().toISOString().split('T')[0];
+                                  const prizeEndDate = prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : null;
+                                  return prizeEndDate && prizeEndDate === today;
+                                })
+                                  ? "All prizes have expired today."
+                                  : "Some prizes are unavailable."}
+                            </p>
                           ) : (
                             <Button
                               variant="outline"
                               size="sm"
                               className="flex items-center gap-2 text-gray-500 border-gray-400 hover:bg-gray-300 hover:text-black"
                               disabled={loading === item._id}
-                              onClick={() => updateVisibility(item._id,)}
+                              onClick={() => updateVisibility(item._id)}
                             >
                               {loading === item._id ? (
                                 "⏳ Updating..."
                               ) : (
                                 (() => {
                                   const today = new Date().toISOString().split("T")[0];
-                                  const canBeActiveAgain = item.prizes.some(
-                                    (prize: any) => prize.quantity > 1 && (!prize.endDate || new Date(prize.endDate).toISOString().split("T")[0] !== today)
+                                  const hasValidPrizes = item.prizes.some(
+                                    (prize: any) =>
+                                      prize.quantity > 0 &&
+                                      (!prize.endDate || new Date(prize.endDate).toISOString().split("T")[0] !== today)
                                   );
 
                                   return item.isVisible
                                     ? "🟢 Open Raffles"
-                                    : canBeActiveAgain
-                                      ? "⚫ Closed Raffles "
+                                    : hasValidPrizes
+                                      ? "⚫ Closed Raffles"
                                       : "⚫ Closed Raffles";
                                 })()
                               )}
                             </Button>
                           )}
+
 
 
 
@@ -2343,6 +2506,10 @@ const AdminDashboard = () => {
           {isManageWheel ? (
             <div className="min-h-screen">
               <h1 className='font-bold text-2xl mb-2'>Manage Wheel: </h1>
+              <div className="text-yellow-600 bg-yellow-100 p-4 rounded-md mb-6">
+                <strong>Note:</strong> If you have deleted any Partner's offerings, they cannot be re-added as they are automatically added by the system.
+              </div>
+
               <div className="mb-6 flex">
                 <h2 className="font-bold text-xl mb-2">Create offer on wheel:</h2>
 
@@ -2412,7 +2579,7 @@ const AdminDashboard = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {vendorOnWheel
-                  .filter((entry) => (entry.vendor?.offerings?.length || 0) > 0 || (entry.admin?.offerings?.length || 0) > 0) // 🎯 Only show cards with offerings
+                  .filter((entry) => (entry.vendor?.offerings?.length || 0) > 0 || (entry.admin?.offerings?.length || 0) > 0)
                   .map((entry) => (
                     <div key={entry._id} className="bg-white shadow-lg rounded-xl p-6">
                       {/* 🎯 Vendor Details (Only if Offerings Exist) */}
@@ -2459,50 +2626,95 @@ const AdminDashboard = () => {
                       )}
 
                       {/* 🎯 Offerings */}
+                      {/* 🎯 Offerings */}
                       <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
                         <Tag className="w-5 h-5 mr-2" /> Wheel Offerings
                       </h2>
                       <div className="space-y-4">
                         {entry.vendor?.offerings?.length > 0 ? (
-                          entry.vendor.offerings.map((offering: any) => (
-                            <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
-                              <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
-                                <Check className="w-3 h-3 mr-1" />
-                                Vendor Offer
-                              </span>
+                          entry.vendor.offerings.map((offering: any) => {
+                            const today = new Date().toISOString().split('T')[0];
+                            const endDate = offering.endDate ? new Date(offering.endDate).toISOString().split('T')[0] : null;
+                            const isExpired = endDate && endDate === today;
 
-                              <div className="mt-6 space-y-2">
-                                <p className="font-medium">Name: {offering.name}</p>
-                                {offering.quantity && <p>Quantity: {offering.quantity}</p>}
-                                <button
-                                  onClick={() => handleDeleteOffering(offering._id)}
-                                  className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-1.5" /> Remove
-                                </button>
+                            return (
+                              <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
+                                {isExpired && (
+                                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Expired Today
+                                  </span>
+                                )}
+                                <span className={`absolute top-2 ${isExpired ? 'right-16' : 'right-2'} bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center`}>
+                                  <Check className="w-3 h-3 mr-1" />
+                                  Vendor Offer
+                                </span>
+
+                                <div className="mt-6 space-y-2">
+                                  <p className="font-medium">Name: {offering.name}</p>
+                                  {offering.quantity && <p>Quantity: {offering.quantity}</p>}
+                                  {offering.endDate && (
+                                    <p className="text-sm text-gray-500">
+                                      Valid until: {new Date(offering.endDate).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                  {isExpired && (
+                                    <p className="text-sm text-red-500 font-medium">
+                                      This offer won't appear on the wheel as it's expired
+                                    </p>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteOffering(offering._id)}
+                                    className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-1.5" /> Remove
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         ) : entry.admin?.offerings?.length > 0 ? (
-                          entry.admin.offerings.map((offering: any) => (
-                            <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
-                              <span className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
-                                <Check className="w-3 h-3 mr-1" />
-                                Admin Offer
-                              </span>
+                          entry.admin.offerings.map((offering: any) => {
+                            const today = new Date().toISOString().split('T')[0];
+                            const endDate = offering.endDate ? new Date(offering.endDate).toISOString().split('T')[0] : null;
+                            const isExpired = endDate && endDate === today;
 
-                              <div className="mt-6 space-y-2">
-                                <p className="font-medium">Name: {offering.name}</p>
-                                {offering.quantity && <p>Quantity: {offering.quantity}</p>}
-                                <button
-                                  onClick={() => handleDeleteOffering(offering._id)}
-                                  className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-1.5" /> Remove
-                                </button>
+                            return (
+                              <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
+                                {isExpired && (
+                                  <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Expired Today
+                                  </span>
+                                )}
+                                <span className={`absolute top-2 ${isExpired ? 'right-16' : 'right-2'} bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center`}>
+                                  <Check className="w-3 h-3 mr-1" />
+                                  Admin Offer
+                                </span>
+
+                                <div className="mt-6 space-y-2">
+                                  <p className="font-medium">Name: {offering.name}</p>
+                                  {offering.quantity && <p>Quantity: {offering.quantity}</p>}
+                                  {offering.endDate && (
+                                    <p className="text-sm text-gray-500">
+                                      Valid until: {new Date(offering.endDate).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                  {isExpired && (
+                                    <p className="text-sm text-red-500 font-medium">
+                                      This offer won't appear on the wheel as it's expired
+                                    </p>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteOffering(offering._id)}
+                                    className="mt-3 flex items-center px-3 py-1.5 bg-red-400 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-1.5" /> Remove
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         ) : (
                           <p className="text-gray-500">No offerings available</p>
                         )}

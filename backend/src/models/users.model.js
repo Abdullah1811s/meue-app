@@ -58,9 +58,11 @@ const userSchema = new mongoose.Schema(
         postalCode: { type: String, required: true, trim: true, match: [/^\d+$/, "Postal code must contain only digits"] },
         isPaid: { type: Boolean, default: false },
         prizeWon: [{ type: String }],
+        resetPasswordToken: { type: String },
+        resetPasswordExpire: { type: Date },
         referralCodeShare: { type: String },
         numberOfTimesWheelRotate: { type: Number, default: 0 },
-        firstSpinTime:{type:Date}
+        firstSpinTime: { type: Date }
     },
     { timestamps: true }
 );

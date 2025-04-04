@@ -314,9 +314,6 @@ export async function removeUserFromAllRaffles(userId) {
 
 
 
-
-
-
 export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
     try {
         if (![1, 10].includes(entries)) {
@@ -325,7 +322,7 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
 
         // First, get the user's information
         const user = await usersModel.findById(userId);
-       
+
         if (!user) {
             throw new Error('User not found');
         }
@@ -714,7 +711,7 @@ export const toggleVisibility = async (req, res, io) => {
 
                     if (endDate.toDateString() === today.toDateString()) {
                         // Remove the prize if end date is today
-                        raffle.prizes = raffle.prizes.filter(prize => prize._id.toString() !== selectedPrize._id.toString());
+                        // raffle.prizes = raffle.prizes.filter(prize => prize._id.toString() !== selectedPrize._id.toString());
                     }
                 }
             }
@@ -899,9 +896,6 @@ export const deleteRafflesByVendor = async (req, res) => {
         }
 
         const deletedRaffles = await raffModel.deleteMany({ vendorId: id });
-
-
-
         return res.status(200).json({
             success: true,
             message: "All raffles for the vendor have been deleted successfully",

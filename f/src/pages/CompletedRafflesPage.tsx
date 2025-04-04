@@ -237,8 +237,15 @@ export default function UserDashboard() {
   }, [fetchCompletedRaffles, fetchUpcomingRaffles, handleVisibilityChange]);
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString().split('T')[0];
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
+  
+  // Output: "Apr 4, 2025"
+  
 
   const CustomCard = ({ children, className = "", isDrawing = false }: {
     children: React.ReactNode;

@@ -5,7 +5,19 @@ import { v2 as cloudinary } from 'cloudinary'
 import usersModel from '../models/users.model.js';
 import { addPoints } from '../utils/pointsService.js'
 import referralModel from "../models/referral.model.js";
+import jwt from 'jsonwebtoken'
 import affiliateModel from "../models/affiliate.model.js";
+import crypto from 'crypto';
+
+
+const generateResetToken = (vendorId) => {
+    return jwt.sign(
+        { id: vendorId },
+        process.env.JWT_SECRET + '-reset', // Different secret for reset tokens
+        { expiresIn: '1h' } // Short-lived token
+    );
+};
+
 const checkCode = async (code, _id) => {
     try {
         console.log("Checking referral code:", code, "for user ID:", _id);
@@ -179,34 +191,51 @@ export const delVendor = async (req, res) => {
 
             if (vendor.status === "pending") {
                 message = `
-                Dear ${vendor.businessName || "Partner"},
-                
-                We regret to inform you that your partner account has been cancelled.
-                
-                Reason for cancellation: ${cancelReason || "No reason provided"}
-                
-                If you have any questions regarding this decision, please contact our support team.
-                
-                Regards,  
-                The Menu Team
-                `;
+  <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <p>Dear ${vendor.businessName || "Partner"},</p>
+
+      <p>We regret to inform you that your partner account has been cancelled.</p>
+
+      <p><strong>Reason for cancellation:</strong> ${cancelReason || "No reason provided"}</p>
+
+      <p>If you have any questions regarding this decision, please contact our support team at 
+      <a href="mailto:support@themenuportal.co.za" style="color: #1a73e8;">support@themenuportal.co.za</a>.</p>
+
+      <p>We appreciate your time with us and hope to serve you again in the future.</p>
+
+      <p>Best regards,<br>
+      The Menu Team</p>
+    </body>
+  </html>
+`;
+
             }
 
             if (vendor.status === "approved") {
                 message = `
-                Dear ${vendor.businessName || "Partner"},
-                
-                We regret to inform you that your partner account has been cancelled.
-                
-                Reason for cancellation: ${cancelReason || "No reason provided"}
-                
-                Since your account has already been approved, we understand this may come as a surprise. If you have any questions or wish to appeal this decision, please reach out to our support team as soon as possible for further clarification.
-                
-                We value your participation, and we're here to assist you.
-                
-                Regards,  
-                The Menu Team
-                `;
+                <html>
+                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;">
+                    <p>Dear ${vendor.businessName || "Partner"},</p>
+              
+                    <p>We regret to inform you that your partner account has been cancelled.</p>
+              
+                    <p><strong>Reason for cancellation:</strong> ${cancelReason || "No reason provided"}</p>
+              
+                    <p>
+                      Since your account has already been approved, we understand this may come as a surprise.
+                      If you have any questions or wish to appeal this decision, please reach out to our support team
+                      as soon as possible for further clarification.
+                    </p>
+              
+                    <p>We value your participation, and we're here to assist you.</p>
+              
+                    <p>Regards,<br>
+                    The Menu Team</p>
+                  </body>
+                </html>
+              `;
+
             }
 
             const smtpConfig = {
@@ -216,13 +245,13 @@ export const delVendor = async (req, res) => {
             };
 
             try {
-                await sendEmail(smtpConfig, vendor.businessEmail, subject, "Your vendor account has been cancelled.", message);
+                await sendEmail(smtpConfig, vendor.businessEmail, subject, "Your Partner account has been cancelled.", message);
                 console.log(`Cancellation email sent to ${vendor.businessEmail}`);
             } catch (emailError) {
                 console.error("Failed to send cancellation email:", emailError);
             }
         }
-        
+
         // Assuming vendor object contains the URLs for the files
         if (vendor.addressProofURl?.public_id) {
             console.log(vendor.addressProofURl.public_id);
@@ -667,6 +696,151 @@ export const checkVendorEmailExists = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+
+
+
+export const forgotPassword = async (req, res) => {
+    try {
+        const { businessEmail } = req.body;
+
+        if (!businessEmail) {
+            return res.status(400).json({ message: "Business email is required" });
+        }
+
+        const vendor = await vendorModel.findOne({ businessEmail });
+
+        if (!vendor) {
+            // Don't reveal if vendor doesn't exist for security
+            return res.status(200).json({
+                message: "If an account exists with this email, a reset link has been sent"
+            });
+        }
+
+        // Generate JWT reset token
+        const resetToken = generateResetToken(vendor._id);
+
+        // Store token hash in DB (for additional security)
+        vendor.resetPasswordToken = crypto
+            .createHash('sha256')
+            .update(resetToken)
+            .digest('hex');
+        vendor.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+
+        await vendor.save();
+
+        // Create reset URL (use your frontend URL in production)
+        const resetUrl = `${process.env.FRONTEND_URL}/vendor/reset-password/${resetToken}`;
+
+        // Email message
+        const message = `
+        <p>You requested a password reset for your Partners account.</p>
+        <p>Please click the link below to reset your password:</p>
+        <a href="${resetUrl}">Reset Password</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `;
+
+        // Send email
+        const smtpConfig = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "partners@themenuportal.co.za",
+        };
+
+        await sendEmail(
+            smtpConfig,
+            vendor.businessEmail,
+            "Partners Password Reset Request",
+            "Reset your password",
+            message
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Password reset email sent"
+        });
+
+    } catch (error) {
+        console.error("Forgot password error:", error);
+        return res.status(500).json({
+            message: "Server error while processing forgot password request",
+            error: error.message
+        });
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ message: "Password is required" });
+        }
+
+        // Verify JWT token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET + '-reset');
+
+        // Hash the token to compare with stored one
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        const vendor = await vendorModel.findOne({
+            _id: decoded.id,
+            resetPasswordToken: hashedToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        });
+
+        if (!vendor) {
+            return res.status(400).json({
+                message: "Password reset token is invalid or has expired"
+            });
+        }
+
+        // Set new password
+        vendor.password = password;
+        vendor.resetPasswordToken = undefined;
+        vendor.resetPasswordExpire = undefined;
+
+        await vendor.save();
+
+        // Send confirmation email
+        const smtpConfig = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "partners@themenuportal.co.za",
+        };
+
+        await sendEmail(
+            smtpConfig,
+            vendor.businessEmail,
+            "Partner Password Changed Successfully",
+            "Password Update Confirmation",
+            `<p>Your Partner account password has been successfully updated.</p>
+         <p>If you did not make this change, please contact support immediately.</p>`
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully"
+        });
+
+    } catch (error) {
+        console.error("Reset password error:", error);
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: "Reset token has expired" });
+        }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: "Invalid reset token" });
+        }
+        return res.status(500).json({
+            message: "Server error while resetting password",
             error: error.message
         });
     }

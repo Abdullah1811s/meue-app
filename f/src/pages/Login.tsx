@@ -47,9 +47,9 @@ const Login = () => {
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/Login`, {
         ...data,
-        captchaToken, 
+        captchaToken,
       });
-    
+
       const { token, admin, user } = response.data;
       if (token) {
         if (admin) {
@@ -188,6 +188,18 @@ const Login = () => {
                   {errors.password && (
                     <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
                   )}
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <input type="checkbox" id="remember" className="mr-2" />
+                    <label htmlFor="remember" className="text-sm text-gray-600">Remember me</label>
+                  </div>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-[#DBC166] font-semibold hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
                 </div>
 
                 <ReCAPTCHA

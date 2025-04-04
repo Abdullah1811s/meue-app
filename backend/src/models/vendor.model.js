@@ -24,7 +24,8 @@ const VendorSchema = new mongoose.Schema({
     twitter: { type: String },
     tiktok: { type: String }
   },
-
+  resetPasswordToken: { type: String },
+  resetPasswordExpire: { type: Date },
   representativeName: { type: String, required: true },
   representativePosition: { type: String, required: true },
   representativeEmail: { type: String, required: true },

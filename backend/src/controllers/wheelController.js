@@ -144,20 +144,34 @@ export const addWheelEntry = async (req, res) => {
 
 export const getAllOnWheel = async (req, res) => {
     try {
-        console.log("Fetching all vendors and admins on the wheel...");
-        const allEntries = await wheelModel.find()
+      
+        let allEntries = await wheelModel.find()
             .populate("vendor.vendorInfo")
             .populate("admin.adminInfo");
 
-        if (!allEntries || allEntries.length === 0) {
-            console.log("No vendors or admins found on the wheel.");
-            return res.status(404).json({ message: "No vendors or admins found on the wheel" });
+        const validEntries = [];
+
+        for (const entry of allEntries) {
+            const vendorEmpty = (!entry.vendor.offerings || entry.vendor.offerings.length === 0);
+            const adminEmpty = (!entry.admin.offerings || entry.admin.offerings.length === 0);
+            console.log("vendors : ", vendorEmpty, " admin : ", adminEmpty);
+            if (vendorEmpty && adminEmpty) {
+                // Delete the document if both vendor and admin info/offerings are empty
+                await entry.delete();
+                console.log(`Deleted empty wheel with ID ${entry._id}`);
+            } else {
+                validEntries.push(entry);
+            }
         }
 
+        // if (validEntries.length === 0) {
+        //     console.log("No valid vendors or admins found on the wheel.");
+        //     return res.status(404).json({ message: "No valid vendors or admins found on the wheel" });
+        // }
 
         return res.status(200).json({
             message: "Vendors and Admins retrieved successfully",
-            data: allEntries
+            data: validEntries,
         });
 
     } catch (error) {
@@ -170,7 +184,6 @@ export const getAllOnWheel = async (req, res) => {
 export const removeVendorFromWheel = async (req, res) => {
     try {
         const { vendorInfo } = req.body;
-        console.log("Deleting vendor from wheel", req.body);
 
         if (!vendorInfo) {
             return res.status(400).json({ message: "Please provide the partner info" });
@@ -204,46 +217,55 @@ export const delOffer = async (req, res) => {
     try {
         const objectIdOfferId = new mongoose.Types.ObjectId(offerId);
 
+        // Try to find in Vendor first
+        let wheel = await wheelModel.findOne({ "vendor.offerings._id": objectIdOfferId })
+            .populate("vendor.vendorInfo")
+            .populate("admin.adminInfo");
 
-        const vendorWheel = await wheelModel.findOne({ "vendor.offerings._id": objectIdOfferId });
-
-        if (vendorWheel) {
-            vendorWheel.vendor.offerings = vendorWheel.vendor.offerings.filter(
+        if (wheel) {
+            wheel.vendor.offerings = wheel.vendor.offerings.filter(
                 (offering) => !offering._id.equals(objectIdOfferId)
             );
 
-            await vendorWheel.save();
+            // Save the updated wheel
+            await wheel.save();
+        } else {
+            // Try to find in Admin
+            wheel = await wheelModel.findOne({ "admin.offerings._id": objectIdOfferId })
+                .populate("vendor.vendorInfo")
+                .populate("admin.adminInfo");
 
-            return res.status(200).json({
-                message: "Offer deleted successfully from Vendor",
-                updatedWheel: vendorWheel,
-            });
+            if (wheel) {
+                wheel.admin.offerings = wheel.admin.offerings.filter(
+                    (offering) => !offering._id.equals(objectIdOfferId)
+                );
+
+                await wheel.save();
+            } else {
+                return res.status(404).json({ message: "Offer not found in Vendor or Admin" });
+            }
         }
 
-
-        // Check if offer exists in admin
-        const adminWheel = await wheelModel.findOne({ "admin.offerings._id": objectIdOfferId });
-
-        if (adminWheel) {
-            adminWheel.admin.offerings = adminWheel.admin.offerings.filter(
-                (offering) => !offering._id.equals(objectIdOfferId)
-            );
-
-            await adminWheel.save();
-
-            return res.status(200).json({
-                message: "Offer deleted successfully from Admin",
-                updatedWheel: adminWheel,
-            });
+        // After deletion, check if both vendor and admin are now empty/null
+        const vendorEmpty = (!wheel.vendor.offerings || wheel.vendor.offerings.length === 0);
+        const adminEmpty =  (!wheel.admin.offerings || wheel.admin.offerings.length === 0);
+        console.log("vendor: ", vendorEmpty, " admin : ", adminEmpty);
+        if (vendorEmpty && adminEmpty) {
+            await wheel.delete();
+            return res.status(200).json({ message: "Offer deleted and wheel was empty, so it was removed." });
         }
 
-        return res.status(404).json({ message: "Offer not found in Vendor or Admin" });
+        return res.status(200).json({
+            message: "Offer deleted successfully",
+            updatedWheel: wheel,
+        });
 
     } catch (error) {
         console.error("Error deleting offer:", error);
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
+
 
 
 export const updateVendorExclusiveOffer = async (req, res) => {

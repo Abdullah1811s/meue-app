@@ -40,9 +40,8 @@ function AffiliateLogin() {
                 console.log("The id is ", _id);
 
                 if (status === "pending") {
-
                     toast(
-                        "    Your application is under review. Please wait 48-72 hours for verification.",
+                        "Your application is under review. Please wait 48-72 hours for verification.",
                         {
                             duration: 6000,
                         }
@@ -65,7 +64,6 @@ function AffiliateLogin() {
             toast.error(error.response?.data?.message || "Login failed. Please try again.");
         }
     };
-
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -125,8 +123,8 @@ function AffiliateLogin() {
                             <div className="flex items-center justify-between">
                                 <button
                                     type="button"
-                                    onClick={() => navigate("/forgot-password")}
-                                    className="text-sm text-[#C5AD59] hover:underline"
+                                    onClick={() => navigate("/affiliated/forgot-password")}
+                                    className="text-sm text-[#C5AD59] hover:underline font-medium hover:text-[#b39a4d] transition-colors"
                                 >
                                     Forgot Password?
                                 </button>
@@ -145,7 +143,7 @@ function AffiliateLogin() {
                                 Don't have an account?{" "}
                                 <button
                                     onClick={() => navigate("/affiliated/register")}
-                                    className="text-[#C5AD59] font-semibold hover:underline"
+                                    className="text-[#C5AD59] font-semibold hover:underline hover:text-[#b39a4d] transition-colors"
                                 >
                                     Register as Affiliate
                                 </button>

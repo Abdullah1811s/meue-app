@@ -33,6 +33,12 @@ import TermsOfService from './pages/TOS.tsx'
 import GeneralTermPdf from './pages/GeneralTerms.tsx'
 import PartnerProgramTerms from './pages/PartnerProgramTerms .tsx'
 import AboutUs from './pages/Aboutus.tsx'
+import ForgotPassword from './pages/ForgetPass.tsx'
+import ResetPassword from './pages/ResetPass.tsx'
+import AffiliateForgotPassword from './pages/AffiliateForgotPassword.tsx'
+import AffiliateResetPassword from './pages/AffiliateResetPassword.tsx'
+import VendorForgotPassword from './pages/VendorForgotPassword.tsx'
+import VendorResetPassword from './pages/VendorResetPassword.tsx'
 
 
 const router = createBrowserRouter(
@@ -46,9 +52,14 @@ const router = createBrowserRouter(
       <Route path="aboutUs" element={<AboutUs />} />
       <Route path="allPartners" element={<AllPartners />} />
       <Route path="/vendor/login" element={<VendorLogin />} />
+      <Route path="/vendor/forgot-password" element={<VendorForgotPassword />} />
+      <Route path="/vendor/reset-password/:token" element={<VendorResetPassword />} />
       <Route path="/affiliated/register" element={<AffiliateRegistration />} />
+      <Route path="/affiliated/forgot-password" element={<AffiliateForgotPassword />} />
+      <Route path="/affiliate/reset-password/:token" element={<AffiliateResetPassword />} />
       <Route path="/affiliated/login" element={<AffiliateLogin />} />
-     
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/doc/generalTerm" element={<GeneralTermPdf />} />
       <Route path="/doc/PartnerProgram" element={<PartnerProgramTerms />} />
       <Route path="/doc/ComRule" element={<ComRule />} />
@@ -83,7 +94,7 @@ const router = createBrowserRouter(
         <Route path="manageAffiliated" element={<AdminDashboard />} />
         <Route path="managePartner" element={<ManagePartner />} />
       </Route>
-      
+
       {/* affiliated protected route */}
       <Route path="affiliated" element={<AffiliatedProtectedRoute />}>
         <Route path="dashboard/:id" element={<AffiliatedDashboard />} />
