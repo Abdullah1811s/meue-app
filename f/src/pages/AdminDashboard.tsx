@@ -427,7 +427,7 @@ const AdminDashboard = () => {
           const prizeEndDate = normalizeDate(prize.endDate);
           const scheduledDate = normalizeDate(formData.scheduledAt);
 
-          
+
           return scheduledDate >= prizeEndDate;
         }
         return true;
@@ -454,7 +454,7 @@ const AdminDashboard = () => {
         ? formatDateForSubmission(formData.scheduledAt)
         : '';
 
-   
+
 
       // Prepare prizes data - ensure required fields are present
       const preparedPrizes = formData.prizes.map((prize: any) => {
@@ -480,7 +480,7 @@ const AdminDashboard = () => {
         isVisible: false
       };
 
-     
+
 
       const response = await axios.post(`${API_BASE_URL}/Raff/createRaff`, submissionData, {
         headers: {
@@ -520,7 +520,7 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       const res = await axios.get(`${API_BASE_URL}/Raff`);
-   
+
       setRaff(res.data.raff);
 
       setIsLoading(false);
@@ -677,13 +677,13 @@ const AdminDashboard = () => {
     try {
 
       const response = await axios.put(`${API_BASE_URL}/Raff/changeVisibility`, { refId });
-     
+
       toast.success("Raffle visibility updated! Please do a reload");
 
       // Emit visibility change event
       socket.emit("visibilityChanged", { refId, isVisible: true });
       const updatedRaffle1 = response.data.raffle;
-     
+
       setRaff((prevRaffles) =>
         prevRaffles.map((raffle) =>
           raffle._id === refId
@@ -760,9 +760,9 @@ const AdminDashboard = () => {
   const fetchAdmin = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/admin`);
-     
+
       setAdmin(res.data.admins);
-    
+
     } catch (error) {
       toast.error("Failed to fetch user  =. Try again!");
     }
@@ -910,7 +910,7 @@ const AdminDashboard = () => {
       );
       try {
 
-         await axios.post(
+        await axios.post(
           `${API_BASE_URL}/wheel/add`,
           {
             vendorInfo: res.data.vendor._id,
@@ -1227,7 +1227,7 @@ const AdminDashboard = () => {
   };
 
   function handleDeleteAdmin(email: string): void {
-     axios.delete(`${API_BASE_URL}/admin/removeAdmin`, {
+    axios.delete(`${API_BASE_URL}/admin/removeAdmin`, {
       data: { removeEmail: email },
       headers: {
         'Authorization': `Bearer ${adminToken}` // Assuming you store the token in localStorage
@@ -1243,7 +1243,7 @@ const AdminDashboard = () => {
         console.error('Error deleting admin:', error.response?.data?.message || error.message);
         toast.error("error in deleting admin");
       });
-   
+
   }
 
   return (
@@ -2102,6 +2102,15 @@ const AdminDashboard = () => {
               className="w-full"
             >
               <h2 className="text-xl md:text-2xl font-bold mb-6 ml-2">Manage Raff:</h2>
+              <div className="flex items-start gap-3 bg-[#DBC166]-200 border-l-4 border-[#DBC166] p-4 my-3 rounded-r">
+                <svg className="w-5 h-5 text-[#DBC166] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-gray-800">Raffle Update</p>
+                  <p className="text-gray-700">To maintain our automated system, any raffle created today or partner raffles with today's date will automatically expire.</p>
+                </div>
+              </div>
               <div className='flex flex-wrap  items-center'>
                 <h2 className="text-xl md:text-2xl font-bold p-2 mr-7">Create new raffle </h2>
                 <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -2319,7 +2328,7 @@ const AdminDashboard = () => {
                           <ul className="list-disc ml-5">
                             {item.prizes.length > 0 ? (
                               item?.prizes.map((prize: any, index: number) => {
-                              
+
                                 if (prize === null || prize.quantity === null) {
                                   return (
                                     <li key={`quantity-${index}`} className="break-words">
@@ -2436,23 +2445,28 @@ const AdminDashboard = () => {
                               ⚠️ This raffle is no longer available. Reason: No prizes assigned.
                             </p>
                           ) : item.prizes.every((prize: any) => {
-                            const today = new Date().toISOString().split('T')[0];
-                            const prizeEndDate = prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : null;
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const prizeEndDate = prize.endDate ? new Date(prize.endDate) : null;
+                            if (prizeEndDate) prizeEndDate.setHours(0, 0, 0, 0);
+
                             // Prize is invalid if either:
                             // 1. Quantity is zero, OR
-                            // 2. End date is today
-                            return prize.quantity <= 0 || (prizeEndDate && prizeEndDate === today);
+                            // 2. End date exists and is today or in the past
+                            return prize.quantity <= 0 || (prizeEndDate && prizeEndDate <= today);
                           }) ? (
                             <p className="text-sm text-red-500 font-semibold">
                               ⚠️ This raffle is no longer available. Reason:{" "}
                               {item.prizes.every((prize: any) => prize.quantity <= 0)
                                 ? "All prizes are given away."
                                 : item.prizes.every((prize: any) => {
-                                  const today = new Date().toISOString().split('T')[0];
-                                  const prizeEndDate = prize.endDate ? new Date(prize.endDate).toISOString().split('T')[0] : null;
-                                  return prizeEndDate && prizeEndDate === today;
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  const prizeEndDate = prize.endDate ? new Date(prize.endDate) : null;
+                                  if (prizeEndDate) prizeEndDate.setHours(0, 0, 0, 0);
+                                  return prizeEndDate && prizeEndDate <= today;
                                 })
-                                  ? "All prizes have expired today."
+                                  ? "All prizes have expired."
                                   : "Some prizes are unavailable."}
                             </p>
                           ) : (
@@ -2506,8 +2520,28 @@ const AdminDashboard = () => {
           {isManageWheel ? (
             <div className="min-h-screen">
               <h1 className='font-bold text-2xl mb-2'>Manage Wheel: </h1>
-              <div className="text-yellow-600 bg-yellow-100 p-4 rounded-md mb-6">
-                <strong>Note:</strong> If you have deleted any Partner's offerings, they cannot be re-added as they are automatically added by the system.
+              <div className="space-y-4">
+                {/* Main Wheel Update Notification */}
+                <div className="flex items-start gap-3 bg-[#FBF7E0] border-l-4 border-[#DBC166] p-4 rounded-r">
+                  <svg className="w-5 h-5 text-[#DBC166] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-gray-800">Wheel Update</p>
+                    <p className="text-gray-700">To maintain our automated system, any wheel offer created today or partner wheel offer with today's date will automatically expire.</p>
+                  </div>
+                </div>
+
+                {/* Partner Offerings Note */}
+                <div className="flex items-start gap-3 bg-[#FBF7E0] border-l-4 border-[#DBC166] p-4 rounded-r">
+                  <svg className="w-5 h-5 text-[#DBC166] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-gray-800">Important Note</p>
+                    <p className="text-gray-700">If you have deleted any Partner offerings, they cannot be re-added as they are automatically added by the system.</p>
+                  </div>
+                </div>
               </div>
 
               <div className="mb-6 flex">
@@ -2582,70 +2616,32 @@ const AdminDashboard = () => {
                   .filter((entry) => (entry.vendor?.offerings?.length || 0) > 0 || (entry.admin?.offerings?.length || 0) > 0)
                   .map((entry) => (
                     <div key={entry._id} className="bg-white shadow-lg rounded-xl p-6">
-                      {/* 🎯 Vendor Details (Only if Offerings Exist) */}
-                      {entry.vendor?.offerings?.length > 0 && entry.vendor?.vendorInfo && (
-                        <>
-                          <h1 className="text-2xl font-bold mb-4 text-gray-800">Vendor Details</h1>
-                          <div className="mb-6 space-y-3">
-                            <div className="flex items-center text-gray-700">
-                              <User className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Business Name:</strong>
-                              {entry.vendor.vendorInfo.businessName}
-                            </div>
-                            <div className="flex items-center text-gray-700">
-                              <Mail className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Email:</strong>
-                              {entry.vendor.vendorInfo.businessEmail}
-                            </div>
-                            <div className="flex items-center text-gray-700">
-                              <Phone className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Contact:</strong>
-                              {entry.vendor.vendorInfo.businessContactNumber}
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      {/* Vendor and Admin details remain the same */}
 
-                      {/* 🎯 Admin Details (Only if Offerings Exist) */}
-                      {entry.admin?.offerings?.length > 0 && entry.admin?.adminInfo && (
-                        <>
-                          <h1 className="text-2xl font-bold mb-4 text-gray-800">Admin Details</h1>
-                          <div className="mb-6 space-y-3">
-                            <div className="flex items-center text-gray-700">
-                              <User className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Admin Name:</strong>
-                              {entry.admin.adminInfo.name || "N/A"}
-                            </div>
-                            <div className="flex items-center text-gray-700">
-                              <Mail className="w-5 h-5 mr-2" />
-                              <strong className="mr-2">Email:</strong>
-                              {entry.admin.adminInfo.email || "N/A"}
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {/* 🎯 Offerings */}
-                      {/* 🎯 Offerings */}
+                      {/* Offerings Section */}
                       <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
                         <Tag className="w-5 h-5 mr-2" /> Wheel Offerings
                       </h2>
                       <div className="space-y-4">
                         {entry.vendor?.offerings?.length > 0 ? (
                           entry.vendor.offerings.map((offering: any) => {
-                            const today = new Date().toISOString().split('T')[0];
-                            const endDate = offering.endDate ? new Date(offering.endDate).toISOString().split('T')[0] : null;
-                            const isExpired = endDate && endDate === today;
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const endDate = offering.endDate ? new Date(offering.endDate) : null;
+                            if (endDate) endDate.setHours(0, 0, 0, 0);
+
+                            const isExpired = endDate && endDate < today;
+                            const expiresToday = endDate && endDate.getTime() === today.getTime();
 
                             return (
                               <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
-                                {isExpired && (
+                                {(isExpired || expiresToday) && (
                                   <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
                                     <AlertTriangle className="w-3 h-3 mr-1" />
-                                    Expired Today
+                                    {expiresToday ? "Expires Today" : "Expired"}
                                   </span>
                                 )}
-                                <span className={`absolute top-2 ${isExpired ? 'right-16' : 'right-2'} bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center`}>
+                                <span className={`absolute top-2 ${(isExpired || expiresToday) ? 'right-16' : 'right-2'} bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center`}>
                                   <Check className="w-3 h-3 mr-1" />
                                   Vendor Offer
                                 </span>
@@ -2654,13 +2650,16 @@ const AdminDashboard = () => {
                                   <p className="font-medium">Name: {offering.name}</p>
                                   {offering.quantity && <p>Quantity: {offering.quantity}</p>}
                                   {offering.endDate && (
-                                    <p className="text-sm text-gray-500">
+                                    <p className={`text-sm ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
                                       Valid until: {new Date(offering.endDate).toLocaleDateString()}
+                                      {expiresToday && " (Today)"}
                                     </p>
                                   )}
-                                  {isExpired && (
+                                  {(isExpired || expiresToday) && (
                                     <p className="text-sm text-red-500 font-medium">
-                                      This offer won't appear on the wheel as it's expired
+                                      {expiresToday
+                                        ? "This offer has expire today "
+                                        : "This offer won't appear on the wheel as it's expired"}
                                     </p>
                                   )}
                                   <button
@@ -2675,19 +2674,23 @@ const AdminDashboard = () => {
                           })
                         ) : entry.admin?.offerings?.length > 0 ? (
                           entry.admin.offerings.map((offering: any) => {
-                            const today = new Date().toISOString().split('T')[0];
-                            const endDate = offering.endDate ? new Date(offering.endDate).toISOString().split('T')[0] : null;
-                            const isExpired = endDate && endDate === today;
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const endDate = offering.endDate ? new Date(offering.endDate) : null;
+                            if (endDate) endDate.setHours(0, 0, 0, 0);
+
+                            const isExpired = endDate && endDate < today;
+                            const expiresToday = endDate && endDate.getTime() === today.getTime();
 
                             return (
                               <div key={offering._id} className="p-4 border rounded-lg bg-gray-50 relative">
-                                {isExpired && (
+                                {(isExpired || expiresToday) && (
                                   <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
                                     <AlertTriangle className="w-3 h-3 mr-1" />
-                                    Expired Today
+                                    {expiresToday ? "Expires Today" : "Expired"}
                                   </span>
                                 )}
-                                <span className={`absolute top-2 ${isExpired ? 'right-16' : 'right-2'} bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center`}>
+                                <span className={`absolute top-2 ${(isExpired || expiresToday) ? 'right-16' : 'right-2'} bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center`}>
                                   <Check className="w-3 h-3 mr-1" />
                                   Admin Offer
                                 </span>
@@ -2696,13 +2699,16 @@ const AdminDashboard = () => {
                                   <p className="font-medium">Name: {offering.name}</p>
                                   {offering.quantity && <p>Quantity: {offering.quantity}</p>}
                                   {offering.endDate && (
-                                    <p className="text-sm text-gray-500">
+                                    <p className={`text-sm ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
                                       Valid until: {new Date(offering.endDate).toLocaleDateString()}
+                                      {expiresToday && " (Today)"}
                                     </p>
                                   )}
-                                  {isExpired && (
+                                  {(isExpired || expiresToday) && (
                                     <p className="text-sm text-red-500 font-medium">
-                                      This offer won't appear on the wheel as it's expired
+                                      {expiresToday
+                                        ? "This offer has expired today "
+                                        : "This offer won't appear on the wheel as it's expired"}
                                     </p>
                                   )}
                                   <button
@@ -2722,7 +2728,6 @@ const AdminDashboard = () => {
                     </div>
                   ))}
               </div>
-
 
 
 

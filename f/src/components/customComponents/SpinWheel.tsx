@@ -59,22 +59,32 @@ const SpinWheel = () => {
     setIsLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
-     
+      
       const processedData = res.data.data.map((entry: any) => {
+        // Get today's date at midnight for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+  
         // Process vendor offerings
         const filteredVendorOfferings = entry.vendor?.offerings?.filter((offering: any) => {
           if (!offering.endDate) return true; // Keep if no end date
-          const today = new Date().toISOString().split('T')[0];
-          const endDate = new Date(offering.endDate).toISOString().split('T')[0];
-          return endDate !== today;
+          
+          const endDate = new Date(offering.endDate);
+          endDate.setHours(0, 0, 0, 0); // Normalize to midnight
+          
+          // Keep if end date is in the future (after today)
+          return endDate > today;
         }) || [];
   
         // Process admin offerings
         const filteredAdminOfferings = entry.admin?.offerings?.filter((offering: any) => {
           if (!offering.endDate) return true; // Keep if no end date
-          const today = new Date().toISOString().split('T')[0];
-          const endDate = new Date(offering.endDate).toISOString().split('T')[0];
-          return endDate !== today;
+          
+          const endDate = new Date(offering.endDate);
+          endDate.setHours(0, 0, 0, 0); // Normalize to midnight
+          
+          // Keep if end date is in the future (after today)
+          return endDate > today;
         }) || [];
   
         return {
