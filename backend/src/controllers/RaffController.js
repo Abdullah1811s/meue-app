@@ -325,7 +325,7 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
 
         // First, get the user's information
         const user = await usersModel.findById(userId);
-        console.log("user: " , user);
+       
         if (!user) {
             throw new Error('User not found');
         }
@@ -333,13 +333,13 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
         // Determine the date filter based on user type
         let dateFilter = {};
         if (user.userType === "R10" && user.signupDate) {
-        
+
             const paidDate = new Date(user.signupDate);
             paidDate.setHours(0, 0, 0, 0);
-            
+
             const nextDay = new Date(paidDate);
-            nextDay.setDate(paidDate.getDate() + 1); 
-            
+            nextDay.setDate(paidDate.getDate() + 1);
+
             dateFilter = {
                 scheduledAt: {
                     $gte: paidDate,
@@ -363,7 +363,7 @@ export const addUserToInvisibleRaffles = async (userId, entries = 1) => {
         await raffModel.collection.createIndex(
             { _id: 1, 'participants.user': 1 },
             { unique: true, partialFilterExpression: { 'participants.user': { $exists: true } } }
-        ).catch(() => {}); // ignore if already exists
+        ).catch(() => { }); // ignore if already exists
 
         const session = await raffModel.startSession();
         let results = [];
@@ -900,9 +900,7 @@ export const deleteRafflesByVendor = async (req, res) => {
 
         const deletedRaffles = await raffModel.deleteMany({ vendorId: id });
 
-        if (deletedRaffles.deletedCount === 0) {
-            return res.status(404).json({ success: false, message: "No raffles found for the given vendor ID" });
-        }
+
 
         return res.status(200).json({
             success: true,
