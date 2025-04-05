@@ -291,7 +291,7 @@ const SpinWheel = () => {
       });
 
       toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
-     
+
     } catch (error: any) {
       console.error("Error updating winner:", error);
       toast.error("Failed to update prize. Please try again later.");
@@ -465,60 +465,46 @@ const SpinWheel = () => {
     setTimeout(async () => {
       const finalDegree = (rotation + randomSpin) % 360;
       const segmentSize = 360 / segmentData.length;
-
       let winningIndex = Math.floor(((360 - finalDegree) % 360) / segmentSize);
-      if (winningIndex >= segmentData.length) {
-        winningIndex = 0;
-      }
-
+      if (winningIndex >= segmentData.length) winningIndex = 0;
+    
       const winningPrize = segmentData[winningIndex];
       setPrize(winningPrize);
-
-      // Update winner in database
-      await updateWinner(winningPrize);
-
-      // Update user spin count
+    
       try {
+        // 1. Update winner FIRST (critical operation)
+        await updateWinner(winningPrize);
+    
+        // 2. THEN increment spin count
         if (id) {
-          const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`, null, {
-            timeout: 10000 // 10 seconds timeout
-          });
-          console.log("updated", updatedUser);
-          if (updatedUser.data.message && updatedUser.data.message.includes('Please wait')) {
-            // Handle cooldown message
+          const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`);
+          
+          if (updatedUser.data.message?.includes('Please wait')) {
             toast.error(updatedUser.data.message);
-            return;
+            return; // Exit if cooldown active
           }
           setUser(updatedUser.data.user);
         }
+    
+       
+    
+        // 4. Reload after 500ms (ensure toast is visible)
+        setTimeout(() => window.location.reload(), 500);
+    
       } catch (error: any) {
-        console.error("Error updating user spin count:", error);
-
-        if (error.response) {
-          // Handle specific error messages from the backend
-          const errorMessage = error.response.data.message;
-
-          if (errorMessage.includes("Please wait") && errorMessage.includes("hour(s) before spinning again")) {
-            // 8-hour delay message
-            toast.error(errorMessage);
-          } else if (errorMessage.includes("You've reached your daily limit")) {
-            // 24-hour reset message
-            toast.error("Maximum spin limit reached. Please try again after 24 hours.");
-          } else {
-            // Generic error
-            toast.error("An error occurred while updating your spin count.");
-          }
+        console.error("Spin error:", error);
+        
+        // Unified error handling
+        if (error.response?.data?.message) {
+          toast.error(error.response.data.message);
+        } else if (error.code === 'ECONNABORTED') {
+          toast.error("Network issue. Please check your connection.");
         } else {
-          // Network or other errors
-          toast.error("An error occurred while updating your spin count.");
+          toast.error("Failed to process spin. Please try again.");
         }
+      } finally {
+        setSpinning(false); // Always stop spinner
       }
-
-
-      setSpinning(false);
-       setTimeout(() => {
-        window.location.reload();
-      }, 300)
     }, 3000);
   };
 
