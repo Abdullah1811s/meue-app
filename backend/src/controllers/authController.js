@@ -249,7 +249,7 @@ export const signUp = async (req, res) => {
         await sendEmail(
             smtpConfig,
             newUser.email,
-            "Welcome! You're Now Eligible to Win Big 🎁",
+            "Welcome to the Menu - Your World Your Way.",
             "Your Account is Ready – Let the Excitement Begin!",
             message
         );

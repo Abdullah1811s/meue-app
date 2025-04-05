@@ -35,8 +35,8 @@ app.post(
 // app.use(cors());
 
 app.use(cors({
-  origin: [FRONTEND_URL],
-  credentials: true
+    origin: [FRONTEND_URL],
+    credentials: true
 }));
 
 app.use(express.json())
