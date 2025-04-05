@@ -2108,7 +2108,7 @@ const AdminDashboard = () => {
                 </svg>
                 <div>
                   <p className="font-semibold text-gray-800">Raffle Update</p>
-                  <p className="text-gray-700">To maintain our automated system, any raffle created today or partner raffles with today's date will automatically expire.</p>
+                  <p className="text-gray-700">To maintain our automated system, any raffle with end date today or partner raffles with today's end date will automatically expire.</p>
                 </div>
               </div>
               <div className='flex flex-wrap  items-center'>
@@ -2498,11 +2498,6 @@ const AdminDashboard = () => {
                             </Button>
                           )}
 
-
-
-
-
-
                         </div>
                       </motion.div>
                     ))}
@@ -2539,7 +2534,7 @@ const AdminDashboard = () => {
                   </svg>
                   <div>
                     <p className="font-semibold text-gray-800">Important Note</p>
-                    <p className="text-gray-700">If you have deleted any Partner offerings, they cannot be re-added as they are automatically added by the system.</p>
+                    <p className="text-gray-700">If you have deleted any Partner offerings, they can only re-added from there dashboard.</p>
                   </div>
                 </div>
               </div>
@@ -2577,12 +2572,13 @@ const AdminDashboard = () => {
 
                       <div className="space-y-2">
                         <label htmlFor="quantity" className="block text-sm font-medium">
-                          Quantity (optional)
+                          Quantity 
                         </label>
                         <Input
                           id="quantity"
                           name="quantity"
                           type="number"
+                          required
                           value={offer.quantity}
                           onChange={handleChange1}
                         />

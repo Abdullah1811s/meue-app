@@ -987,6 +987,7 @@ const Dashboard = () => {
                                             <input
                                               type="number"
                                               placeholder="Quantity"
+                                              required
                                               value={offering.quantity || ''}
                                               onChange={(e) => handleInputChange1(e, 'wheelOffer', index, 'quantity')}
                                               onKeyDown={(e) => {

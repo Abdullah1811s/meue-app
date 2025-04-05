@@ -348,7 +348,6 @@ export const updateVendorExclusiveOffer = async (req, res) => {
 };
 
 
-
 export const updateWinner = async (req, res) => {
     try {
         const { label, labelId, vendorId, id, vId, adminId } = req.body;
@@ -383,7 +382,7 @@ export const updateWinner = async (req, res) => {
                     wheel.vendor.offerings.splice(vendorOfferIndex, 1);
                     console.log("Removed expired vendor offer");
                 }
-                // Handle quantity reduction
+                // Only handle quantity reduction if quantity exists
                 else if (vendorOffer.quantity !== undefined) {
                     if (vendorOffer.quantity > 0) {
                         vendorOffer.quantity -= 1;
@@ -393,9 +392,7 @@ export const updateWinner = async (req, res) => {
                             wheel.vendor.offerings.splice(vendorOfferIndex, 1);
                             console.log("Removed vendor offer with zero quantity");
                         }
-                    } else {
-                        return res.status(400).json({ message: "Vendor offer quantity is already zero" });
-                    }
+                    } 
                 }
 
                 if (!wheel.vendor.offerings || wheel.vendor.offerings.length === 0) {
@@ -418,7 +415,7 @@ export const updateWinner = async (req, res) => {
                     wheel.admin.offerings.splice(adminOfferIndex, 1);
                     console.log("Removed expired admin offer");
                 }
-                // Handle quantity reduction
+                // Only handle quantity reduction if quantity exists
                 else if (adminOffer.quantity !== undefined) {
                     if (adminOffer.quantity > 0) {
                         adminOffer.quantity -= 1;
@@ -428,8 +425,6 @@ export const updateWinner = async (req, res) => {
                             wheel.admin.offerings.splice(adminOfferIndex, 1);
                             console.log("Removed admin offer with zero quantity");
                         }
-                    } else {
-                        return res.status(400).json({ message: "Admin offer quantity is already zero" });
                     }
                 }
 
@@ -505,7 +500,6 @@ export const updateWinner = async (req, res) => {
                                      </ul>`;
             await sendEmail(smtpConfig2, updatedVendor.businessEmail, vendorEmailSubject, vendorEmailText, vendorEmailHtml);
         }
-
 
         return res.status(200).json({
             message: "Offer updated successfully",

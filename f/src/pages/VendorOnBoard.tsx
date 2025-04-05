@@ -978,10 +978,11 @@ function VendorOnboarding() {
                                     </div>
                                     <div>
                                       <label className="block text-sm font-medium text-gray-700">
-                                        Quantity (Optional)
+                                        Quantity
                                       </label>
                                       <input
                                         type="number"
+                                        required
                                         value={offering.quantity || ""}
                                         onChange={(e) =>
                                           handleUpdateOffering(index, 'wheel', "quantity", e.target.value)

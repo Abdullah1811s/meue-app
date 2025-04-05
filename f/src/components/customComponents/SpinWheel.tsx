@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 interface Offering {
   _id: string;
   name: string;
-  quantity?: number;
+  quantity?: any;
   startDate?: string;
   endDate?: string;
 }
@@ -59,34 +59,34 @@ const SpinWheel = () => {
     setIsLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/wheel`);
-      
+
       const processedData = res.data.data.map((entry: any) => {
         // Get today's date at midnight for comparison
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-  
+
         // Process vendor offerings
         const filteredVendorOfferings = entry.vendor?.offerings?.filter((offering: any) => {
           if (!offering.endDate) return true; // Keep if no end date
-          
+
           const endDate = new Date(offering.endDate);
           endDate.setHours(0, 0, 0, 0); // Normalize to midnight
-          
+
           // Keep if end date is in the future (after today)
           return endDate > today;
         }) || [];
-  
+
         // Process admin offerings
         const filteredAdminOfferings = entry.admin?.offerings?.filter((offering: any) => {
           if (!offering.endDate) return true; // Keep if no end date
-          
+
           const endDate = new Date(offering.endDate);
           endDate.setHours(0, 0, 0, 0); // Normalize to midnight
-          
+
           // Keep if end date is in the future (after today)
           return endDate > today;
         }) || [];
-  
+
         return {
           ...entry,
           vendor: entry.vendor ? {
@@ -99,7 +99,7 @@ const SpinWheel = () => {
           } : null
         };
       });
-  
+     
       setVendor(processedData);
     } catch (error: any) {
       console.error("Error fetching wheel data:", error);
@@ -114,7 +114,6 @@ const SpinWheel = () => {
       setIsLoading(false);
     }
   };
-
 
   useEffect(() => {
     if (!nextSpinTime) return;
@@ -145,7 +144,7 @@ const SpinWheel = () => {
 
     try {
       const res = await axios.get(`${API_BASE_URL}/users/${id}`);
-    
+
       if (res.data.user.numberOfTimesWheelRotate === 1 && res.data.user.firstSpinTime) {
         const nextSpin = new Date(res.data.user.firstSpinTime);
         nextSpin.setHours(nextSpin.getHours() + 8);
@@ -181,7 +180,7 @@ const SpinWheel = () => {
       v.vendor?.offerings
         ?.filter(
           (offering) =>
-            (offering.quantity === undefined || offering.quantity > 0) &&
+
             (!offering.endDate || new Date(offering.endDate) > today)
         )
         .map((offering) => ({
@@ -197,7 +196,7 @@ const SpinWheel = () => {
       v.admin?.offerings
         ?.filter(
           (offering) =>
-            (offering.quantity === undefined || offering.quantity > 0) &&
+
             (!offering.endDate || new Date(offering.endDate) > today)
         )
         .map((offering) => ({
@@ -208,7 +207,7 @@ const SpinWheel = () => {
           type: "Admin" as const,
         })) || [];
 
-    return [...vendorOfferings, ...adminOfferings]; // Merge both filtered offerings
+    return [...vendorOfferings, ...adminOfferings];
   });
 
   // Update winner in database and UI
@@ -228,33 +227,56 @@ const SpinWheel = () => {
       // Update local state to reflect changes
       setVendor((prevVendor) => {
         return prevVendor.map((v) => {
-          // Update vendor offerings
+          // Update vendor offerings - only modify quantity if it exists
           const updatedVendorOfferings = v.vendor?.offerings?.map((offering) => {
             if (offering._id === p.labelId) {
+              // Only decrease quantity if it exists
+              const newQuantity = offering.quantity !== undefined 
+                ? offering.quantity - 1 
+                : undefined;
+              
               return {
                 ...offering,
-                quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
+                quantity: newQuantity
               };
             }
             return offering;
-          }).filter((offering) =>
-            (offering.quantity === undefined || offering.quantity > 0) &&
-            (!offering.endDate || new Date(offering.endDate) > new Date())
-          ) || [];
+          }).filter((offering) => {
+            // Keep the offering if:
+            // 1. It has no quantity (unlimited) AND no end date OR end date not passed
+            // OR
+            // 2. It has quantity > 0 AND (no end date OR end date not passed)
+            const isExpired = offering.endDate && new Date(offering.endDate) <= new Date();
+            const hasQuantity = offering.quantity !== undefined;
+            
+            if (hasQuantity) {
+              return offering?.quantity > 0 && !isExpired;
+            }
+            return !isExpired; // Keep unlimited offers unless expired
+          }) || [];
 
-          // Update admin offerings
+          // Update admin offerings - same logic as vendor offerings
           const updatedAdminOfferings = v.admin?.offerings?.map((offering) => {
             if (offering._id === p.labelId) {
+              const newQuantity = offering.quantity !== undefined 
+                ? offering.quantity - 1 
+                : undefined;
+              
               return {
                 ...offering,
-                quantity: offering.quantity !== undefined ? offering.quantity - 1 : undefined
+                quantity: newQuantity
               };
             }
             return offering;
-          }).filter((offering) =>
-            (offering.quantity === undefined || offering.quantity > 0) &&
-            (!offering.endDate || new Date(offering.endDate) > new Date())
-          ) || [];
+          }).filter((offering) => {
+            const isExpired = offering.endDate && new Date(offering.endDate) <= new Date();
+            const hasQuantity = offering.quantity !== undefined;
+            
+            if (hasQuantity) {
+              return offering?.quantity > 0 && !isExpired;
+            }
+            return !isExpired; // Keep unlimited offers unless expired
+          }) || [];
 
           return {
             ...v,
@@ -262,16 +284,16 @@ const SpinWheel = () => {
             admin: v.admin ? { ...v.admin, offerings: updatedAdminOfferings } : undefined
           };
         }).filter((v) =>
+          // Keep vendor if either vendor or admin has offerings
           (v.vendor?.offerings?.length ?? 0) > 0 ||
           (v.admin?.offerings?.length ?? 0) > 0
         );
       });
 
       toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
-      setTimeout(()=>
-      {
-        window.location.reload();
-      } , 400)
+        setTimeout(() => {
+          window.location.reload();
+        }, 300)
     } catch (error: any) {
       console.error("Error updating winner:", error);
       toast.error("Failed to update prize. Please try again later.");
