@@ -105,7 +105,7 @@ export default function UserDashboard() {
       //   ) : [],
       //   participants: raffle.participants || []
       // }));
-      console.log("formattedRaffles" , res)
+     
       setUpcomingRaffles(res.data.scheduled);
     } catch (error) {
       console.error("Error fetching upcoming raffles:", error);

@@ -68,7 +68,7 @@ const RankCard: React.FC = () => {
               )
             )
             .slice(0, 3);
-            console.log("Filter  " , filteredRaffles)
+           
           setRaffles(filteredRaffles);
 
         }

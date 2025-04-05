@@ -2534,7 +2534,7 @@ const AdminDashboard = () => {
                   </svg>
                   <div>
                     <p className="font-semibold text-gray-800">Important Note</p>
-                    <p className="text-gray-700">If you have deleted any Partner offerings, they can only re-added from there dashboard.</p>
+                    <p className="text-gray-700">If you have deleted any Partner offerings, they can only re-add from there dashboard.</p>
                   </div>
                 </div>
               </div>

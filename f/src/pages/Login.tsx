@@ -190,10 +190,7 @@ const Login = () => {
                   )}
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <input type="checkbox" id="remember" className="mr-2" />
-                    <label htmlFor="remember" className="text-sm text-gray-600">Remember me</label>
-                  </div>
+
                   <Link
                     to="/forgot-password"
                     className="text-sm text-[#DBC166] font-semibold hover:underline"
