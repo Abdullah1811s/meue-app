@@ -98,14 +98,15 @@ export default function UserDashboard() {
     setUpcomingLoading(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/Raff/notReady`);
-      const formattedRaffles = res.data.scheduled.map((raffle: any) => ({
-        ...raffle,
-        prizes: Array.isArray(raffle.prizes) ? raffle.prizes.map((prize: any) =>
-          typeof prize === 'string' ? prize : { id: prize.id || prize._id || '', name: prize.name || 'Unnamed Prize' }
-        ) : [],
-        participants: raffle.participants || []
-      }));
-      setUpcomingRaffles(formattedRaffles);
+      // const formattedRaffles = res.data.scheduled.map((raffle: any) => ({
+      //   ...raffle,
+      //   prizes: Array.isArray(raffle.prizes) ? raffle.prizes.map((prize: any) =>
+      //     typeof prize === 'string' ? prize : { id: prize.id || prize._id || '', name: prize.name || 'Unnamed Prize' }
+      //   ) : [],
+      //   participants: raffle.participants || []
+      // }));
+      console.log("formattedRaffles" , res)
+      setUpcomingRaffles(res.data.scheduled);
     } catch (error) {
       console.error("Error fetching upcoming raffles:", error);
       showToast("Failed to fetch upcoming raffles", 'error');

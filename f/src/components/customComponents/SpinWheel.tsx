@@ -99,7 +99,7 @@ const SpinWheel = () => {
           } : null
         };
       });
-     
+
       setVendor(processedData);
     } catch (error: any) {
       console.error("Error fetching wheel data:", error);
@@ -231,10 +231,10 @@ const SpinWheel = () => {
           const updatedVendorOfferings = v.vendor?.offerings?.map((offering) => {
             if (offering._id === p.labelId) {
               // Only decrease quantity if it exists
-              const newQuantity = offering.quantity !== undefined 
-                ? offering.quantity - 1 
+              const newQuantity = offering.quantity !== undefined
+                ? offering.quantity - 1
                 : undefined;
-              
+
               return {
                 ...offering,
                 quantity: newQuantity
@@ -248,7 +248,7 @@ const SpinWheel = () => {
             // 2. It has quantity > 0 AND (no end date OR end date not passed)
             const isExpired = offering.endDate && new Date(offering.endDate) <= new Date();
             const hasQuantity = offering.quantity !== undefined;
-            
+
             if (hasQuantity) {
               return offering?.quantity > 0 && !isExpired;
             }
@@ -258,10 +258,10 @@ const SpinWheel = () => {
           // Update admin offerings - same logic as vendor offerings
           const updatedAdminOfferings = v.admin?.offerings?.map((offering) => {
             if (offering._id === p.labelId) {
-              const newQuantity = offering.quantity !== undefined 
-                ? offering.quantity - 1 
+              const newQuantity = offering.quantity !== undefined
+                ? offering.quantity - 1
                 : undefined;
-              
+
               return {
                 ...offering,
                 quantity: newQuantity
@@ -271,7 +271,7 @@ const SpinWheel = () => {
           }).filter((offering) => {
             const isExpired = offering.endDate && new Date(offering.endDate) <= new Date();
             const hasQuantity = offering.quantity !== undefined;
-            
+
             if (hasQuantity) {
               return offering?.quantity > 0 && !isExpired;
             }
@@ -291,9 +291,7 @@ const SpinWheel = () => {
       });
 
       toast.success(`🎉 Jackpot! You just won ${payload.label}! 🎁🔥 Check your email or spam folder!`);
-        setTimeout(() => {
-          window.location.reload();
-        }, 300)
+     
     } catch (error: any) {
       console.error("Error updating winner:", error);
       toast.error("Failed to update prize. Please try again later.");
@@ -482,7 +480,10 @@ const SpinWheel = () => {
       // Update user spin count
       try {
         if (id) {
-          const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`);
+          const updatedUser = await axios.put(`${API_BASE_URL}/users/${id}/increment-spin`, null, {
+            timeout: 10000 // 10 seconds timeout
+          });
+          console.log("updated", updatedUser);
           if (updatedUser.data.message && updatedUser.data.message.includes('Please wait')) {
             // Handle cooldown message
             toast.error(updatedUser.data.message);
@@ -515,6 +516,9 @@ const SpinWheel = () => {
 
 
       setSpinning(false);
+       setTimeout(() => {
+        window.location.reload();
+      }, 300)
     }, 3000);
   };
 

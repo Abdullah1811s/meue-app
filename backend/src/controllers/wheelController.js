@@ -144,7 +144,7 @@ export const addWheelEntry = async (req, res) => {
 
 export const getAllOnWheel = async (req, res) => {
     try {
-      
+
         let allEntries = await wheelModel.find()
             .populate("vendor.vendorInfo")
             .populate("admin.adminInfo");
@@ -248,7 +248,7 @@ export const delOffer = async (req, res) => {
 
         // After deletion, check if both vendor and admin are now empty/null
         const vendorEmpty = (!wheel.vendor.offerings || wheel.vendor.offerings.length === 0);
-        const adminEmpty =  (!wheel.admin.offerings || wheel.admin.offerings.length === 0);
+        const adminEmpty = (!wheel.admin.offerings || wheel.admin.offerings.length === 0);
         console.log("vendor: ", vendorEmpty, " admin : ", adminEmpty);
         if (vendorEmpty && adminEmpty) {
             await wheel.delete();
@@ -392,7 +392,7 @@ export const updateWinner = async (req, res) => {
                             wheel.vendor.offerings.splice(vendorOfferIndex, 1);
                             console.log("Removed vendor offer with zero quantity");
                         }
-                    } 
+                    }
                 }
 
                 if (!wheel.vendor.offerings || wheel.vendor.offerings.length === 0) {
@@ -458,8 +458,9 @@ export const updateWinner = async (req, res) => {
 
         // ==================== 🛠 USER UPDATE ====================
         userExists.wheelRotatePoint += 10;
+        console.log("This is the user point : ", userExists.wheelRotatePoint)
         await addPoints(userExists._id, userExists.wheelRotatePoint);
-
+        await userExists.save();
         const update = await usersModel.findByIdAndUpdate(
             id,
             { $push: { prizeWon: label } },

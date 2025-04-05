@@ -57,21 +57,20 @@ const RankCard: React.FC = () => {
         const response = await axios.get<{ scheduled: Raffle[] }>(
           `${API_BASE_URL}/Raff/notReady`
         );
-     
+
         if (response.data.scheduled.length > 0) {
 
           const filteredRaffles = response.data.scheduled
-            .filter((raffle) =>
-              raffle.prizes.map(
-                (prize) =>
-                  (prize.endDate && new Date(prize.endDate) > new Date()) ||
-                  prize.quantity > 0
+            .filter(raffle =>
+              raffle.prizes.every(prize =>
+                (prize.endDate && new Date(prize.endDate) >= new Date()) ||
+                prize.quantity > 0
               )
             )
-            .slice(0, 3); // Show max 3 raffles
-        
+            .slice(0, 3);
+            console.log("Filter  " , filteredRaffles)
           setRaffles(filteredRaffles);
-      
+
         }
       } catch (error) {
         console.error("Error fetching raffles:", error);
@@ -97,10 +96,10 @@ const RankCard: React.FC = () => {
             <div
               key={raffle._id}
               className={`relative flex flex-col items-center w-60 rounded-2xl shadow-xl p-6 transition-transform transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl ${index === 0
-                  ? "bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900"
-                  : index === 1
-                    ? "bg-gradient-to-b from-yellow-400 via-yellow-600 to-yellow-800"
-                    : "bg-gradient-to-b from-gray-300 via-gray-500 to-gray-800"
+                ? "bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900"
+                : index === 1
+                  ? "bg-gradient-to-b from-yellow-400 via-yellow-600 to-yellow-800"
+                  : "bg-gradient-to-b from-gray-300 via-gray-500 to-gray-800"
                 }`}
             >
               {/* Rank Badge */}
@@ -121,7 +120,7 @@ const RankCard: React.FC = () => {
               {/* End Date */}
               {timeRemaining && (
                 <p className="mt-1 text-sm sm:text-base md:text-lg text-white">
-                  Ends In: {timeRemaining}
+                  Ends On: {new Date(prize.endDate).toLocaleDateString()}
                 </p>
               )}
 

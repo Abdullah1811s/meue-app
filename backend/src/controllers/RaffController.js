@@ -189,19 +189,33 @@ export const getCompletedRaff = async (req, res) => {
 export const getScheduledRaff = async (req, res) => {
     try {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to start of the day
+        today.setHours(0, 0, 0, 0); // Reset to start of day
 
-        const scheduledReferrals = await raffModel.find({
-            status: "scheduled",
-            "prizes.quantity": { $gt: "0" }, // Ensures at least one prize has a quantity greater than zero
-            "prizes.endDate": { $ne: today } // Ensures endDate is not today
+        const allScheduledReferrals = await raffModel.find({
+            status: "scheduled"
         })
             .populate('participants.user')
-            .populate('winner'); // Also populate winner (will be null for scheduled)
+            .populate('winner');
+
+        // Filter out raffles where any prize's end date is today
+        const filteredReferrals = allScheduledReferrals.filter(raffle => {
+            // Check if any prize in this raffle has an end date that's today
+            const hasPrizeEndingToday = raffle.prizes.some(prize => {
+                if (!prize.endDate) return false;
+                const prizeEndDate = new Date(prize.endDate);
+                prizeEndDate.setHours(0, 0, 0, 0);
+                return prizeEndDate.getTime() === today.getTime();
+            });
+
+            // Only keep raffles that DON'T have any prizes ending today
+            return !hasPrizeEndingToday;
+        });
+
+        console.log("Filtered scheduledReferrals:", filteredReferrals);
 
         res.status(200).json({
             message: "Scheduled weekly referrals fetched successfully",
-            scheduled: scheduledReferrals
+            scheduled: filteredReferrals
         });
     } catch (error) {
         console.error("Error fetching scheduled raffles:", error);
@@ -211,7 +225,6 @@ export const getScheduledRaff = async (req, res) => {
         });
     }
 };
-
 
 
 export const delRef = async (req, res) => {
