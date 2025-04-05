@@ -2523,7 +2523,7 @@ const AdminDashboard = () => {
                   </svg>
                   <div>
                     <p className="font-semibold text-gray-800">Wheel Update</p>
-                    <p className="text-gray-700">To maintain our automated system, any wheel offer created today or partner wheel offer with today's date will automatically expire.</p>
+                    <p className="text-gray-700">To maintain our automated system, any wheel offer with end date today or partner wheel offer with today's end date will automatically expire.</p>
                   </div>
                 </div>
 
