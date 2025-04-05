@@ -1579,7 +1579,7 @@ const AdminDashboard = () => {
                 </div>
               ) : error ? (
                 <div className="bg-red-100 p-4 rounded-md text-red-700">{error}</div>
-              ) : (
+              ) : vendors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {vendors.map((vendor) => (
                     <motion.div
@@ -2004,6 +2004,12 @@ const AdminDashboard = () => {
                     </motion.div>
                   ))}
                 </div >
+              ) : (
+                <div className=" p-6 rounded-lg text-center">
+
+                  <h3 className="text-xl font-medium text-gray-800 mb-2">No Partners Found</h3>
+                  <p className="text-gray-600">There are currently no partners to display. Check back later or try refreshing the page.</p>
+                </div>
               )}
             </motion.div>
           )}
@@ -2572,7 +2578,7 @@ const AdminDashboard = () => {
 
                       <div className="space-y-2">
                         <label htmlFor="quantity" className="block text-sm font-medium">
-                          Quantity 
+                          Quantity
                         </label>
                         <Input
                           id="quantity"

@@ -213,13 +213,38 @@ export const signUp = async (req, res) => {
             user: "support@themenuportal.co.za",
         };
         const message = `
-        <p>Welcome aboard!</p>
-        <p>Your account has been successfully created.</p>
-        <p>You're now officially in the running to win our <strong>BIG PRIZE</strong> 🎉</p>
-        <p>Stay tuned for updates and announcements—you won’t want to miss what’s coming next.</p>
-        <p>Thank you for joining us, and good luck!</p>
-        <p>If you have any questions, feel free to reach out to our Menu support team.</p>
-      `;
+  <h2>You’re In! Let’s Get You Started…</h2>
+  <p>Hi ${newUser.name || "there"},</p>
+
+  <p>Welcome to <strong>The Menu</strong> – where deals, rewards, raffles, and surprises meet <em>YOU</em> right where you are.</p>
+
+  <p>You’ve just joined South Africa’s most exciting lifestyle platform. No fluff. No loyalty tricks. Just real value, delivered daily.</p>
+
+  <p><strong>Here’s what to do next:</strong></p>
+  <ol style="padding-left: 1.2rem;">
+    <li>Explore Our Partners – discover exclusive offers from vendors across the country.</li>
+    <li>Spin the Wheel – your first reward could be waiting.</li>
+    <li>Refer & Earn – invite friends and climb the leaderboard.</li>
+    <li>Explore Your Dashboard – track raffles, offers, and unlock new perks.</li>
+  </ol>
+
+  <p>This is <strong>your world. Your way.</strong> And it just got better.</p>
+
+  <p>
+    <a href="https://themenuportal.co.za/Login" style="display: inline-block; background: #DBC166; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 10px;">
+      Go and login
+    </a>
+  </p>
+
+  <p>Thanks for being part of the movement.</p>
+
+  <p>
+    <strong>The Menu Team</strong><br/>
+    <a href="https://www.themenuportal.co.za">www.themenuportal.co.za</a><br/>
+    Support: <a href="mailto:support@themenuportal.co.za">support@themenuportal.co.za</a>
+  </p>
+`;
+
 
         await sendEmail(
             smtpConfig,
