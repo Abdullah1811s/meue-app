@@ -72,6 +72,7 @@ function SignUp() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("");
   const [referralCode, setReferralCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -161,7 +162,7 @@ function SignUp() {
 
   const onSubmit = async (data: SignUpForm) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-
+    setIsSubmitting(true);
     try {
       const UserResponse = await axios.post(
         `${API_BASE_URL}/auth/signUp`,
@@ -197,6 +198,7 @@ function SignUp() {
       } else {
         handleClickPayNowR10(userId);
       }
+
     } catch (error: any) {
       console.error("Signup Error:", error?.response?.data?.message || error?.message);
 
@@ -208,6 +210,8 @@ function SignUp() {
       } else {
         setErrorMessage(errorMessage);
       }
+    } finally {
+      setIsSubmitting(false); // ⬅️ Stop loading
     }
   };
 
@@ -784,11 +788,16 @@ function SignUp() {
             >
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#DBC166] to-[#C8A13A] text-white py-3 rounded-lg shadow-md hover:from-[#C8A13A] hover:to-[#B8943A] focus:outline-none focus:ring-2 focus:ring-[#DBC166] transition-all duration-200 font-medium"
+                disabled={isSubmitting}
+                className={`w-full bg-gradient-to-r from-[#DBC166] to-[#C8A13A] text-white py-3 rounded-lg shadow-md transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-[#DBC166]
+      hover:from-[#C8A13A] hover:to-[#B8943A] 
+      ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}
+    `}
               >
-                Create Account
+                {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>
             </motion.div>
+
           </form>
 
           <motion.div

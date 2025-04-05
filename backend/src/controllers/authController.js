@@ -207,6 +207,28 @@ export const signUp = async (req, res) => {
         newUser.signupPoint += 125;
         newUser.save();
         await addPoints(newUser._id, newUser.signupPoint);
+        const smtpConfig = {
+            host: "mail.themenuportal.co.za",
+            port: 465,
+            user: "support@themenuportal.co.za",
+        };
+        const message = `
+        <p>Welcome aboard!</p>
+        <p>Your account has been successfully created.</p>
+        <p>You're now officially in the running to win our <strong>BIG PRIZE</strong> 🎉</p>
+        <p>Stay tuned for updates and announcements—you won’t want to miss what’s coming next.</p>
+        <p>Thank you for joining us, and good luck!</p>
+        <p>If you have any questions, feel free to reach out to our Menu support team.</p>
+      `;
+
+        await sendEmail(
+            smtpConfig,
+            newUser.email,
+            "Welcome! You're Now Eligible to Win Big 🎁",
+            "Your Account is Ready – Let the Excitement Begin!",
+            message
+        );
+
         return res.status(201).json({
             message: "User created successfully",
             user: { ...newUser.toObject(), password: undefined },
@@ -220,6 +242,10 @@ export const signUp = async (req, res) => {
         });
     }
 };
+
+
+
+
 
 const generateResetToken = (userId) => {
     return jwt.sign(
