@@ -473,7 +473,7 @@ const SpinWheel = () => {
     
       try {
         // 1. Update winner FIRST (critical operation)
-        await updateWinner(winningPrize);
+      
     
         // 2. THEN increment spin count
         if (id) {
@@ -486,10 +486,10 @@ const SpinWheel = () => {
           setUser(updatedUser.data.user);
         }
     
-       
+        await updateWinner(winningPrize);
     
         // 4. Reload after 500ms (ensure toast is visible)
-        setTimeout(() => window.location.reload(), 500);
+        // setTimeout(() => window.location.reload(), 500);
     
       } catch (error: any) {
         console.error("Spin error:", error);

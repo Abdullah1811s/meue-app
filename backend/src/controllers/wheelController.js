@@ -457,9 +457,9 @@ export const updateWinner = async (req, res) => {
         }
 
         // ==================== 🛠 USER UPDATE ====================
+        await addPoints(userExists._id, 10);
         userExists.wheelRotatePoint += 10;
-        console.log("This is the user point : ", userExists.wheelRotatePoint)
-        await addPoints(userExists._id, userExists.wheelRotatePoint);
+       
         await userExists.save();
         const update = await usersModel.findByIdAndUpdate(
             id,

@@ -103,7 +103,7 @@ export const updatePoint = async (req, res) => {
 
     user.ReferralPoint += 1000;
     await user.save();
-    await addPoints(user._id, user.ReferralPoint);
+    await addPoints(user._id, 1000);
 
     return res.status(200).json({ message: "Referral points updated successfully", user });
   } catch (error) {

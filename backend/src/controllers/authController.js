@@ -95,7 +95,7 @@ export const Login = async (req, res) => {
         if (lastLogin !== today) {
             user.dailyLoginDate = new Date();
             user.DailyLoginPoint += 10
-            await addPoints(user._id, user.DailyLoginPoint);
+            await addPoints(user._id, 10); 
             await user.save();
         }
         return res.status(200).json({
@@ -149,7 +149,7 @@ export const signUp = async (req, res) => {
             if (referrer2) {
                 referrer2.ReferralPoint += 100
                 await referrer2.save();
-                await addPoints(referrer2._id, referrer2.ReferralPoint);
+                await addPoints(referrer2._id, 100);
             }
             referrer = referrer1 || referrer2;
 
@@ -205,8 +205,8 @@ export const signUp = async (req, res) => {
         const token = generateToken(tokenPayload);
 
         newUser.signupPoint += 125;
-        newUser.save();
         await addPoints(newUser._id, newUser.signupPoint);
+        newUser.save();
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
             port: 465,
