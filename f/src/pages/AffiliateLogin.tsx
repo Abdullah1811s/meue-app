@@ -37,7 +37,7 @@ function AffiliateLogin() {
                 const { affiliate, token } = response.data;
                 const { _id, status } = affiliate;
 
-                console.log("The id is ", _id);
+
 
                 if (status === "pending") {
                     toast(
@@ -57,7 +57,7 @@ function AffiliateLogin() {
                 // If approved, proceed with login
                 toast.success("Login successful!");
                 localStorage.setItem("affiliatedToken", token);
-                window.open(`/affiliated/dashboard/${_id}`, '_blank');
+                window.location.href = `/affiliated/dashboard/${_id}`;
             }
         } catch (error: any) {
             console.error("Login error:", error);
