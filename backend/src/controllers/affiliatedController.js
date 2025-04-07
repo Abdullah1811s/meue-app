@@ -384,7 +384,9 @@ export const removeAffiliateById = async (req, res) => {
             return res.status(404).json({ message: "Affiliate with this id not found" });
         }
         const referralDeletionResult = await deleteReferrerFromReferrals(affId);
-        deleteFile(affiliate.bankConfirmationUrl.public_id)
+        if (affiliate.bankConfirmationUrl.public_id) {
+            deleteFile(affiliate.bankConfirmationUrl.public_id)
+        }
         await affiliateModel.findOneAndDelete({ _id: affId });
         const subject = "Your Affiliate Account Has Been Cancelled";
         const message = `
