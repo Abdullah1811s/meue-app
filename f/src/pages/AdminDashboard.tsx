@@ -1369,8 +1369,9 @@ const AdminDashboard = () => {
                 <div className="bg-red-100 p-4 rounded-md text-red-700">{error}</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {affiliates.map((affiliate) => (
-                    <div key={affiliate._id} className="bg-white rounded-lg shadow p-4 md:p-6 flex flex-col">
+                  {affiliates.length > 0 ? (
+                    affiliates.map((affiliate) =>
+                    (<div key={affiliate._id} className="bg-white rounded-lg shadow p-4 md:p-6 flex flex-col">
                       <h3 className="text-lg md:text-xl font-bold mb-3 break-words">
                         {affiliate.fullName} {affiliate.surname}
                       </h3>
@@ -1494,8 +1495,31 @@ const AdminDashboard = () => {
                         </Button>
 
                       </div>
+                    </div>))
+                  ) : (<div className="col-span-full py-12 text-center">
+                    <div className="mx-auto max-w-md">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <h3 className="mt-2 text-lg font-medium text-gray-900">No affiliates found</h3>
+                      <p className="mt-1 text-gray-500">
+                        There are currently no affiliates to display. Check back later or try refreshing the page.
+                      </p>
                     </div>
-                  ))}
+                  </div>
+                  )}
+
 
                   {/* Reject Confirmation Dialog */}
                   <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>

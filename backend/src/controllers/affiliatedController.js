@@ -7,7 +7,7 @@ import referralModel from "../models/referral.model.js";
 import schedule from "node-schedule";
 import { deleteReferrerFromReferrals } from './referralController.js'
 import crypto from 'crypto';
-
+import { v2 as cloudinary } from 'cloudinary'
 
 const generateResetToken = (affiliateId) => {
     return jwt.sign(
@@ -103,12 +103,12 @@ export const registerAffiliate = async (req, res) => {
             branchCode,
             bankConfirmationUrl,
             agreedToTerms, idNumber } = req.body;
-        console.log("The data from frontend is", req.body);
+
         const existingAffiliate = await affiliateModel.findOne({ email });
         if (existingAffiliate) {
             return res.status(400).json({ message: "Affiliate with this email already exists" });
         }
-        console.log("yesssssssssssssssssssssss ")
+
         const referralCode = generateReferralCode();
         const newAffiliate = await affiliateModel.create({
             fullName,
@@ -137,15 +137,34 @@ export const registerAffiliate = async (req, res) => {
             agreedToTerms,
             idNumber
         });
-        console.log("this is the data that has been saved in  database : ", newAffiliate);
-        const subject = "Your Affiliate Signup is Complete - Awaiting Approval ✅";
+
+        const subject = "🎉 Welcome to The Menu Affiliate Network!";
+
         const message = `
-            <p>Dear ${newAffiliate.fullName},</p>
-            <p>Thank you for signing up for our affiliate program! We have received your application and it is currently under review.</p>
-            <p>Our team will assess your application and notify you once it has been approved.</p>
-            <p>We appreciate your patience and look forward to having you on board.</p>
-            <p>Best regards, <br> The Menu Team</p>
-        `;
+  <p>Hi <b>${newAffiliate.fullName}</b>,</p>
+
+  <p>You’re now part of <b>The Menu’s top-tier affiliate program</b>! </p>
+
+  <p>Here’s how you win:</p>
+  <ul>
+    <li> Share your referral link</li>
+    <li> Earn <b>30% commission</b> per user sign-up</li>
+    <li> Climb the leaderboard and unlock trade promo opportunities</li>
+    <li> Track everything from your Affiliate Dashboard</li>
+  </ul>
+
+ <p>
+    <a href="https://themenuportal.co.za/affiliated/login" style="display: inline-block; background: #DBC166; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 10px;">
+      AFFILIATE LOGIN
+    </a>
+  </p>
+
+  <p>Let’s grow together </p>
+
+  <p>Thanks for being part of the movement.</p>
+
+  <p>Best regards,<br><b>The Menu Team</b></p>
+`;
 
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
@@ -365,7 +384,7 @@ export const removeAffiliateById = async (req, res) => {
             return res.status(404).json({ message: "Affiliate with this id not found" });
         }
         const referralDeletionResult = await deleteReferrerFromReferrals(affId);
-        console.log("Deleting the referre thing from database : ", referralDeletionResult.message); // Optional logging
+        deleteFile(affiliate.bankConfirmationUrl.public_id)
         await affiliateModel.findOneAndDelete({ _id: affId });
         const subject = "Your Affiliate Account Has Been Cancelled";
         const message = `
@@ -398,8 +417,7 @@ export const removeAffiliateById = async (req, res) => {
             host: "mail.themenuportal.co.za",
             port: 465,
             user: "affiliates@themenuportal.co.za",
-            // Add password if required
-            // pass: "your-email-password"
+
         };
 
         const emailSent = await sendEmail(
@@ -449,11 +467,11 @@ export const forgotPassword = async (req, res) => {
 
         await affiliate.save();
 
-      
+
         const resetUrl = `${process.env.FRONTEND_URL}/affiliate/reset-password/${resetToken}`;
 
         // Email message
-            const message = `
+        const message = `
             <p>You requested a password reset for your affiliate account.</p>
             <p>Please click the link below to reset your password:</p>
             <a href="${resetUrl}">Reset Password</a>

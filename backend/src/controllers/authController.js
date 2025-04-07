@@ -95,7 +95,7 @@ export const Login = async (req, res) => {
         if (lastLogin !== today) {
             user.dailyLoginDate = new Date();
             user.DailyLoginPoint += 10
-            await addPoints(user._id, 10); 
+            await addPoints(user._id, 10);
             await user.save();
         }
         return res.status(200).json({
@@ -213,7 +213,8 @@ export const signUp = async (req, res) => {
             user: "support@themenuportal.co.za",
         };
         const message = `
-  <h2>You’re In! Let’s Get You Started…</h2>
+  <h2>The Menu Team
+</h2>
   <p>Hi ${newUser.name || "there"},</p>
 
   <p>Welcome to <strong>The Menu</strong> – where deals, rewards, raffles, and surprises meet <em>YOU</em> right where you are.</p>

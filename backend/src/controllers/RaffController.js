@@ -810,16 +810,22 @@ export const toggleVisibility = async (req, res, io) => {
 
                 // Prepare email content
                 const winnerEmailContent = {
-                    subject: "🎉 Congratulations! You're a Winner!",
-                    text: `Dear ${winnerEmail.split('@')[0]},\n\nWe are excited to inform you that you have won **${prizeName}!** 🎁\n\nTo claim your prize, please check your email for further details.\n\nIf you don't see our email in your inbox, kindly check your spam or promotions folder.\n\nOnce again, congratulations! 🎉\n\nBest regards,\nThe Menu Portal Team`,
-                    html: `<p>Dear <b>${winnerEmail.split('@')[0]}</b>,</p>
-                        <p>We are excited to inform you that you have won <b>${prizeName}!</b> 🎁</p>
-                        <p>To claim your prize, please check your email for further details.</p>
-                        <p>If you don't see our email in your inbox, kindly check your <b>spam</b> or <b>promotions</b> folder.</p>
-                        <p>🎉 Congratulations once again!</p>
-                        <p>Best regards,</p>
-                        <p><b>The Menu Team</b></p>`
+                    subject: "Congrats! You Just Won on The Menu.",
+                    text: `Dear ${winnerEmail.split('@')[0]},\n\nCongratulations! You’ve won **${prizeName}** in our latest raffle! 🎉\n\nWe’ll be in touch soon with the next steps. Keep playing, referring, and unlocking more rewards.\n\nThanks for being part of the movement!\n\nBest regards,\nThe Menu Team\n\nContact: support@themenu.co.za\nWebsite: https://themenuportal.co.za/`,
+                    html: `<p><b>The Menu Team</b></p>
+         <p>Congratulations! You’ve won <b>${prizeName}</b> in our latest raffle. 🎉</p>
+         <p>We’ll be in touch soon with the next steps. Keep playing, referring, and unlocking more rewards.</p>
+         <p>
+    <a href="https://themenuportal.co.za/Login" style="display: inline-block; background: #DBC166; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 10px;">
+      Go and login
+    </a>
+  </p>
+         <p>Thanks for being part of the movement.</p>
+         <p><b>The Menu Team</b></p>
+         <p>Contact: <a href="mailto:support@themenu.co.za">support@themenu.co.za</a></p>
+         <p>Website: <a href="https://themenuportal.co.za/">themenuportal.co.za</a></p>`
                 };
+
 
                 const vendorEmailContent = {
                     subject: "🎉 A Winner Has Been Selected For Your Raffle",
@@ -851,8 +857,14 @@ export const toggleVisibility = async (req, res, io) => {
 
                     // Send email to vendor if email exists
                     if (vendorEmail) {
+                        
+                        const smtpConfig1 = {
+                            host: "mail.themenuportal.co.za",
+                            port: 465,
+                            user: "partners@themenuportal.co.za",
+                        };
                         await sendEmail(
-                            smtpConfig,
+                            smtpConfig1,
                             vendorEmail,
                             vendorEmailContent.subject,
                             vendorEmailContent.text,

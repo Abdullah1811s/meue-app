@@ -411,8 +411,8 @@ export default function UserDashboard() {
                           <Gift className="w-4 h-4" /> Prizes
                         </h4>
                         <ul className="space-y-1">
-                          {Array.isArray(raffle.prizes) && raffle.prizes.length > 0 ? (
-                            raffle.prizes.map((prize, idx) => (
+                          {Array.isArray(raffle?.prizes) && raffle?.prizes.length > 0 ? (
+                            raffle?.prizes.map((prize, idx) => (
                               <li key={idx} className="text-sm">
                                 {typeof prize === 'string'
                                   ? prize
@@ -430,7 +430,7 @@ export default function UserDashboard() {
                           <User className="w-4 h-4" /> Participants
                         </h4>
                         <p className="text-sm">
-                          {getUniqueParticipantsCount(raffle.participants)} users ({getTotalEntriesCount(raffle.participants)} entries)
+                          {getUniqueParticipantsCount(raffle?.participants)} users ({getTotalEntriesCount(raffle?.participants)} entries)
                         </p>
                       </div>
 
@@ -467,7 +467,7 @@ export default function UserDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {withWinnerRaffles.map((raffle) => (
               <motion.div
-                key={raffle._id}
+                key={raffle?._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ scale: 1.02 }}
@@ -475,10 +475,10 @@ export default function UserDashboard() {
               >
                 <CustomCard>
                   <div className="bg-[#DBC166] p-4">
-                    <h3 className="text-xl font-bold text-white">{raffle.name}</h3>
+                    <h3 className="text-xl font-bold text-white">{raffle?.name}</h3>
                     <p className="text-white/80 flex items-center gap-2 mt-2">
                       <CalendarIcon className="w-4 h-4" />
-                      {formatDateTime(raffle.scheduledAt)}
+                      {formatDateTime(raffle?.scheduledAt)}
                     </p>
                   </div>
 
@@ -488,22 +488,22 @@ export default function UserDashboard() {
                         <Trophy className="w-5 h-5" /> Winner
                       </h4>
 
-                      {raffle.winner && raffle.winner.length > 0 ? (
+                      {raffle?.winner && raffle?.winner.length > 0 ? (
                         <div className="space-y-4">
                           {raffle.winner.map((w, index) => (
                             <div key={index} className="space-y-2 p-3 border-b border-gray-300">
                               <p className="flex items-center gap-2 text-sm">
                                 <User className="w-4 h-4 text-[#DBC166]" />
-                                {w.user.name || "No name provided"}
+                                {w?.user?.name || "No name provided"}
                               </p>
 
                               <p className="flex items-center gap-2 text-sm">
                                 <MapPin className="w-4 h-4 text-[#DBC166]" />
-                                {w.user.province || "Unknown Province"}
+                                {w?.user?.province || "Unknown Province"}
                               </p>
                               <p className="flex items-center gap-2 text-sm mt-2 font-medium">
                                 <Gift className="w-4 h-4 text-[#DBC166]" />
-                                Prize: {typeof w.prize === "string" ? w.prize : (w.prize?.name || "Unnamed Prize")}
+                                Prize: {typeof w.prize === "string" ? w.prize : (w?.prize?.name || "Unnamed Prize")}
                               </p>
                             </div>
                           ))}

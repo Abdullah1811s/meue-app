@@ -459,7 +459,7 @@ export const updateWinner = async (req, res) => {
         // ==================== 🛠 USER UPDATE ====================
         await addPoints(userExists._id, 10);
         userExists.wheelRotatePoint += 10;
-       
+
         await userExists.save();
         const update = await usersModel.findByIdAndUpdate(
             id,
@@ -475,14 +475,31 @@ export const updateWinner = async (req, res) => {
         };
 
         const userEmailSubject = "🎉 Congratulations! You've Won a Prize 🎉";
-        const userEmailText = `Dear ${update.name}, you have won the prize: ${label}. 🎊🎁`;
+        const userEmailText = `Dear ${update.name}, you have won the prize: ${label}.`;
         const userEmailHtml = `
-          <p>Dear ${update.name},</p>
-          <p>🎉🎉 <strong>Congratulations!</strong> 🎉🎉</p>
-          <p>You have won the prize: <strong>${label}</strong>. 🎁✨</p>
-          <p>We're so excited for you! 🥳</p>
-          <p>Best regards,<br/>The Menu Team</p>
-        `;
+        <p>Dear ${update.name},</p>
+      
+        <h2> You spun. You won! </h2>
+        <p><strong>${label}</strong> is now yours. </p>
+      
+        <p>Our partners are awaiting your redemption!</p>
+        <p>Please reach out to <strong>THE MENU</strong> should you have any issues with redeeming your prize.</p>
+      
+        <p>
+    <a href="https://themenuportal.co.za/Login" style="display: inline-block; background: #DBC166; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 10px;">
+      USER LOGIN
+    </a>
+  </p>
+      
+        <p>Stay spinning. Stay winning. </p>
+      
+        <br/>
+        <p>Thanks for being part of the movement.</p>
+        <p><strong>The Menu Team</strong></p>
+        <p>Contact: <a href="mailto:support@themenu.co.za">support@themenu.co.za</a></p>
+        <p>Website: <a href="https://themenuportal.co.za/">https://themenuportal.co.za/</a></p>
+      `;
+
         await sendEmail(smtpConfig, update.email, userEmailSubject, userEmailText, userEmailHtml);
         const smtpConfig2 = {
             host: "mail.themenuportal.co.za",

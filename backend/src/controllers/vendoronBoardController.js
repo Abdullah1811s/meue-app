@@ -538,14 +538,36 @@ export const registerVendor = async (req, res) => {
         const vendorResponse = newVendor.toObject();
         delete vendorResponse.password;
 
-        const subject = "Your Partner Signup is Complete - Awaiting Approval ✅";
+        const subject = "🎉 Welcome to The Menu – Let’s Get Your Business Noticed!";
         const message = `
-            <p>Dear ${newVendor.businessName},</p>
-            <p>Thank you for signing up as a partner on our platform! We have received your application and it is currently under review.</p>
-            <p>Our team will assess your application and notify you once it has been approved.</p>
-            <p>We appreciate your patience and look forward to partnering with you.</p>
-            <p>Best regards, <br> The Menu Team</p>
-        `;
+  <p>Dear <b>${newVendor.businessName}</b>,</p>
+
+  <p>You’re officially part of South Africa’s fastest-growing engagement platform. </p>
+
+  <p>Here’s what’s next:</p>
+  <ul>
+    <li> Log in to your dashboard</li>
+    <li> Upload your offers for increased visibility on our Wheel and Raffle platforms</li>
+    <li> Await approvals and be part of our raffles or Spin the Wheel</li>
+    <li> Track your interactions and visibility</li>
+  </ul>
+
+  <p>We’re here to help your business grow – and we don’t take commission.</p>
+
+ <p>
+    <a href="https://themenuportal.co.za/vendor/login" style="display: inline-block; background: #DBC166; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 10px;">
+      Go and login
+    </a>
+  </p>
+
+  <p>Thanks for being part of the movement.</p>
+
+  <p>Best regards,<br><b>The Menu Team</b></p>
+
+  <p>Contact: <a href="mailto:support@themenu.co.za">support@themenu.co.za</a><br>
+  Website: <a href="https://themenuportal.co.za/">themenuportal.co.za</a></p>
+`;
+
 
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
@@ -554,7 +576,6 @@ export const registerVendor = async (req, res) => {
         };
 
         const emailSent = await sendEmail(smtpConfig, newVendor.businessEmail, subject, subject, message);
-        console.log("This is the vendor that has been saved in database", vendorResponse);
         res.status(201).json({
             message: "Vendor created successfully",
             vendor: vendorResponse
