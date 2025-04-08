@@ -325,7 +325,7 @@ function VendorOnboarding() {
 
   const onSubmit = async (data: VendorFormData) => {
     setLoading(true);
-
+    window.scrollTo({top:0 , behavior:"smooth"})
     try {
       const response1 = await axios.get(`${API_BASE_URL}/vendor/check-email`, {
         params: { businessEmail: data.businessEmail }

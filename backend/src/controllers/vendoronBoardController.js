@@ -22,10 +22,7 @@ const checkCode = async (code, _id) => {
     try {
         console.log("Checking referral code:", code, "for user ID:", _id);
 
-        // Check if the referral code belongs to a User
         const referrerUser = await usersModel.findOne({ referralCodeShare: code });
-
-        // Check if the referral code belongs to an Affiliate
         const referrerAffiliate = await affiliateModel.findOne({ referralCode: code });
 
         if (referrerUser) {
@@ -39,38 +36,39 @@ const checkCode = async (code, _id) => {
                 status: "pending",
             });
 
-            console.log("User referral link created:", newReferrer);
-
-            // Update referral points for the User
             referrerUser.ReferralPoint += 100;
             await referrerUser.save();
             await addPoints(referrerUser._id, referrerUser.ReferralPoint);
-        }
-        else if (referrerAffiliate) {
+
+            return "valid";
+        } else if (referrerAffiliate) {
             console.log("Referral belongs to an Affiliate:", referrerAffiliate._id);
 
-            // Store referral in the referral database
-            const newReferrer = await referralModel.create({
+            await referralModel.create({
                 referrer: referrerAffiliate._id,
                 referrerModel: "Affiliate",
                 referredUser: _id,
                 referralCode: code,
                 status: "pending",
             });
-            console.log("Affiliate referral link created:", newReferrer);
+
             await referrerAffiliate.save();
-        }
-        else {
+
+            return "valid";
+        } else {
             console.log("No valid referrer found for the code:", code);
+            return "invalid";
         }
     } catch (error) {
         console.error("Error checking referral code:", error);
+        return "error";
     }
 };
 
 
 const deleteFile = async (publicId) => {
     try {
+        console.log("in fun");
         const fileExtension = publicId.split('.').pop().toLowerCase();
         let resourceType = "image";
 
@@ -441,7 +439,7 @@ export const updateVendorStatus = async (req, res) => {
 };
 
 
-export const registerVendor = async (req, res) => {
+export const registerVendor = async (req, res) => { 
     try {
         const {
             businessName,
@@ -528,10 +526,68 @@ export const registerVendor = async (req, res) => {
             referralCodeUsed
         });
 
-        // Process referral code if used
         if (referralCodeUsed) {
+            const referralStatus = await checkCode(referralCodeUsed, newVendor._id);
 
-            await checkCode(newVendor.referralCodeUsed, newVendor._id);
+            if (referralStatus === "invalid") {
+                // Remove the just-created vendor if the referral is invalid
+                if (newVendor.addressProofURl?.public_id) {
+                    console.log(newVendor.addressProofURl.public_id);
+                    deleteFile(newVendor.addressProofURl.public_id);
+                }
+
+                if (newVendor.companyRegistrationCertificateURl?.public_id) {
+                    console.log(newVendor.companyRegistrationCertificateURl.public_id);
+                    deleteFile(newVendor.companyRegistrationCertificateURl.public_id);
+                }
+
+                if (newVendor.vendorIdURl?.public_id) {
+                    console.log(newVendor.vendorIdURl.public_id);
+                    deleteFile(newVendor.vendorIdURl.public_id);
+                }
+
+                if (newVendor.confirmationLetterURl?.public_id) {
+                    console.log(newVendor.confirmationLetterURl.public_id);
+                    deleteFile(newVendor.confirmationLetterURl.public_id);
+                }
+
+                if (newVendor.businessPromotionalMaterialURl?.public_id) {
+                    console.log(newVendor.businessPromotionalMaterialURl.public_id);
+                    deleteFile(newVendor.businessPromotionalMaterialURl.public_id);
+                }
+             
+                await vendorModel.findByIdAndDelete(newVendor._id);
+                return res.status(400).json({ message: "Invalid referral code" });
+            }
+
+            if (referralStatus === "error") {
+                if (newVendor.addressProofURl?.public_id) {
+                    console.log(newVendor.addressProofURl.public_id);
+                    deleteFile(newVendor.addressProofURl.public_id);
+                }
+
+                if (newVendor.companyRegistrationCertificateURl?.public_id) {
+                    console.log(newVendor.companyRegistrationCertificateURl.public_id);
+                    deleteFile(newVendor.companyRegistrationCertificateURl.public_id);
+                }
+
+                if (newVendor.vendorIdURl?.public_id) {
+                    console.log(newVendor.vendorIdURl.public_id);
+                    deleteFile(newVendor.vendorIdURl.public_id);
+                }
+
+                if (newVendor.confirmationLetterURl?.public_id) {
+                    console.log(newVendor.confirmationLetterURl.public_id);
+                    deleteFile(newVendor.confirmationLetterURl.public_id);
+                }
+
+                if (newVendor.businessPromotionalMaterialURl?.public_id) {
+                    console.log(newVendor.businessPromotionalMaterialURl.public_id);
+                    deleteFile(newVendor.businessPromotionalMaterialURl.public_id);
+                }
+                await vendorModel.findByIdAndDelete(newVendor._id);
+                return res.status(500).json({ message: "Error validating referral code" });
+            }
         }
 
 

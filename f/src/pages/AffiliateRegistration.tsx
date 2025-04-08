@@ -28,7 +28,7 @@ const AffiliateSchema = z
         vatNumber: z.string().optional(),
         tradingAddress: z.string().optional(),
         countryCode: z.string(),
-        idNumber: z.string().max(16, "Enter 16 digit id number").min(2, "Please enter the correct id number"),
+        idNumber: z.string().max(16, "Enter 16 digit id number").min(2, "Please enter the correct id number").optional(),
         bankName: z.string().min(2, "Bank name must be at least 2 characters"),
         accountHolder: z.string().min(2, "Account holder name must be at least 2 characters"),
         accountNumber: z.string()
@@ -45,7 +45,13 @@ const AffiliateSchema = z
         businessEmail: z.string().email("Invalid business email address").optional(),
         promotionChannels: z.array(z.string()).nonempty("Please select at least one promotion channel"),
         targetAudience: z.string().min(10, "Please provide at least 10 characters").max(500, "Description cannot exceed 500 characters"),
-        password: z.string().min(6, "Password must be at least 6 characters"),
+        password: z
+            .string()
+            .min(6, "Password must be at least 6 characters")
+            .regex(
+                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
+                "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+            ),
         confirmPassword: z.string().min(6, "Confirm Password must be at least 6 characters"),
         agreedToTerms: z.literal(true, { errorMap: () => ({ message: "You must agree to the terms" }) }),
         confirmationLetter: z.any().optional()
