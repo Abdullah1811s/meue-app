@@ -28,7 +28,10 @@ const AffiliateSchema = z
         vatNumber: z.string().optional(),
         tradingAddress: z.string().optional(),
         countryCode: z.string(),
-        idNumber: z.string().max(16, "Enter 16 digit id number").min(2, "Please enter the correct id number").optional(),
+        idNumber: z
+            .string()
+            .optional(),
+
         bankName: z.string().min(2, "Bank name must be at least 2 characters"),
         accountHolder: z.string().min(2, "Account holder name must be at least 2 characters"),
         accountNumber: z.string()
@@ -42,7 +45,7 @@ const AffiliateSchema = z
         province: z.string().optional(),
         city: z.string().optional(),
         businessContactNumber: z.string().optional(),
-        businessEmail: z.string().email("Invalid business email address").optional(),
+        businessEmail: z.string().optional(),
         promotionChannels: z.array(z.string()).nonempty("Please select at least one promotion channel"),
         targetAudience: z.string().min(10, "Please provide at least 10 characters").max(500, "Description cannot exceed 500 characters"),
         password: z
@@ -85,7 +88,7 @@ const AffiliateSchema = z
     .refine(
         (data) => {
             if (data.affiliateType === "business") {
-                return data.businessName && data.tradingAddress && data.province && data.city && data.businessContactNumber && data.businessEmail;
+                return data.businessName && data.tradingAddress && data.province && data.city && data.businessContactNumber;
             }
             return true;
         },
@@ -149,7 +152,7 @@ function AffiliateRegistration() {
     const getSignature = async (folder: string) => {
         try {
             const response = await axios.post(`${API_BASE_URL}/generateSignature`, { folder });
-            console.log("The signature response is ", response);
+
             return response.data;
         } catch (error) {
             console.error("Error in getting signature for ", folder);
@@ -169,7 +172,7 @@ function AffiliateRegistration() {
             });
 
             const { secure_url, public_id } = res.data;
-            console.log("Uploaded File URL:", res.data);
+
 
             return { secure_url, public_id };
         } catch (error) {
@@ -191,15 +194,11 @@ function AffiliateRegistration() {
         data.append("api_key", import.meta.env.VITE_CLOUD_API);
         data.append("folder", "BankConfirmationAffiliate");
 
-        console.log("Uploading Bank Confirmation to Cloudinary:", {
-            fileName: confirmationLetterPreview.name,
-            size: confirmationLetterPreview.size,
-            type: confirmationLetterPreview.type
-        });
+
 
         try {
             const result = await makeCloudinaryApiCall(data);
-            console.log("Bank Confirmation Uploaded Successfully:", result);
+
             return result; // Return just the URL
         } catch (error) {
             console.error("Bank Confirmation Upload Failed:", error);
@@ -215,7 +214,7 @@ function AffiliateRegistration() {
             }, {
                 headers: { "Content-Type": "application/json" },
             })
-            console.log(userExists)
+
             if (userExists?.data?.data?.exists) {
                 toast.error("Email already register")
                 return;
@@ -476,13 +475,9 @@ function AffiliateRegistration() {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">ID Number</label>
                                                 <input
-                                                    {...register("idNumber", {
-                                                        required: "ID number is required",
-                                                        pattern: {
-                                                            value: /^[0-9]{13}$/,
-                                                            message: "Please enter a valid 13-digit South African ID number"
-                                                        }
-                                                    })}
+                                                    {...register("idNumber")
+
+                                                    }
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-md"
                                                     placeholder="Enter your 13-digit ID number"
                                                 />
@@ -554,7 +549,11 @@ function AffiliateRegistration() {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Business Email Address</label>
-                                                <input {...register("businessEmail")} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                                                <input
+                                                    {...register("businessEmail")}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                                                />
+
                                                 {errors.businessEmail && <p className="text-red-500 text-sm mt-1">{errors.businessEmail.message}</p>}
                                             </div>
                                         </div>

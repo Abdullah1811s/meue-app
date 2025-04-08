@@ -1385,12 +1385,13 @@ const AdminDashboard = () => {
                       </p>
                       {affiliate.type === "individual" && (
                         <div className="mt-2">
-                          <p className="text-gray-600 mb-2 break-words"><strong>ID number:</strong> {affiliate.idNumber}</p>
+                          <p className="text-gray-600 mb-2 break-words"><strong>ID number:</strong> {affiliate.idNumber || "Not provided"}</p>
                         </div>
                       )}
                       {affiliate.type === "business" && (
                         <div className="mt-2">
                           <p className="text-gray-600 mb-2 break-words"><strong>Business Name:</strong> {affiliate.businessName}</p>
+                          <p className="text-gray-600 mb-2 break-words"><strong>Business Email:</strong> {affiliate.businessEmailAddress || "Not provided"}</p>
                           <p className="text-gray-600 mb-2 break-words"><strong>Reg Number:</strong> {affiliate.companyRegistrationNumber}</p>
                           <p className="text-gray-600 mb-2 break-words"><strong>VAT Number:</strong> {affiliate.vatNumber}</p>
                           <p className="text-gray-600 mb-2 break-words"><strong>Address:</strong> {affiliate.tradingAddress}</p>
