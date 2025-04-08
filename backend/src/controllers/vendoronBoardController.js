@@ -127,7 +127,7 @@ export const getVendors = async (req, res) => {
         const vendors = await vendorModel.find();
 
         const updatedVendors = vendors.map(vendor => {
-            const { companyRegistrationCertificateURl, vendorIdURl, addressProofURl, confirmationLetterURl, ...rest } = vendor.toObject();
+            const { companyRegistrationCertificateURl, vendorIdURl, addressProofURl, confirmationLetterURl, password, resetPasswordToken, resetPasswordExpire, ...rest } = vendor.toObject();
             return rest;
         });
 
@@ -143,10 +143,24 @@ export const getVendors = async (req, res) => {
 export const getVendorById = async (req, res) => {
     try {
         const vendor = await vendorModel.findById(req.params.id);
+
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
-        res.status(200).json(vendor);
+
+        const {
+            companyRegistrationCertificateURl,
+            vendorIdURl,
+            addressProofURl,
+            confirmationLetterURl,
+            password,
+            resetPasswordToken,
+            resetPasswordExpire,
+            ...safeVendor
+        } = vendor.toObject();
+
+        res.status(200).json(safeVendor);
+
     } catch (error) {
         console.error("Error fetching vendor:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -159,7 +173,12 @@ export const getALlDetails = async (req, res) => {
         if (!vendor) {
             return res.status(404).json({ message: "Vendor not found" });
         }
-        res.status(200).json(vendor);
+        const updatedVendors = vendor.map(vendor => {
+            const { password, ...rest } = vendor.toObject();
+            return rest;
+        });
+
+        res.status(200).json(updatedVendors)
     } catch (error) {
         console.error("Error fetching vendor:", error);
         res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -323,11 +342,11 @@ export const vendorTierUpdate = async (req, res) => {
                 message: "Vendor not found"
             });
         }
-
+        const { password, companyRegistrationCertificateURl, vendorIdURl, addressProofURl, confirmationLetterURl, businessPromotionalMaterialURl, ...safeVendor } = updatedVendor.toObject();
         return res.status(200).json({
             success: true,
             message: "Vendor tier updated successfully",
-            data: updatedVendor
+            data: safeVendor
         });
 
     } catch (error) {
@@ -345,7 +364,6 @@ export const vendorTierUpdate = async (req, res) => {
 export const updateVendorStatus = async (req, res) => {
     try {
         const { id, status, reason } = req.body;
-        console.log(req.body);
 
         if (!id || !status) {
             return res.status(400).json({ message: "Vendor ID and status are required" });
@@ -426,9 +444,11 @@ export const updateVendorStatus = async (req, res) => {
         }
 
 
+        const { password, ...safeVendor } = updatedVendor.toObject();
+
         return res.status(200).json({
             message: `Vendor status updated to '${status}' successfully`,
-            vendor: updatedVendor,
+            vendor: safeVendor,
             emailSent: emailSent.success ? "Email sent successfully" : "Email failed to send",
         });
 
@@ -439,7 +459,7 @@ export const updateVendorStatus = async (req, res) => {
 };
 
 
-export const registerVendor = async (req, res) => { 
+export const registerVendor = async (req, res) => {
     try {
         const {
             businessName,
@@ -555,7 +575,7 @@ export const registerVendor = async (req, res) => {
                     console.log(newVendor.businessPromotionalMaterialURl.public_id);
                     deleteFile(newVendor.businessPromotionalMaterialURl.public_id);
                 }
-             
+
                 await vendorModel.findByIdAndDelete(newVendor._id);
                 return res.status(400).json({ message: "Invalid referral code" });
             }

@@ -81,7 +81,7 @@ const AffiliatedDashboard = () => {
                 setUserReferralLink(`${BASE_SIGNUP_URL}?ref=${referralCodeResponse.data.referralCode}`);
                 setVendorReferralLink(`${BASE_SIGNUP_URL_vendor}?ref=${referralCodeResponse.data.referralCode}`);
                 setReferrals(allReferredUser?.data?.referrals?.filter((ref: { user: any; }) => ref && ref.user) || []);
-               
+                
             } catch (error: any) {
                 console.error("Error fetching data", error);
                 setError(error.message);

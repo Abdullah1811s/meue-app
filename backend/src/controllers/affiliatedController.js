@@ -76,14 +76,17 @@ export const getAffiliateById = async (req, res) => {
             });
         }
 
+        const { password, resetPasswordToken, resetPasswordExpire, ...safeAffiliate } = affiliate.toObject();
+
         res.status(200).json({
             success: true,
             message: "Affiliate retrieved successfully",
             data: {
-                affiliate,
+                affiliate: safeAffiliate,
                 refCount
             }
         });
+
 
     } catch (error) {
         console.error("[AFFILIATE CONTROLLER ERROR]", error);
@@ -174,7 +177,13 @@ export const registerAffiliate = async (req, res) => {
 
         const emailSent = await sendEmail(smtpConfig, newAffiliate.email, subject, "Your affiliate application is under review.", message);
 
-        res.status(200).json({ message: "Affiliate registered successfully", newAffiliate });
+        
+
+        res.status(200).json({
+            message: "Affiliate registered successfully",
+           
+        });
+
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
@@ -183,7 +192,7 @@ export const registerAffiliate = async (req, res) => {
 export const loginAffiliate = async (req, res) => {
     try {
         const { email, password } = req.body;
-
+        console.log(req.body)
         if (!email || !password) {
             return res.status(400).json({ message: "Email and password are required" });
         }
@@ -202,7 +211,7 @@ export const loginAffiliate = async (req, res) => {
         }
 
         const isMatch = await affiliate.comparePassword(password);
-
+        console.log("The pass is " , isMatch)
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -211,7 +220,11 @@ export const loginAffiliate = async (req, res) => {
             expiresIn: "7h"
         });
 
-        res.status(200).json({ message: "Login successful", token, affiliate });
+        res.status(200).json({ 
+            message: "Login successful", 
+            token, 
+            affiliate: { _id: affiliate._id , status: affiliate.status }
+        });
     } catch (error) {
         console.error("[AFFILIATE SERVER ERROR]", error);
         res.status(500).json({ message: "[AFFILIATE SERVER ERROR]", error: error.message });
@@ -221,7 +234,16 @@ export const loginAffiliate = async (req, res) => {
 export const getAllAffiliates = async (req, res) => {
     try {
         const affiliates = await affiliateModel.find();
-        res.status(200).json({ message: "All affiliates fetched successfully", data: affiliates });
+
+        const safeAffiliates = affiliates.map(affiliate => {
+            const { password, ...rest } = affiliate.toObject();
+            return rest;
+        });
+
+        res.status(200).json({
+            message: "All affiliates fetched successfully",
+            data: safeAffiliates
+        });
     } catch (error) {
         res.status(500).json({ message: "[AFFILIATE SERVER ERROR]", error });
     }
@@ -310,7 +332,13 @@ export const updateStatus = async (req, res) => {
             });
         }
 
-        res.status(200).json({ message: "Status updated successfully", affiliate });
+        const { password, ...safeAffiliate } = affiliate.toObject();
+
+        res.status(200).json({
+            message: "Status updated successfully",
+            affiliate: safeAffiliate
+        });
+
     } catch (error) {
         console.error("[AFFILIATE SERVER ERROR] updateStatus", error);
         res.status(500).json({ message: "[AFFILIATE SERVER ERROR]", error: error.message });

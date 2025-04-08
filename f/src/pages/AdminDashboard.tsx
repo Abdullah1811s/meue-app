@@ -1377,6 +1377,11 @@ const AdminDashboard = () => {
                       </h3>
                       <p className="text-gray-600 mb-2 break-words"><strong>Email:</strong> {affiliate.email}</p>
                       <p className="text-gray-600 mb-2"><strong>Phone:</strong> {affiliate.phoneNumber}</p>
+                      <p className="text-gray-600 mb-2"><strong>PromotionChannels :</strong> {affiliate.promotionChannels}</p>
+                      <p className="text-gray-600 mb-2 truncate overflow-hidden whitespace-nowrap">
+                        <strong>TargetAudience :</strong> {affiliate.targetAudience}
+                      </p>
+
                       <p className="text-gray-600 mb-2">
                         <strong>Type:</strong>
                         <span className={`ml-1 px-2 py-1 rounded-full text-xs ${affiliate.type === "business" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}>
@@ -1606,7 +1611,7 @@ const AdminDashboard = () => {
                 <div className="bg-red-100 p-4 rounded-md text-red-700">{error}</div>
               ) : vendors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {vendors.map((vendor) => (
+                  {vendors?.map((vendor) => (
                     <motion.div
                       key={vendor._id}
                       initial={{ opacity: 0, y: -20 }}
@@ -1627,7 +1632,8 @@ const AdminDashboard = () => {
                       <p className="text-gray-500 break-words">
                         Website: <a href={vendor.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Visit</a>
                       </p>
-                      <p className="text-gray-500 break-words">Code used: {vendor.referralCodeUsed || "No code used"}</p>
+                      <p className="text-gray-500 break-words">Code used: {vendor?.referralCodeUsed || "No code used"}</p>
+                      <p className="text-gray-500 break-words">Vendor tier: {vendor?.vendorTier || "No tier info"}</p>
 
                       <h3 className="mt-3 md:mt-4 font-semibold">Representative:</h3>
                       <p className="break-words">{vendor.representativeName} ({vendor.representativePosition})</p>
@@ -1638,8 +1644,8 @@ const AdminDashboard = () => {
                       <h3 className="mt-3 md:mt-4 font-semibold">Exclusive Offer:</h3>
                       {/* Wheel Offer Section */}
                       <h3 className="mt-3 md:mt-4 font-semibold">Wheel Offer:</h3>
-                      <p className="break-words"><strong>Type:</strong> {vendor.wheelOffer?.type || 'N/A'}</p>
-                      <p className="break-words"><strong>Terms:</strong> {vendor.wheelOffer?.terms || 'N/A'}</p>
+                      <p className="break-words"><strong>Type:</strong> {vendor?.wheelOffer?.type || 'N/A'}</p>
+                      <p className="break-words"><strong>Terms:</strong> {vendor?.wheelOffer?.terms || 'N/A'}</p>
                       <div className="mt-2">
                         {vendor.wheelOffer?.offerings?.length > 0 ? (
                           <div className="space-y-2">
