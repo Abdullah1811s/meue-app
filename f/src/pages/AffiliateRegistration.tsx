@@ -355,7 +355,7 @@ function AffiliateRegistration() {
                                 >
                                     Back
                                 </button>
-                                <div className="text-gray-600">
+                                <div className="text-gray-600 ml-3 md:ml-0">
                                     Already have an account?{" "}
                                     <button
                                         onClick={() => navigate("/affiliated/login")}
