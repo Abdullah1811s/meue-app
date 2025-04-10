@@ -4,9 +4,9 @@ const AnalogTimer = () => {
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
-  const totalSeconds = 60 * 24 * 60 * 60; // 60 days in seconds
+  const totalSeconds = 45 * 24 * 60 * 60;
   
-  // Fetch mainWebTime from API or use cached value
+
   useEffect(() => {
     const fetchTime = async () => {
       try {

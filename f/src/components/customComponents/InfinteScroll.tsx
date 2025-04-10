@@ -44,7 +44,7 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({ vendors }) => {
         initial={{ x: 0 }}
         animate={{ x: [-width, 0] }}
         transition={{
-          x: { repeat: Infinity, repeatType: "loop", duration: 12, ease: "linear" },
+          x: { repeat: Infinity, repeatType: "loop", duration: 40, ease: "linear" },
         }}
       >
         {duplicatedVendors.map((vendor, index) => (

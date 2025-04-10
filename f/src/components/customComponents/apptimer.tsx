@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const AppTimer = () => {
-  const totalSeconds = 30 * 24 * 60 * 60; // 30 days in seconds
+  const totalSeconds = 60 * 24 * 60 * 60; // 30 days in seconds
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
