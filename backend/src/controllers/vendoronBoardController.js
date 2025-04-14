@@ -190,14 +190,14 @@ export const getALlDetails = async (req, res) => {
 export const delVendor = async (req, res) => {
     try {
         const { id, cancelReason } = req.body;
-
+        console.log("The vendor to be deleted ", id, "and the reason is ", cancelReason);
         if (!id) {
             return res.status(400).json({ success: false, message: "Provide the id" });
         }
 
         // Find the vendor first to get their email
         const vendor = await vendorModel.findOne({ _id: id });
-
+        console.log("This is the vendor ", vendor);
         if (!vendor) {
             return res.status(404).json({ success: false, message: "Vendor not found" });
         }
@@ -296,7 +296,7 @@ export const delVendor = async (req, res) => {
         }
 
         const result = await vendorModel.deleteOne({ _id: id });
-
+        console.log("This is the result" , result);
         if (result.deletedCount === 0) {
             return res.status(404).json({ success: false, message: "Vendor not found or already deleted" });
         }

@@ -39,7 +39,7 @@ import AffiliateForgotPassword from './pages/AffiliateForgotPassword.tsx'
 import AffiliateResetPassword from './pages/AffiliateResetPassword.tsx'
 import VendorForgotPassword from './pages/VendorForgotPassword.tsx'
 import VendorResetPassword from './pages/VendorResetPassword.tsx'
-
+import NotFound from './pages/NotFound.tsx'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -99,6 +99,8 @@ const router = createBrowserRouter(
       <Route path="affiliated" element={<AffiliatedProtectedRoute />}>
         <Route path="dashboard/:id" element={<AffiliatedDashboard />} />
       </Route>
+      
+      <Route path="*" element={<NotFound />} />
     </Route>
   )
 );

@@ -450,7 +450,7 @@ export const removeAffiliateById = async (req, res) => {
 
         };
 
-        const emailSent = await sendEmail(
+        await sendEmail(
             smtpConfig,
             affiliate.email,
             subject,

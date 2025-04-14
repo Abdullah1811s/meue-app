@@ -272,6 +272,7 @@ const AdminDashboard = () => {
   const [rejectionReason1, setRejectionReason1] = useState<any>('');
   const [vendorToReject1, setVendorToReject] = useState<any>(null);
   const [raffleName, setRaffleName] = useState('');
+  const [vendorToDelete, setVendorTOdelete] = useState<any>()
   const [newAdmin, setNewAdmin] = useState({
     whoMadeHimEmail: '',  // Email of the admin creating this new admin
     name: '',             // Name of the new admin
@@ -600,14 +601,16 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDelVendor = async (id: string) => {
 
-
-  const handleDelVendor = async () => {
+    setVendorTOdelete(id);
     setOpen(true);
-
   };
 
+
   const confirmDelete = async (id: string) => {
+
+
     setIsDeleting(true);
     try {
       // Delete the vendor
@@ -879,6 +882,7 @@ const AdminDashboard = () => {
   };
 
   const updatePartnerStatus = async (id: string, status: "pending" | "approved" | "rejected", reason: string) => {
+
     if (status === "approved")
       setIsApproving(true);
     if (status === "rejected")
@@ -1140,6 +1144,7 @@ const AdminDashboard = () => {
 
 
   const deleteUser = async (id: string) => {
+
     try {
       setDeleteing(true);
       await axios.delete(
@@ -1606,6 +1611,7 @@ const AdminDashboard = () => {
               {isLoading ? (
                 <div className="flex justify-center items-center h-64">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#DBC166]"></div>
+                  <p className="text-gray-600">Loading partners data...</p>
                 </div>
               ) : error ? (
                 <div className="bg-red-100 p-4 rounded-md text-red-700">{error}</div>
@@ -1894,17 +1900,28 @@ const AdminDashboard = () => {
                       <div className="mt-4 md:mt-6 flex flex-wrap gap-2">
                         <Button
                           onClick={() => updatePartnerStatus(vendor._id, "approved", "")}
-                          disabled={isApproving || vendor.status === "approved"}
+                          disabled={
+                            isApproving || vendor.status === "approved" || vendor.status === "rejected"
+                          }
                           className={`${vendor.status === "approved"
                             ? "bg-green-400 cursor-not-allowed"
                             : vendor.status === "rejected"
                               ? "bg-gray-400 cursor-not-allowed"
                               : "bg-green-500 hover:bg-green-600"
-                            } text-white px-4 py-2 rounded-lg shadow-md transition-transform transform ${vendor.status !== "approved" && vendor.status !== "rejected" ? "hover:scale-105" : ""
+                            } text-white px-4 py-2 rounded-lg shadow-md transition-transform transform ${vendor.status !== "approved" && vendor.status !== "rejected"
+                              ? "hover:scale-105"
+                              : ""
                             } text-sm`}
                         >
-                          {isApproving ? "Approving..." : vendor.status === "approved" ? "Approved" : "Approve"}
+                          {isApproving
+                            ? "Approving..."
+                            : vendor.status === "approved"
+                              ? "Approved"
+                              : vendor.status === "rejected"
+                                ? "Rejected"
+                                : "Approve"}
                         </Button>
+
 
                         {vendor.status !== "approved" && (
                           <>
@@ -1962,7 +1979,7 @@ const AdminDashboard = () => {
                         )}
 
                         <Button
-                          onClick={handleDelVendor}
+                          onClick={() => handleDelVendor(vendor._id)}  // Pass the ID here
                           className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md transition-transform transform hover:scale-105 text-sm"
                         >
                           Delete
@@ -1994,7 +2011,7 @@ const AdminDashboard = () => {
                                 Cancel
                               </Button>
                               <Button
-                                onClick={() => confirmDelete(vendor?._id)}
+                                onClick={() => confirmDelete(vendorToDelete)}
                                 className="bg-red-500 hover:bg-red-600 text-white"
                                 disabled={!confirmText.trim() || isDeleting}
                               >
@@ -2090,7 +2107,8 @@ const AdminDashboard = () => {
                       <MapPin size={16} className="mr-2" /> {user.street}, {user.city}, {user.province} - {user.postalCode}
                     </p>
 
-                    <p className="text-gray-600">User Type: <span className="font-medium">{user.userType}</span></p>
+                    <p className="text-gray-600">User Type: <span className="font-medium">{user.userType || "Not paid"}</span></p>
+                    <p className="text-gray-600">User's Referral code: <span className="font-medium">{user.referralCodeShare || "No paid"}</span></p>
                     <p className="text-gray-600">Total Points: <span className="font-medium">{user.TotalPoints}</span></p>
                     <p className="text-gray-600">Signup Date: <span className="font-medium">{new Date(user.signupDate || "").toLocaleDateString()}</span></p>
 

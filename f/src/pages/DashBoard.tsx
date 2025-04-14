@@ -1124,6 +1124,7 @@ const Dashboard = () => {
                                             <input
                                               type="date"
                                               placeholder="End Date"
+                                              required
                                               value={offering.endDate || ''}
                                               onChange={(e) => {
                                                 const selectedDate = new Date(e.target.value);
