@@ -325,7 +325,7 @@ function VendorOnboarding() {
 
   const onSubmit = async (data: VendorFormData) => {
     setLoading(true);
-    window.scrollTo({top:0 , behavior:"smooth"})
+    window.scrollTo({ top: 0, behavior: "smooth" })
     try {
       const response1 = await axios.get(`${API_BASE_URL}/vendor/check-email`, {
         params: { businessEmail: data.businessEmail }
@@ -795,16 +795,18 @@ function VendorOnboarding() {
                         {/* Phone Number Input */}
                         <input
                           type="tel"
+                          maxLength={15}
                           {...register("representativePhone", {
                             required: "Phone number is required",
                             pattern: {
-                              value: /^[0-9]{6,14}$/,
+                              value: /^\+?[1-9]\d{1,14}$/,
                               message: "Enter a valid phone number"
                             }
                           })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           placeholder="Enter phone number"
                         />
+
                       </div>
 
                       {/* Error Messages */}
