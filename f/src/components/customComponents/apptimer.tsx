@@ -1,75 +1,78 @@
 import { useState, useEffect } from "react";
 
 const AppTimer = () => {
-  const totalSeconds = 60 * 24 * 60 * 60; // 30 days in seconds
-  const [timeLeft, setTimeLeft] = useState<any>(null);
+  const TOTAL_SECONDS = 60 * 24 * 60 * 60; // 60 days in seconds
+  const LOCAL_STORAGE_KEY = "appTimeData";
+  const FETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes in ms
+
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
 
-  // Fetch appTime from API or use cached value
-  useEffect(() => {
-    const fetchTime = async () => {
-      try {
-        // Check if we have a stored time and when it was last fetched
-        const storedTimeData = localStorage.getItem('appTimeData');
-        const currentTime = Date.now();
+  // Fetch time (with force refresh option)
+  const fetchTime = async (forceRefresh = false) => {
+    const now = Date.now();
+    const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    let parsedData = storedData ? JSON.parse(storedData) : null;
 
-        if (storedTimeData) {
-          const { timeValue, fetchTimestamp } = JSON.parse(storedTimeData);
-          const elapsedSeconds = Math.floor((currentTime - fetchTimestamp) / 1000);
+    // Check if stored data is stale
+    const isStale = !parsedData || (now - parsedData.fetchTimestamp) > FETCH_INTERVAL;
 
-          // Use the stored value but adjust for elapsed time
-          setTimeLeft(Math.max(0, timeValue - elapsedSeconds));
-          setLastFetchTime(fetchTimestamp);
-          setLoading(false);
-        }
+    // Use cached data if not forcing refresh and data isn't stale
+    if (!forceRefresh && parsedData && !isStale) {
+      const elapsedSeconds = Math.floor((now - parsedData.fetchTimestamp) / 1000);
+      setTimeLeft(Math.max(0, parsedData.timeValue - elapsedSeconds));
+      setLoading(false);
+      return;
+    }
 
-        // Only fetch from API if we don't have data or it's been more than 5 minutes
-        const shouldFetchFromAPI = !storedTimeData ||
-          (lastFetchTime && (currentTime - lastFetchTime) > 5 * 60 * 1000);
+    try {
+      // Always try to fetch fresh data first
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/appTime`);
+      const data = await response.json();
 
-        if (shouldFetchFromAPI) {
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/appTime`);
-          const data = await response.json();
+      const newTimeData = {
+        timeValue: data.appTime,
+        fetchTimestamp: now,
+      };
 
-          // Store the new time value and current timestamp
-          const newTimeData = {
-            timeValue: data.appTime,
-            fetchTimestamp: currentTime
-          };
-
-          localStorage.setItem('appTimeData', JSON.stringify(newTimeData));
-          setTimeLeft(data.appTime);
-          setLastFetchTime(currentTime);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching appTime:", error);
-        setLoading(false);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newTimeData));
+      setTimeLeft(data.appTime);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching appTime:", error);
+      // Fallback to cached data if API fails
+      if (parsedData) {
+        const elapsedSeconds = Math.floor((now - parsedData.fetchTimestamp) / 1000);
+        setTimeLeft(Math.max(0, parsedData.timeValue - elapsedSeconds));
       }
-    };
+      setLoading(false);
+    }
+  };
 
-    fetchTime();
+  // Initial fetch + periodic refresh
+  useEffect(() => {
+    fetchTime(true); // Force refresh on mount
+    const interval = setInterval(() => fetchTime(), FETCH_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
 
-  // Countdown logic
+  // Countdown timer
   useEffect(() => {
     if (!timeLeft || timeLeft <= 0) return;
+
     const interval = setInterval(() => {
-      setTimeLeft((prev: any) => {
-        const newValue = prev ? prev - 1 : 0;
-        return newValue;
-      });
+      setTimeLeft((prev) => (prev ? prev - 1 : 0));
     }, 1000);
+
     return () => clearInterval(interval);
   }, [timeLeft]);
 
-  // Progress calculation
-  const percentage = timeLeft ? (timeLeft / totalSeconds) * 100 : 0;
-  const strokeDasharray = 283; // Full circle length
+  // Progress circle values
+  const percentage = timeLeft ? (timeLeft / TOTAL_SECONDS) * 100 : 0;
+  const strokeDasharray = 283;
   const strokeDashoffset = (strokeDasharray * (100 - percentage)) / 100;
 
-  // Format time with seconds
+  // Format seconds into d/h/m/s
   const formatTime = (seconds: number) => {
     if (seconds === null) return "Loading...";
     const days = Math.floor(seconds / (24 * 60 * 60));
@@ -90,9 +93,7 @@ const AppTimer = () => {
       <div className="text-[#DBC166] font-medium text-xs text-center mb-1 opacity-70">App Launch Time</div>
       <div className="bg-white bg-opacity-40 rounded-lg shadow-lg p-2 transition-all duration-300 hover:scale-105 hover:bg-opacity-60">
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28">
-          {/* SVG Circular Timer */}
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {/* Background Circle */}
             <circle
               cx="50"
               cy="50"
@@ -102,15 +103,12 @@ const AppTimer = () => {
               fill="none"
               opacity="0.2"
             />
-
-            {/* Progress Circle with Gradient */}
             <defs>
               <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#DBC166" />
                 <stop offset="100%" stopColor="#F4E077" />
               </linearGradient>
             </defs>
-
             <circle
               cx="50"
               cy="50"
@@ -124,14 +122,12 @@ const AppTimer = () => {
               className="transition-all duration-1000 ease-linear opacity-70"
             />
           </svg>
-
-          {/* Timer Text - Centered with responsive visibility */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             {loading ? (
               <div className="text-[#DBC166] font-bold text-xs">Loading...</div>
             ) : (
               <>
-                {formatTime(timeLeft)}
+                {formatTime(timeLeft!)}
                 <span className="text-[#DBC166] font-medium text-xs mt-1 hidden md:block opacity-70">Remaining</span>
               </>
             )}
@@ -142,4 +138,4 @@ const AppTimer = () => {
   );
 };
 
-export default AppTimer;
+export default AppTimer;  

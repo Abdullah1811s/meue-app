@@ -1,77 +1,74 @@
 import { useState, useEffect } from "react";
+const TOTAL_SECONDS = 45 * 24 * 60 * 60; // 45 days in seconds
+const LOCAL_STORAGE_KEY = "mainWebTimeData";
+const FETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes in ms
 
 const AnalogTimer = () => {
-  const [timeLeft, setTimeLeft] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
-  const totalSeconds = 45 * 24 * 60 * 60;
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
+  // Fetch from API (with localStorage fallback)
+  const fetchTime = async (forceFetch = false) => {
+    const now = Date.now();
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    let storedData = stored ? JSON.parse(stored) : null;
 
-  useEffect(() => {
-    const fetchTime = async () => {
-      try {
-        // Check if we have a stored time and when it was last fetched
-        const storedTimeData = localStorage.getItem('mainWebTimeData');
-        const currentTime = Date.now();
+    // Check if stored data is expired or forced to refresh
+    const isStale = !storedData || (now - storedData.fetchTimestamp) > FETCH_INTERVAL;
 
-        if (storedTimeData) {
-          const { timeValue, fetchTimestamp } = JSON.parse(storedTimeData);
-          const elapsedSeconds = Math.floor((currentTime - fetchTimestamp) / 1000);
+    if (!forceFetch && storedData && !isStale) {
+      const elapsed = Math.floor((now - storedData.fetchTimestamp) / 1000);
+      setTimeLeft(Math.max(0, storedData.timeValue - elapsed));
+      setLoading(false);
+      return;
+    }
 
-          // Use the stored value but adjust for elapsed time
-          setTimeLeft(Math.max(0, timeValue - elapsedSeconds));
-          setLastFetchTime(fetchTimestamp);
-          setLoading(false);
-        }
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/mainWebTime`);
+      const data = await res.json();
 
-        // Only fetch from API if we don't have data or it's been more than 5 minutes
-        const shouldFetchFromAPI = !storedTimeData ||
-          (lastFetchTime && (currentTime - lastFetchTime) > 5 * 60 * 1000);
+      const newTime = {
+        timeValue: data.mainWebTime,
+        fetchTimestamp: now,
+      };
 
-        if (shouldFetchFromAPI) {
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/mainWebTime`);
-          const data = await response.json();
-
-          // Store the new time value and current timestamp
-          const newTimeData = {
-            timeValue: data.mainWebTime,
-            fetchTimestamp: currentTime
-          };
-
-          localStorage.setItem('mainWebTimeData', JSON.stringify(newTimeData));
-          setTimeLeft(data.mainWebTime);
-          setLastFetchTime(currentTime);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching mainWebTime:", error);
-        setLoading(false);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newTime));
+      setTimeLeft(data.mainWebTime);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching time:", error);
+      // Fallback to stored data if API fails
+      if (storedData) {
+        const elapsed = Math.floor((now - storedData.fetchTimestamp) / 1000);
+        setTimeLeft(Math.max(0, storedData.timeValue - elapsed));
       }
-    };
+      setLoading(false);
+    }
+  };
 
-    fetchTime();
+  // Initial fetch + periodic refresh
+  useEffect(() => {
+    fetchTime(true); // Force fetch on mount to get latest time
+    const interval = setInterval(() => fetchTime(), FETCH_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
 
   // Countdown logic
   useEffect(() => {
     if (!timeLeft || timeLeft <= 0) return;
+
     const interval = setInterval(() => {
-      setTimeLeft((prev: any) => {
-        const newValue = prev ? prev - 1 : 0;
-        return newValue;
-      });
+      setTimeLeft((prev) => (prev ? prev - 1 : 0));
     }, 1000);
+
     return () => clearInterval(interval);
   }, [timeLeft]);
 
-  // Calculate progress percentage
-  const percentage = timeLeft ? (timeLeft / totalSeconds) * 100 : 0;
-  const strokeDasharray = 283; // Full circle
-  const strokeDashoffset = (strokeDasharray * (100 - percentage)) / 100;
 
-  // Format time with seconds
-  const formatTime = (seconds: any) => {
+  // Timer formatting
+  const formatTime = (seconds: number | null) => {
     if (seconds === null) return "Loading...";
+
     const days = Math.floor(seconds / (24 * 60 * 60));
     const hours = Math.floor((seconds % (24 * 60 * 60)) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -79,20 +76,30 @@ const AnalogTimer = () => {
 
     return (
       <div className="flex flex-col items-center">
-        <div className="text-sm font-bold text-amber-600">{days}d {hours}h</div>
-        <div className="text-xs font-medium text-amber-500">{minutes}m {secs}s</div>
+        <div className="text-sm font-bold text-amber-600">
+          {days}d {hours}h
+        </div>
+        <div className="text-xs font-medium text-amber-500">
+          {minutes}m {secs}s
+        </div>
       </div>
     );
   };
 
+  // Progress calculation
+  const percentage = timeLeft ? (timeLeft / TOTAL_SECONDS) * 100 : 0;
+  const strokeDasharray = 283;
+  const strokeDashoffset = (strokeDasharray * (100 - percentage)) / 100;
+
   return (
     <div className="fixed top-31 right-4 z-50">
-      <div className="text-amber-600 font-medium text-xs text-center mb-1 opacity-70">Main website Time</div>
+      <div className="text-amber-600 font-medium text-xs text-center mb-1 opacity-70">
+        Main website Time
+      </div>
+
       <div className="bg-white bg-opacity-40 rounded-lg shadow-lg p-2 transition-all duration-300 hover:scale-105 hover:bg-opacity-60">
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28">
-          {/* SVG Circular Timer */}
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {/* Background Circle */}
             <circle
               cx="50"
               cy="50"
@@ -102,15 +109,12 @@ const AnalogTimer = () => {
               fill="none"
               opacity="0.2"
             />
-
-            {/* Progress Circle with Gradient */}
             <defs>
               <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#D97706" />
                 <stop offset="100%" stopColor="#FBBF24" />
               </linearGradient>
             </defs>
-
             <circle
               cx="50"
               cy="50"
@@ -132,7 +136,9 @@ const AnalogTimer = () => {
             ) : (
               <>
                 {formatTime(timeLeft)}
-                <span className="text-amber-600 font-medium text-xs mt-1 hidden md:block opacity-70">Remaining</span>
+                <span className="text-amber-600 font-medium text-xs mt-1 hidden md:block opacity-70">
+                  Remaining
+                </span>
               </>
             )}
           </div>
