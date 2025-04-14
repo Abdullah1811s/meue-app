@@ -1703,7 +1703,7 @@ function VendorOnboarding() {
                         <h2 className="text-xl font-semibold mt-6">2. Vendor Onboarding and Fees</h2>
                         <ul className="list-disc list-inside text-gray-700">
                           <li>Vendors joining during the Beta Testing period will onboard for free.</li>
-                          <li>After Beta Testing, a one-time, non-refundable setup fee of R5 000.00 applies.</li>
+                          <li>After Beta Testing, a one-time, non-refundable setup fee of R2500.00 applies.</li>
                           <li>All listing and advertisement fees are final and non-refundable.</li>
                         </ul>
 
