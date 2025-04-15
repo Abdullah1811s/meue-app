@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { vendorLogout } from "@/store/authSlice";
+import toast from "react-hot-toast";
 
 
 
@@ -229,37 +230,46 @@ const Dashboard = () => {
 
   const handleUpdateVendor = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("The form data is ", formData);
     const { wheelOffer } = formData;
-    console.log(wheelOffer);
+  
     if (cooldownActive) {
       Math.floor(cooldownTime / 60);
       cooldownTime % 60;
       return;
     }
-
+  
     setIsLoading(true);
+  
     try {
-      const { wheelOffer } = formData;
-      console.log(wheelOffer);
-
-      console.log("Updating wheel...");
-      await axios.put(`${API_BASE_URL}/wheel/${id}/exclusive-offer`, {
-        wheelOffer,
-      });
+      // ✅ Update wheelOffer only if it exists and has offerings
+      if (wheelOffer && Array.isArray(wheelOffer.offerings) && wheelOffer.offerings.length > 0) {
+        try {
+          await axios.put(`${API_BASE_URL}/wheel/${id}/exclusive-offer`, { wheelOffer });
+        } catch (wheelError: any) {
+          if (wheelError.response?.data?.message?.includes("Wheel limit exceeded")) {
+            toast.error(wheelError.response.data.message, { duration: 3000 });
+          } else {
+            throw wheelError;
+          }
+        }
+      }
+  
+      // ✅ Always update vendor info
       await axios.put(`${API_BASE_URL}/vendor/update/${id}`, formData);
+  
       setUpdateSuccess(true);
       setTimeout(() => setUpdateSuccess(false), 3000);
-
+  
       window.scrollTo({
         top: 0,
-        behavior: 'smooth'
+        behavior: 'smooth',
       });
-
+  
+      // ⏳ Start cooldown
       setCooldownActive(true);
       setCooldownTime(300);
       const countdownInterval = setInterval(() => {
-        setCooldownTime(prevTime => {
+        setCooldownTime((prevTime) => {
           if (prevTime <= 1) {
             clearInterval(countdownInterval);
             setCooldownActive(false);
@@ -268,12 +278,13 @@ const Dashboard = () => {
           return prevTime - 1;
         });
       }, 1000);
-    } catch (error) {
-      console.log("Error updating vendor data:", error);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Something went wrong", { duration: 3000 });
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   useEffect(() => {
     if (!hasFetched) {

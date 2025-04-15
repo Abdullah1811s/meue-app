@@ -931,9 +931,9 @@ const AdminDashboard = () => {
 
 
       } catch (error: any) {
-        console.error("Failed to add wheel offers:", error);
+        console.error("Failed to add wheel offers:", error.response.data.message);
         if (status === "approved")
-          toast.error(`No offer available from the partner to add to the wheel. Please check and try again.`, { duration: 5000 });
+          toast.error(`${error.response.data.message}`, { duration: 5000 });
         throw error;
       }
 

@@ -23,55 +23,47 @@ const getTotalOfferings = async () => {
 export const addVendorOnWheel = async (req, res) => {
     try {
         const { vendorInfo, offerings } = req.body;
-
+        console.log("=============================================");
         if (!vendorInfo) {
             return res.status(400).json({ message: "Please provide the vendor details." });
         }
         if (!Array.isArray(offerings) || offerings.length === 0) {
             return res.status(400).json({ message: "Please provide at least one offering." });
         }
-        const totalOfferings = await wheelModel.aggregate([
+        const totalOfferingsCount = await wheelModel.aggregate([
             {
-                $facet: {
-                    vendorOfferings: [
-                        { $unwind: "$vendor.offerings" },
-                    ],
-                    adminOfferings: [
-                        { $unwind: "$admin.offerings" },
-                    ]
+                $group: {
+                    _id: null,
+                    vendorCount: { $sum: { $size: "$vendor.offerings" } },
+                    adminCount: { $sum: { $size: "$admin.offerings" } },
                 }
             },
             {
                 $project: {
-                    totalOfferings: {
-                        $add: [{ $size: "$vendorOfferings" }, { $size: "$adminOfferings" }]
-                    }
+                    totalOfferings: { $add: ["$vendorCount", "$adminCount"] }
                 }
             }
         ]);
 
-        const totalOfferingsCount = totalOfferings[0]?.totalOfferings || 0;
-        console.log("Total offerings count: ", totalOfferingsCount);
+
+        const totalCount = totalOfferingsCount[0]?.totalOfferings || 0;
+        console.log("Total offerings count: ", totalCount);
+
+
 
         // Check if total offerings are more than 10
-        if (totalOfferingsCount >= 10) {
+        if (totalCount >= 10) {
             return res.status(400).json({ message: "Wheel limit exceeded! Please remove an entry before adding a new one." });
         }
-        // const currentTotal = await getTotalOfferings();
-        // if (currentTotal === null) {
-        //     return res.status(500).json({ message: "Error fetching total offerings" });
-        // }
-
-        // if (currentTotal + offerings.length > max) {
-        //     return res.status(409).json({ message: `You can only have a maximum of ${max} offerings on the wheel.` });
-        // }
-
-        const updatedVendor = await wheelModel.findOneAndUpdate(
-            { "vendor.vendorInfo": vendorInfo },
-            { $push: { "vendor.offerings": { $each: offerings } } },
-            { new: true, upsert: true }
-        );
-        return res.status(201).json({ message: "Vendor added/updated successfully!", data: updatedVendor });
+        else {
+            const updatedVendor = await wheelModel.findOneAndUpdate(
+                { "vendor.vendorInfo": vendorInfo },
+                { $push: { "vendor.offerings": { $each: offerings } } },
+                { new: true, upsert: true }
+            );
+            return res.status(201).json({ message: "Vendor added/updated successfully!", data: updatedVendor });
+            console.log("=============================================");
+        }
 
     } catch (error) {
         console.error("Error adding Partner to wheel:", error);
@@ -271,7 +263,7 @@ export const delOffer = async (req, res) => {
 export const updateVendorExclusiveOffer = async (req, res) => {
     const { vendorId } = req.params;
     const { wheelOffer } = req.body;
-    console.log("Updating offer with data:", req.body, "and id is", vendorId);
+
 
     try {
         if (!mongoose.Types.ObjectId.isValid(vendorId)) {
@@ -283,61 +275,89 @@ export const updateVendorExclusiveOffer = async (req, res) => {
         if (!vendorExists) {
             return res.status(404).json({ message: 'Vendor not found in vendor database' });
         }
-
-        const updateData = {
-            'vendor.offerings': wheelOffer.offerings.map(offering => ({
-                name: offering.name,
-                quantity: offering.quantity !== undefined ? offering.quantity : null,
-                startDate: offering.startDate || null,
-                endDate: offering.endDate || null,
-                _id: offering._id ? offering._id : new mongoose.Types.ObjectId()
-            }))
-        };
-
-        console.log("Formatted update data:", updateData);
-
-        // Check if vendor exists in Wheel model
-        let existingWheel = await wheelModel.findOne({ 'vendor.vendorInfo': vendorId });
-
-        if (!existingWheel) {
-            // Vendor doesn't exist in Wheel model - create new entry
-            console.log("Vendor not found in Wheel model, creating new entry...");
-
-            const newWheelEntry = new wheelModel({
-                vendor: {
-                    vendorInfo: vendorId,
-                    offerings: updateData['vendor.offerings']
+        const totalOfferings = await wheelModel.aggregate([
+            {
+                $facet: {
+                    vendorOfferings: [
+                        { $unwind: { path: "$vendor.offerings", preserveNullAndEmptyArrays: true } },
+                    ],
+                    adminOfferings: [
+                        { $unwind: { path: "$admin.offerings", preserveNullAndEmptyArrays: true } },
+                    ]
                 }
-            });
+            },
+            {
+                $project: {
+                    totalOfferings: {
+                        $add: [{ $size: "$vendorOfferings" }, { $size: "$adminOfferings" }]
+                    }
+                }
+            }
+        ]);
 
-            const savedWheel = await newWheelEntry.save();
-            console.log("New wheel entry created:", savedWheel);
+        const totalOfferingsCount = totalOfferings[0]?.totalOfferings || 0;
+        console.log("Total : ", totalOfferingsCount);
+        // Check if total offerings are more than 10
+        if (totalOfferingsCount >= 10) {
+            return res.status(400).json({ message: "Wheel limit exceeded! Please come back and try again." });
+        }
+        else {
+            const updateData = {
+                'vendor.offerings': wheelOffer.offerings.map(offering => ({
+                    name: offering.name,
+                    quantity: offering.quantity !== undefined ? offering.quantity : null,
+                    startDate: offering.startDate || null,
+                    endDate: offering.endDate || null,
+                    _id: offering._id ? offering._id : new mongoose.Types.ObjectId()
+                }))
+            };
 
-            return res.status(201).json({
-                message: 'New vendor wheel entry created successfully',
-                data: savedWheel,
+            console.log("Formatted update data:", updateData);
+
+            // Check if vendor exists in Wheel model
+            let existingWheel = await wheelModel.findOne({ 'vendor.vendorInfo': vendorId });
+
+            if (!existingWheel) {
+                // Vendor doesn't exist in Wheel model - create new entry
+                console.log("Vendor not found in Wheel model, creating new entry...");
+
+                const newWheelEntry = new wheelModel({
+                    vendor: {
+                        vendorInfo: vendorId,
+                        offerings: updateData['vendor.offerings']
+                    }
+                });
+
+                const savedWheel = await newWheelEntry.save();
+                console.log("New wheel entry created:", savedWheel);
+
+                return res.status(201).json({
+                    message: 'New vendor wheel entry created successfully',
+                    data: savedWheel,
+                });
+            }
+
+            // Vendor exists in Wheel model - update existing entry
+            console.log("Vendor found in Wheel model. Proceeding with update...");
+
+            const updatedVendor = await wheelModel.findOneAndUpdate(
+                { 'vendor.vendorInfo': vendorId },
+                { $set: updateData },
+                { new: true, runValidators: true }
+            );
+
+            console.log("Updated vendor data:", updatedVendor);
+
+            if (!updatedVendor) {
+                return res.status(404).json({ message: 'Vendor not found after update' });
+            }
+
+            res.status(200).json({
+                message: 'Exclusive offer updated successfully',
+                data: updatedVendor,
             });
         }
 
-        // Vendor exists in Wheel model - update existing entry
-        console.log("Vendor found in Wheel model. Proceeding with update...");
-
-        const updatedVendor = await wheelModel.findOneAndUpdate(
-            { 'vendor.vendorInfo': vendorId },
-            { $set: updateData },
-            { new: true, runValidators: true }
-        );
-
-        console.log("Updated vendor data:", updatedVendor);
-
-        if (!updatedVendor) {
-            return res.status(404).json({ message: 'Vendor not found after update' });
-        }
-
-        res.status(200).json({
-            message: 'Exclusive offer updated successfully',
-            data: updatedVendor,
-        });
     } catch (error) {
         console.error('Error updating vendor exclusive offer:', error);
         res.status(500).json({

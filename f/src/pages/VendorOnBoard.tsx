@@ -330,7 +330,7 @@ function VendorOnboarding() {
       const response1 = await axios.get(`${API_BASE_URL}/vendor/check-email`, {
         params: { businessEmail: data.businessEmail }
       });
-      console.log(response1);
+
       if (response1.data.exists) {
         toast.error("This email is already registered ");
         setLoading(false);
@@ -798,10 +798,7 @@ function VendorOnboarding() {
                           maxLength={15}
                           {...register("representativePhone", {
                             required: "Phone number is required",
-                            pattern: {
-                              value: /^\+?[1-9]\d{1,14}$/,
-                              message: "Enter a valid phone number"
-                            }
+                           
                           })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           placeholder="Enter phone number"
