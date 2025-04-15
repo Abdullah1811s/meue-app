@@ -28,7 +28,7 @@ export const addVendorOnWheel = async (req, res) => {
             return res.status(400).json({ message: "Please provide the vendor details." });
         }
         if (!Array.isArray(offerings) || offerings.length === 0) {
-            return res.status(400).json({ message: "Please provide at least one offering." });
+            return res.status(400).json({ message: "No offer provided." });
         }
         const totalOfferingsCount = await wheelModel.aggregate([
             {
