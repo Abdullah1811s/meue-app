@@ -23,7 +23,8 @@ const GeneralTermPdf = () => {
 
         {/* Section 2: Definitions */}
         <Section title="2. Definitions">
-          • <strong>The Menu</strong>: Refers to the software and services offered at www.themenuportal.co.za. <br />
+          • <strong>The Menu</strong>: Refers to the software and services offered at <a className="text-blue-500" href="https://themenuportal.co.za" target="_blank">www.themenuportal.co.za</a>
+          . <br />
           • <strong>Member</strong>: Any individual who subscribes to a membership tier or purchases a Day Pass on The Menu. <br />
           • <strong>Vendor/Partner</strong>: Any business or individual listing products, services, offers, or promotions on The Menu. <br />
           • <strong>User</strong>: Any person accessing or using The Menu, including Members, Vendors, and visitors. <br />
@@ -295,13 +296,59 @@ const GeneralTermPdf = () => {
           • <strong>Security</strong>: All transactions are encrypted and PCI DSS compliant.
         </Section>
 
-        {/* Section 9: Privacy Policy */}
-        <Section title="9. Privacy Policy">
+        {/* Section 9: Cancellation and Termination of Membership - Added from the first document */}
+        <Section title="9. Cancellation and Termination of Membership">
+          <SubSection title="9.1 Cancellation by Member">
+            Members may cancel their subscription at any time by logging into their profile via the Member Dashboard. Navigate to the Membership Management section and select Cancel Membership. Follow the on-screen prompts until cancellation is confirmed. A cancellation confirmation email will be sent once the process is complete. <br />
+            <br />
+            • Your membership will remain active until the end of the current billing cycle. <br />
+            • All automatic entries, leaderboard points, and access rights associated with the cancelled membership will expire at the end of that cycle. <br />
+            • There are no refunds for any partially used periods or recently paid membership fees unless billing errors occurred or refund is mandated by law.
+          </SubSection>
+
+          <SubSection title="9.2 Forfeiture of Benefits">
+            <strong>Upon cancellation:</strong> <br />
+            • All unused competition entries are forfeited. <br />
+            • Leaderboard points not redeemed by the end of the billing period will expire unless stored via approved Menu mechanics. <br />
+            • Once-off Pass holders with access durations longer than three months will retain their competition entry banking privileges, subject to expiration timelines defined at purchase.
+          </SubSection>
+
+          <SubSection title="9.3 Reactivation & Grace Period">
+            <strong>If your subscription is cancelled:</strong> <br />
+            • You may reactivate a new membership within 30 days to sync your most recent participation history (entries, points, and badges). <br />
+            • After 30 days, all previous records will be permanently removed and will not be eligible for syncing.
+          </SubSection>
+
+          <SubSection title="9.4 Failed Payments">
+            <strong>If a recurring payment fails:</strong> <br />
+            • The system will attempt to debit the account up to two (2) times, spaced every 10 days across a 30-day grace period. <br />
+            • Manual payment retries initiated by the Member also count towards the 2-attempt limit. <br />
+            • On the 2nd failed attempt, the subscription will be automatically cancelled. <br />
+            • This will result in the loss of your loyalty streak, leaderboard progression, and competition entries.
+          </SubSection>
+
+          <SubSection title="9.5 Communications Opt-Out">
+            Terminating your membership does not automatically unsubscribe you from promotional emails, SMS alerts, or notifications. <br />
+            <br />
+            <strong>To manage communication preferences:</strong> <br />
+            • Use the "Unsubscribe" or "Opt-out" links provided in the communications received. <br />
+            • These are managed via third-party providers and must be handled separately from membership cancellation.
+          </SubSection>
+
+          <SubSection title="9.6 Discounted or Voucher-Based Memberships">
+            Members who joined through discount codes or vouchers are subject to the same cancellation and forfeiture rules. <br />
+            • These memberships cannot be paused or extended. <br />
+            • Upon cancellation or failure to renew, all associated access and bonus benefits will be forfeited unless reactivated within the 30-day period.
+          </SubSection>
+        </Section>
+
+        {/* Section 10: Privacy Policy (renumbered) */}
+        <Section title="10. Privacy Policy">
           Refer to our <a href="/doc/Privacy" target="_blank" className="text-blue-500">Privacy Policy</a> for details on data collection, use, and protection.
         </Section>
 
-        {/* Section 10: Limitation of Liability */}
-        <Section title="10. Limitation of Liability">
+        {/* Section 11: Limitation of Liability (renumbered) */}
+        <Section title="11. Limitation of Liability">
           • The Menu is not liable for any claims, damages, losses, or expenses arising out of or in connection with: <br />
           &nbsp;&nbsp;&nbsp;&nbsp;• Transactions conducted between Members/Users and Vendors/Partners. <br />
           &nbsp;&nbsp;&nbsp;&nbsp;• The quality, availability, or delivery of products or services provided by Vendors/Partners. <br />
@@ -310,24 +357,24 @@ const GeneralTermPdf = () => {
           • Our total liability is limited to the amount paid by the User to access the platform in the preceding three months.
         </Section>
 
-        {/* Section 11: Governing Law */}
-        <Section title="11. Governing Law">
+        {/* Section 12: Governing Law (renumbered) */}
+        <Section title="12. Governing Law">
           These Terms are governed by the laws of South Africa. Any disputes arising from or in connection with these Terms shall be resolved exclusively in the courts of South Africa.
         </Section>
 
-        {/* Section 12: Dispute Resolution */}
-        <Section title="12. Dispute Resolution">
+        {/* Section 13: Dispute Resolution (renumbered) */}
+        <Section title="13. Dispute Resolution">
           • In the event of a dispute, parties agree to first attempt resolution through good-faith negotiations. <br />
           • If negotiations fail, the matter may proceed to litigation in accordance with South African law.
         </Section>
 
-        {/* Section 13: Amendments */}
-        <Section title="13. Amendments">
+        {/* Section 14: Amendments (renumbered) */}
+        <Section title="14. Amendments">
           We reserve the right to update these Terms at any time. Changes will take effect immediately upon posting on the Platform. Continued use of the Platform after such changes constitutes acceptance of the revised Terms. It is the User's responsibility to regularly review these Terms for updates.
         </Section>
 
-        {/* Section 14: Contact Information */}
-        <Section title="14. Contact Information">
+        {/* Section 15: Contact Information (renumbered) */}
+        <Section title="15. Contact Information">
           For inquiries or support, please contact us via: <br />
           • <strong>Email</strong>: <a href="mailto:support@themenuportal.co.za" className="text-blue-500 underline">
             support@themenuportal.co.za
