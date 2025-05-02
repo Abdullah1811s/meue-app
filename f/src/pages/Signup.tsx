@@ -42,6 +42,7 @@ const signUpSchema = z.object({
   street: z.string().min(1, 'Street address is required'),
   town: z.string().min(1, 'Suburb/Town is required'),
   city: z.string().min(1, 'City is required'),
+  countryCode: z.string(),
   province: z.string().min(1, 'Province is required'),
   postalCode: z.string().min(1, 'Postal code is required'),
   password: z.string()
@@ -373,41 +374,60 @@ function SignUp() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Mobile Number
                 </label>
-                <input
-                  {...register("phone", {
-                    required: "Mobile number is required",
-                    pattern: {
-                      value: /^\+?[0-9\s-]+$/, // Allows +, numbers, spaces, and hyphens
-                      message: "Only numbers, +, spaces, or hyphens are allowed"
-                    },
-                    validate: (value) => {
-                      // Count only the digits for length validation
-                      const digitCount = value.replace(/[^0-9]/g, '').length;
-                      return (digitCount >= 8 && digitCount <= 15) ||
-                        "Phone number must be 8-15 digits (excluding +, spaces)";
-                    }
-                  })}
-                  type="tel"
-                  inputMode="tel"
-                  onKeyDown={(e) => {
-                    // Allow: backspace, delete, tab, escape, enter
-                    if ([8, 9, 13, 27, 46].includes(e.keyCode) ||
-                      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                      (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
-                      // Allow: home, end, left, right
-                      (e.keyCode >= 35 && e.keyCode <= 39) ||
-                      // Allow: + (only at start)
-                      (e.key === '+')) {
-                      return;
-                    }
-                    // Prevent if not a number, space, or hyphen
-                    if (!/[0-9\s-]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  placeholder="e.g., +90 234 567 8901"
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
-                />
+                <div className="flex space-x-2">
+                  <select
+                    {...register("countryCode", { required: true })}
+                    className="rounded-md border border-gray-300 px-2 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
+                    defaultValue="+27"
+                  >
+                    <option value="+27">🇿🇦 (+27)</option>
+                    <option value="+971">🇦🇪 (+971)</option>
+                    <option value="+7">🇷🇺 (+7)</option>
+                    <option value="+20">🇪🇬 (+20)</option>
+                    <option value="+234">🇳🇬 (+234)</option>
+                    <option value="+255">🇹🇿 (+255)</option>
+                    <option value="+256">🇺🇬 (+256)</option>
+                    <option value="+1">🇺🇸 (+1)</option>
+                    <option value="+44">🇬🇧 (+44)</option>
+                    <option value="+91">🇮🇳 (+91)</option>
+                    <option value="+61">🇦🇺 (+61)</option>
+                    <option value="+49">🇩🇪 (+49)</option>
+                    <option value="+33">🇫🇷 (+33)</option>
+                    <option value="+81">🇯🇵 (+81)</option>
+                    <option value="+55">🇧🇷 (+55)</option>
+                  </select>
+
+                  <input
+                    {...register("phone", {
+                      required: "Mobile number is required",
+                      pattern: {
+                        value: /^[0-9\s-]+$/,
+                        message: "Only numbers, spaces, or hyphens allowed",
+                      },
+                      validate: (value) => {
+                        const digitCount = value.replace(/[^0-9]/g, '').length;
+                        return (digitCount >= 8 && digitCount <= 15) ||
+                          "Phone number must be 8–15 digits (excluding country code)";
+                      },
+                    })}
+                    type="tel"
+                    inputMode="tel"
+                    onKeyDown={(e) => {
+                      if (
+                        [8, 9, 13, 27, 46].includes(e.keyCode) || // backspace, tab, enter, escape, delete
+                        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) || // Ctrl+A/C/V/X
+                        (e.keyCode >= 35 && e.keyCode <= 39)
+                      ) {
+                        return;
+                      }
+                      if (!/[0-9\s-]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="234 567 8901"
+                    className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
+                  />
+                </div>
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
                 )}

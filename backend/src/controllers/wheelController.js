@@ -24,12 +24,18 @@ export const addVendorOnWheel = async (req, res) => {
     try {
         const { vendorInfo, offerings } = req.body;
         console.log("=============================================");
+        console.log(`This is the vendor id: ${vendorInfo}, and these are the wheel offerings: ${JSON.stringify(offerings, null, 2)}`);
+
         if (!vendorInfo) {
             return res.status(400).json({ message: "Please provide the vendor details." });
         }
-        if (!Array.isArray(offerings) || offerings.length === 0) {
+        if (!offerings || offerings.length === 0) {
             return res.status(400).json({ message: "No offer provided." });
         }
+        
+        const offeringsArray = Array.isArray(offerings) ? offerings : [offerings];
+
+        // Check total offerings count
         const totalOfferingsCount = await wheelModel.aggregate([
             {
                 $group: {
@@ -45,29 +51,61 @@ export const addVendorOnWheel = async (req, res) => {
             }
         ]);
 
-
         const totalCount = totalOfferingsCount[0]?.totalOfferings || 0;
         console.log("Total offerings count: ", totalCount);
 
-
-
-        // Check if total offerings are more than 10
-        if (totalCount >= 10) {
-            return res.status(400).json({ message: "Wheel limit exceeded! Please remove an entry before adding a new one." });
+        // Check if total offerings would exceed 10 after adding new ones
+        if (totalCount + offeringsArray.length > 10) {
+            return res.status(400).json({ message: "Adding these offerings would exceed the wheel limit of 10! Please remove some entries first." });
         }
-        else {
-            const updatedVendor = await wheelModel.findOneAndUpdate(
-                { "vendor.vendorInfo": vendorInfo },
-                { $push: { "vendor.offerings": { $each: offerings } } },
-                { new: true, upsert: true }
+
+        // Check for existing offerings
+        const existingWheel = await wheelModel.findOne({ 
+            $or: [
+                { "vendor.offerings": { $in: offeringsArray } },
+                { "admin.offerings": { $in: offeringsArray } }
+            ]
+        });
+
+        if (existingWheel) {
+            // Find which offerings already exist
+            const allOfferings = [
+                ...(existingWheel.vendor?.offerings || []),
+                ...(existingWheel.admin?.offerings || [])
+            ];
+            
+            const duplicates = offeringsArray.filter(offering => 
+                allOfferings.includes(offering)
             );
-            return res.status(201).json({ message: "Vendor added/updated successfully!", data: updatedVendor });
-            console.log("=============================================");
+            
+            return res.status(400).json({ 
+                message: "Some offerings already exist on the wheel!",
+                duplicates,
+                existingIn: existingWheel.vendor?.offerings.includes(duplicates[0]) ? "vendor" : "admin"
+            });
         }
+
+        // If no duplicates, proceed with update
+        const updatedVendor = await wheelModel.findOneAndUpdate(
+            { "vendor.vendorInfo": vendorInfo },
+            { 
+                $set: { "vendor.vendorInfo": vendorInfo }, // Ensure vendorInfo is set
+                $push: { "vendor.offerings": { $each: offeringsArray } } 
+            },
+            { new: true, upsert: true }
+        );
+
+        return res.status(200).json({ 
+            message: "Vendor added/updated successfully!", 
+            data: updatedVendor 
+        });
 
     } catch (error) {
         console.error("Error adding Partner to wheel:", error);
-        return res.status(500).json({ message: "Unable to add Partner on wheel! Please try again later" });
+        return res.status(500).json({ 
+            message: "Unable to add Partner on wheel! Please try again later",
+            error: error.message 
+        });
     }
 };
 

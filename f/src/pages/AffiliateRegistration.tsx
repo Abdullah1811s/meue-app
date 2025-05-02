@@ -17,7 +17,7 @@ const AffiliateSchema = z
         email: z.string().email("Invalid email address"),
         phone: z
             .string()
-            .min(10, "Phone number must be at least 10 digits")
+            .min(1, "Phone number must be at least 10 digits")
             .max(15, "Phone number cannot exceed 15 digits")
             .regex(/^\+?[0-9\s-]+$/, "Invalid phone number format"),
         affiliateType: z.enum(["individual", "business"], {

@@ -15,7 +15,7 @@ const VendorSchema = new mongoose.Schema({
     default: "pending"
   },
   businessContactNumber: { type: String, required: true },
-  businessEmail: { type: String, required: true, unique: true },
+  businessEmail: { type: String, required: true, unique: true, lowercase: true, trim: true, },
   websiteUrl: { type: String },
 
   socialMediaHandles: {

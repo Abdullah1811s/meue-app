@@ -252,7 +252,7 @@ const AllPartners = () => {
               >
                 <div className="text-gray-500 font-medium">
                   {vendors.length > 0 ? (
-                    <>🌟 Partner <span className="text-blue-600">{currentPage}</span> of <span className="text-blue-600">{totalPages}</span></>
+                    <>🌟 Pages <span className="text-blue-600">{currentPage}</span> of <span className="text-blue-600">{totalPages}</span></>
                   ) : (
                     "🚀 No partners found – Stay tuned!"
                   )}

@@ -262,6 +262,7 @@ const AdminDashboard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [delAffLoading, setDelAffLoading] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [, setShowMap] = useState<{ [key: number]: boolean }>({});
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectBtn, setRejectBtn] = useState<{ [key: string]: boolean }>({});
@@ -891,7 +892,7 @@ const AdminDashboard = () => {
 
     try {
       const payload = { id, status, reason };
-      const res = await axios.put(
+      await axios.put(
         `${API_BASE_URL}/vendor/updateStatus`,
         payload,
         {
@@ -912,32 +913,6 @@ const AdminDashboard = () => {
           return partner;
         })
       );
-      try {
-
-        await axios.post(
-          `${API_BASE_URL}/wheel/add`,
-          {
-            vendorInfo: res.data.vendor._id,
-            offerings: res.data.vendor.wheelOffer.offerings
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "application/json"
-            }
-          }
-        );
-
-
-
-      } catch (error: any) {
-        console.error("Failed to add wheel offers:", error.response.data.message);
-        if (status === "approved")
-          toast.error(`${error.response.data.message}`, { duration: 5000 });
-        throw error;
-      }
-
-
 
     } catch (error: any) {
     } finally {
@@ -948,6 +923,49 @@ const AdminDashboard = () => {
     if (status === "rejected")
       setIsRejecting(false);
   };
+
+
+
+  const handleClick = async (index: number, vid: any, status: any, wheelOffer: any) => {
+    if (status != "approved") {
+      toast.error("Please approve partner before proceeding!");
+      return;
+    }
+
+    try {
+       await axios.post(
+        `${API_BASE_URL}/wheel/add`,
+        {
+          vendorInfo: vid,
+          offerings: wheelOffer
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      toast.success("Offer has been added to wheel");
+
+
+
+    } catch (error: any) {
+      console.error("Failed to add wheel offers:", error.response.data.message);
+      if (status === "approved")
+        toast.error(`${error.response.data.message}`, { duration: 5000 });
+      throw error;
+    }
+
+    setShowMap((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+
+  };
+
+
 
   const updateTier = async (id: string, vendorTier: any) => {
     try {
@@ -1657,13 +1675,14 @@ const AdminDashboard = () => {
                           <div className="space-y-2">
                             {vendor.wheelOffer.offerings.map((offering: any, index: any) => (
                               <div key={`wheel-${index}`} className="p-3 border rounded-lg bg-gray-50 relative">
-                                {/* Notification badge */}
-                                <span className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md flex items-center">
-                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                  </svg>
-                                  Auto-shown on wheel
-                                </span>
+
+                                <button
+                                  onClick={() => handleClick(index, vendor._id, vendor.status, offering)}
+                                  className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-3 py-3 rounded-full shadow-md flex items-center cursor-pointer hover:bg-[#c0a849] transition duration-200"
+                                >
+                                  show on wheel
+                                </button>
+
 
                                 <p className="font-medium mt-6">Name: {offering.name}</p>
                                 <p>Quantity: {offering.quantity || 'Unlimited'}</p>

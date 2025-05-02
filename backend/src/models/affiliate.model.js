@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const affiliateSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   surname: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true, },
   phoneNumber: { type: String, required: true },
   type: { type: String, enum: ["individual", "business"], required: true },
   businessName: { type: String, default: null },
