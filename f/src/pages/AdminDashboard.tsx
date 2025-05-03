@@ -1678,7 +1678,7 @@ const AdminDashboard = () => {
 
                                 <button
                                   onClick={() => handleClick(index, vendor._id, vendor.status, offering)}
-                                  className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-3 py-3 rounded-full shadow-md flex items-center cursor-pointer hover:bg-[#c0a849] transition duration-200"
+                                  className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center cursor-pointer hover:bg-[#c0a849] transition duration-200"
                                 >
                                   show on wheel
                                 </button>
