@@ -29,7 +29,7 @@ const signUpSchema = z.object({
   phone: z.string()
     .min(1, "Phone number is required")
     .regex(/^\+?[0-9]*$/, {
-      message: "Must start with + followed by numbers only"
+      message: "Please add only Numbers"
     })
     .refine(val => {
       if (val.startsWith('+')) {
@@ -424,7 +424,7 @@ function SignUp() {
                         e.preventDefault();
                       }
                     }}
-                    placeholder="234 567 8901"
+                    placeholder="123456789"
                     className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-[#DBC166] focus:ring-[#DBC166]"
                   />
                 </div>
