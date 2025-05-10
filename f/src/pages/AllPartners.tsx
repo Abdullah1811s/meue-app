@@ -187,9 +187,8 @@ const AllPartners = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5 }}
-                      className={`flex-shrink-0 w-[280px] cursor-pointer transition-all duration-300 ${
-                        selectedVendorId === vendor._id ? "scale-105 ring-2 ring-[#DBC166]" : "hover:scale-105"
-                      }`}
+                      className={`flex-shrink-0 w-[280px] cursor-pointer transition-all duration-300 ${selectedVendorId === vendor._id ? "scale-105 ring-2 ring-[#DBC166]" : "hover:scale-105"
+                        }`}
                       onClick={() => selectVendor(vendor._id)}
                     >
                       {/* Vendor Card Content */}
@@ -216,7 +215,7 @@ const AllPartners = () => {
                         </motion.div>
                         <div className="text-center">
                           <h2 className="text-xl font-bold text-gray-800 mb-2">{vendor.businessName}</h2>
-                          <p className="text-gray-600 text-sm capitalize mb-4">{vendor.businessType}</p>
+                          <p className="text-gray-600 text-sm capitalize mb-4">{vendor.businessType.replace(/_/g, " ")}</p>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -267,11 +266,10 @@ const AllPartners = () => {
                     whileTap={{ scale: 0.9 }}
                     onClick={goToPrevPage}
                     disabled={currentPage === 1}
-                    className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                      currentPage === 1
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-[#DBC166] text-white hover:bg-[#C0A95A]"
-                    } transition-colors duration-200`}
+                    className={`flex items-center justify-center w-10 h-10 rounded-full ${currentPage === 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-[#DBC166] text-white hover:bg-[#C0A95A]"
+                      } transition-colors duration-200`}
                   >
                     &lt;
                   </motion.button>
@@ -283,11 +281,10 @@ const AllPartners = () => {
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.8 }}
                         onClick={() => handlePageChange(index + 1)}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                          currentPage === index + 1
-                            ? "bg-[#DBC166] transform scale-125"
-                            : "bg-gray-300 hover:bg-gray-400"
-                        }`}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${currentPage === index + 1
+                          ? "bg-[#DBC166] transform scale-125"
+                          : "bg-gray-300 hover:bg-gray-400"
+                          }`}
                         aria-label={`Go to page ${index + 1}`}
                       />
                     ))}
@@ -298,11 +295,10 @@ const AllPartners = () => {
                     whileTap={{ scale: 0.9 }}
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
-                    className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                      currentPage === totalPages
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-[#DBC166] text-white hover:bg-[#C0A95A]"
-                    } transition-colors duration-200`}
+                    className={`flex items-center justify-center w-10 h-10 rounded-full ${currentPage === totalPages
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-[#DBC166] text-white hover:bg-[#C0A95A]"
+                      } transition-colors duration-200`}
                   >
                     &gt;
                   </motion.button>

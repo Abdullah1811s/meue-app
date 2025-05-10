@@ -281,6 +281,41 @@ const AdminDashboard = () => {
     password: ''          // Password for the new admin
   });
 
+
+
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [updatedOffering, setUpdatedOffering] = useState<any>({ name: '', quantity: '' });
+
+  const startEditing = (index: number, offering: any) => {
+    setEditingIndex(index);
+    setUpdatedOffering({
+      name: offering.name || '',
+      quantity: offering.quantity || '',
+    });
+  };
+
+  const handleUpdate = async (
+    vendorId: any,
+    updatedOffering: any,
+    name: any // new updated data for the offering
+  ) => {
+    try {
+      const payload = { name: name, updatedOffer: updatedOffering };
+
+      console.log(payload)
+      const response = await axios.put(
+        `${API_BASE_URL}/wheel/${vendorId}/exclusive-offer/update`,
+        payload
+      );
+      
+      toast.success("updated please do reload");
+      console.log('Server response:', response.data);
+    } catch (err: any) {
+      console.error('Update failed:', err.response?.data || err.message);
+    }
+  };
+
+
   const handleCreateAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -933,7 +968,7 @@ const AdminDashboard = () => {
     }
 
     try {
-       await axios.post(
+      await axios.post(
         `${API_BASE_URL}/wheel/add`,
         {
           vendorInfo: vid,
@@ -1673,30 +1708,74 @@ const AdminDashboard = () => {
                       <div className="mt-2">
                         {vendor.wheelOffer?.offerings?.length > 0 ? (
                           <div className="space-y-2">
-                            {vendor.wheelOffer.offerings.map((offering: any, index: any) => (
-                              <div key={`wheel-${index}`} className="p-3 border rounded-lg bg-gray-50 relative">
+                            {vendor.wheelOffer.offerings.map((offering: any, index: any) => {
+                              const isEditing = editingIndex === index;
 
-                                <button
-                                  onClick={() => handleClick(index, vendor._id, vendor.status, offering)}
-                                  className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center cursor-pointer hover:bg-[#c0a849] transition duration-200"
-                                >
-                                  show on wheel
-                                </button>
+                              return (
+                                <div key={`wheel-${index}`} className="p-3 border rounded-lg bg-gray-50 relative">
+                                  {/* Show on Wheel Button */}
+                                  <button
+                                    onClick={() => handleClick(index, vendor._id, vendor.status, offering)}
+                                    className="absolute top-2 right-2 bg-[#DBC166] text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center cursor-pointer hover:bg-[#c0a849] transition duration-200"
+                                  >
+                                    Show on Wheel
+                                  </button>
+
+                                  {/* Update Button */}
+                                  <button
+                                    onClick={() =>
+                                      isEditing
+                                        ? handleUpdate(vendor._id, updatedOffering, offering.name).then(() =>
+                                          setEditingIndex(null) // stop editing after save
+                                        )
+                                        : startEditing(index, offering)
+                                    }
+                                    className="absolute top-2 right-32 bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center cursor-pointer hover:bg-blue-600 transition duration-200"
+                                  >
+                                    {isEditing ? 'Save' : 'Update'}
+                                  </button>
 
 
-                                <p className="font-medium mt-6">Name: {offering.name}</p>
-                                <p>Quantity: {offering.quantity || 'Unlimited'}</p>
-                                {offering.endDate && (
-                                  <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
-                                )}
-
-                              </div>
-                            ))}
+                                  {/* Offering Info */}
+                                  {isEditing ? (
+                                    <div className="mt-6 space-y-2">
+                                      <input
+                                        type="text"
+                                        value={updatedOffering.name}
+                                        onChange={e =>
+                                          setUpdatedOffering({ ...updatedOffering, name: e.target.value })
+                                        }
+                                        className="w-full border rounded p-1"
+                                        placeholder="Name"
+                                      />
+                                      <input
+                                        type="number"
+                                        value={updatedOffering.quantity}
+                                        onChange={e =>
+                                          setUpdatedOffering({ ...updatedOffering, quantity: +e.target.value })
+                                        }
+                                        className="w-full border rounded p-1"
+                                        placeholder="Quantity"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <p className="font-medium mt-6">Name: {offering.name}</p>
+                                      <p>Quantity: {offering.quantity ?? 'Unlimited'}</p>
+                                      {offering.endDate && (
+                                        <p>End Date: {new Date(offering.endDate).toLocaleDateString()}</p>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <p className="text-gray-500">No wheel offerings available</p>
                         )}
                       </div>
+
 
                       {/* Raffle Offer Section */}
                       <h3 className="mt-3 md:mt-4 font-semibold">Raffle Offer:</h3>

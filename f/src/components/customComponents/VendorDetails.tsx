@@ -1,8 +1,23 @@
+"use client"
 
 import { motion } from "framer-motion"
-import { Globe, Phone, Mail, MapPin, Briefcase, User, Facebook, Instagram, Twitter } from "lucide-react"
+import { Globe, Phone, Mail, MapPin, Briefcase, User, Facebook, Instagram, Twitter, Tag } from "lucide-react"
+import { useSelector } from "react-redux"
 
 const VendorDetails = ({ vendor }: { vendor: any }) => {
+  const isUserAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated)
+
+  // Format date function for wheel offers
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A"
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -14,7 +29,7 @@ const VendorDetails = ({ vendor }: { vendor: any }) => {
       <div className="flex flex-col md:flex-row gap-6 md:gap-8">
         {/* Profile Section */}
         <div className="md:w-1/3 flex flex-col items-center">
-          <div className="h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 rounded-full overflow-hidden border-4 border-[#DBC166] mb-4 sm:mb-6">
+          <div className="h-32 w-32 sm:h-40 sm:w-40 md:h-48 md:w-48 rounded-full overflow-hidden border-4 border-gray-300 mb-4 sm:mb-6">
             <img
               src={vendor?.businessPromotionalMaterialURl?.secure_url || "/placeholder.svg?height=150&width=150"}
               alt={`${vendor?.businessName || "Business"} logo`}
@@ -30,7 +45,10 @@ const VendorDetails = ({ vendor }: { vendor: any }) => {
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
               {vendor.businessName}
             </h2>
-            <p className="text-gray-600 text-base sm:text-lg capitalize mb-4">{vendor.businessType}</p>
+            <p className="text-gray-600 text-base sm:text-lg capitalize mb-4">
+              {vendor.businessType.replace(/_/g, " ")}
+            </p>
+
           </div>
         </div>
 
@@ -90,13 +108,56 @@ const VendorDetails = ({ vendor }: { vendor: any }) => {
           {vendor.exclusiveOffer && (
             <div className="mb-6 sm:mb-8">
               <h3 className="font-medium text-gray-700 mb-2 sm:mb-3 text-lg sm:text-xl">Exclusive Offer</h3>
-              <div className="bg-[#DBC166] bg-opacity-10 p-4 sm:p-6 rounded-lg border border-[#DBC166]">
-                <p className="text-base sm:text-lg font-medium text-[#DBC166] mb-2 capitalize">
+              <div className="bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-300">
+                <p className="text-base sm:text-lg font-medium text-gray-700 mb-2 capitalize">
                   {vendor.exclusiveOffer.type} Offer
                 </p>
                 <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">{vendor.exclusiveOffer.details}</p>
                 <p className="text-xs sm:text-sm text-gray-500 italic">Terms: {vendor.exclusiveOffer.terms}</p>
               </div>
+            </div>
+          )}
+
+          {/* Wheel Offer Section - Only visible to authenticated users */}
+          {isUserAuthenticated && vendor.wheelOffer && vendor.wheelOffer.type && (
+            <div className="mb-6 sm:mb-8">
+              <h3 className="font-medium text-gray-700 mb-2 sm:mb-3 text-lg sm:text-xl">
+                <span className="flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-[#DBC166]" />
+                  Wheel Offer
+                </span>
+              </h3>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-300"
+              >
+                <p className="text-base sm:text-lg font-medium text-gray-700 mb-2 capitalize">
+                  {vendor.wheelOffer.type} Offer
+                </p>
+
+                {vendor.wheelOffer.offerings && vendor.wheelOffer.offerings.length > 0 && (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-sm font-medium text-gray-700">Available Rewards:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {vendor.wheelOffer.offerings.map((offering: any, index: number) => (
+                        <div key={index} className="bg-white p-3 rounded-md shadow-sm border border-gray-300">
+                          <p className="font-medium text-gray-800">{offering.name}</p>
+                          <div className="flex justify-between mt-2 text-sm text-gray-600">
+                            <span>Quantity: {offering.quantity || "N/A"}</span>
+                            <span>Ends: {formatDate(offering.endDate)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {vendor.wheelOffer.terms && (
+                  <p className="text-xs sm:text-sm text-gray-700 italic mt-4">Terms: {vendor.wheelOffer.terms}</p>
+                )}
+              </motion.div>
             </div>
           )}
 
