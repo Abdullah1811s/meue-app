@@ -283,37 +283,43 @@ const AdminDashboard = () => {
 
 
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingStates, setEditingStates] = useState<Record<string, number | null>>({});
   const [updatedOffering, setUpdatedOffering] = useState<any>({ name: '', quantity: '' });
 
-  const startEditing = (index: number, offering: any) => {
-    setEditingIndex(index);
+  const startEditing = (vendorId: string, index: number, offering: any) => {
+    setEditingStates(prev => ({ ...prev, [vendorId]: index }));
     setUpdatedOffering({
       name: offering.name || '',
       quantity: offering.quantity || '',
     });
   };
 
+  const cancelEditing = (vendorId: string) => {
+    setEditingStates(prev => ({ ...prev, [vendorId]: null }));
+  };
+
   const handleUpdate = async (
     vendorId: any,
     updatedOffering: any,
-    name: any // new updated data for the offering
+    name: any
   ) => {
     try {
       const payload = { name: name, updatedOffer: updatedOffering };
-
       console.log(payload)
       const response = await axios.put(
         `${API_BASE_URL}/wheel/${vendorId}/exclusive-offer/update`,
         payload
       );
-      
+
       toast.success("updated please do reload");
       console.log('Server response:', response.data);
+      cancelEditing(vendorId); // Exit edit mode after successful update
     } catch (err: any) {
       console.error('Update failed:', err.response?.data || err.message);
     }
   };
+
+
 
 
   const handleCreateAdminSubmit = async (e: React.FormEvent) => {
@@ -1709,7 +1715,7 @@ const AdminDashboard = () => {
                         {vendor.wheelOffer?.offerings?.length > 0 ? (
                           <div className="space-y-2">
                             {vendor.wheelOffer.offerings.map((offering: any, index: any) => {
-                              const isEditing = editingIndex === index;
+                              const isEditing = editingStates[vendor._id] === index;
 
                               return (
                                 <div key={`wheel-${index}`} className="p-3 border rounded-lg bg-gray-50 relative">
@@ -1721,20 +1727,27 @@ const AdminDashboard = () => {
                                     Show on Wheel
                                   </button>
 
-                                  {/* Update Button */}
+                                  {/* Update/Save Button */}
                                   <button
                                     onClick={() =>
                                       isEditing
-                                        ? handleUpdate(vendor._id, updatedOffering, offering.name).then(() =>
-                                          setEditingIndex(null) // stop editing after save
-                                        )
-                                        : startEditing(index, offering)
+                                        ? handleUpdate(vendor._id, updatedOffering, offering.name)
+                                        : startEditing(vendor._id, index, offering)
                                     }
                                     className="absolute top-2 right-32 bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center cursor-pointer hover:bg-blue-600 transition duration-200"
                                   >
                                     {isEditing ? 'Save' : 'Update'}
                                   </button>
 
+                                  {/* Cancel Button (only visible when editing) */}
+                                  {isEditing && (
+                                    <button
+                                      onClick={() => cancelEditing(vendor._id)}
+                                      className="absolute top-2 right-52 bg-gray-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md flex items-center cursor-pointer hover:bg-gray-600 transition duration-200"
+                                    >
+                                      Cancel
+                                    </button>
+                                  )}
 
                                   {/* Offering Info */}
                                   {isEditing ? (
