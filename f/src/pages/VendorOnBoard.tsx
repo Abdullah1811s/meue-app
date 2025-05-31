@@ -301,7 +301,7 @@ function VendorOnboarding() {
     }
 
     if (!file) {
-      console.error(`No file selected for ${type}`);
+      console.log(`No file selected for ${type}`);
       return;
     }
 

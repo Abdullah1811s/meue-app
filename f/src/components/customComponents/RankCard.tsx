@@ -29,7 +29,23 @@ interface Raffle {
   scheduledAt?: string;
   createdAt: string;
 }
-
+const colorGradients = [
+  "from-blue-400 via-blue-600 to-blue-800",     // Blue
+  "from-purple-400 via-purple-600 to-purple-800", // Purple
+  "from-pink-400 via-pink-600 to-pink-800",     // Pink
+  "from-red-400 via-red-600 to-red-800",        // Red
+  "from-orange-400 via-orange-600 to-orange-800", // Orange
+  "from-amber-400 via-amber-600 to-amber-800",  // Amber
+  "from-yellow-400 via-yellow-600 to-yellow-800", // Yellow
+  "from-lime-400 via-lime-600 to-lime-800",     // Lime
+  "from-green-400 via-green-600 to-green-800",  // Green
+  "from-emerald-400 via-emerald-600 to-emerald-800", // Emerald
+  "from-teal-400 via-teal-600 to-teal-800",     // Teal
+  "from-cyan-400 via-cyan-600 to-cyan-800",     // Cyan
+  "from-indigo-400 via-indigo-600 to-indigo-800", // Indigo
+  "from-violet-400 via-violet-600 to-violet-800", // Violet
+  "from-fuchsia-400 via-fuchsia-600 to-fuchsia-800", // Fuchsia
+];
 // Function to calculate time remaining until a given date
 const getTimeRemaining = (endDate: string): string => {
   const end = new Date(endDate).getTime();
@@ -67,8 +83,8 @@ const RankCard: React.FC = () => {
                 prize.quantity > 0
               )
             )
-            .slice(0, 3);
-           
+
+
           setRaffles(filteredRaffles);
 
         }
@@ -83,24 +99,21 @@ const RankCard: React.FC = () => {
   return (
     <div className="flex flex-col items-center space-y-10">
       <p className="text-2xl font-semibold">Ongoing Raffles</p>
-
-      <div className="flex flex-col md:flex-row justify-center gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 w-full px-4">
         {raffles.map((raffle, index) => {
-          const prize = raffle.prizes[0]; // Display first prize
+          const prize = raffle.prizes[0];
           const timeRemaining =
             prize?.endDate && new Date(prize.endDate) > new Date()
               ? getTimeRemaining(prize.endDate)
               : null;
 
+          // Use the color gradient based on index, cycling through the available gradients
+          const colorGradient = colorGradients[index % colorGradients.length];
+
           return (
             <div
               key={raffle._id}
-              className={`relative flex flex-col items-center w-60 rounded-2xl shadow-xl p-6 transition-transform transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl ${index === 0
-                ? "bg-gradient-to-b from-blue-500 via-blue-700 to-blue-900"
-                : index === 1
-                  ? "bg-gradient-to-b from-yellow-400 via-yellow-600 to-yellow-800"
-                  : "bg-gradient-to-b from-gray-300 via-gray-500 to-gray-800"
-                }`}
+              className={`relative flex flex-col items-center w-full rounded-2xl shadow-xl p-6 transition-transform transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl bg-gradient-to-b ${colorGradient}`}
             >
               {/* Rank Badge */}
               <div className="absolute -top-4 bg-gray-800 text-white text-lg px-4 py-2 rounded-full font-bold transition-transform transform duration-300 hover:scale-110">
@@ -108,19 +121,26 @@ const RankCard: React.FC = () => {
               </div>
 
               {/* Raffle Name */}
-              <h3 className="mt-4 text-2xl font-bold">{raffle.name}</h3>
+              <h3 className="mt-4 text-2xl font-bold text-white">{raffle.name}</h3>
 
-              {/* Prize Name & Quantity */}
+              {/* Prize Info */}
               {prize && (
                 <p className="mt-2 text-sm sm:text-base md:text-lg text-yellow-300 font-semibold">
                   Prize: {prize.name} ({prize.quantity} available)
                 </p>
               )}
 
-              {/* End Date */}
+              {/* Time Remaining */}
               {timeRemaining && (
                 <p className="mt-1 text-sm sm:text-base md:text-lg text-white">
-                  Ends On: {new Date(prize.endDate).toLocaleDateString()}
+                  {timeRemaining}
+                </p>
+              )}
+
+              {/* End Date */}
+              {prize?.endDate && (
+                <p className="mt-1 text-sm sm:text-base text-gray-200">
+                  Ends: {new Date(prize.endDate).toLocaleDateString()}
                 </p>
               )}
 
@@ -130,7 +150,7 @@ const RankCard: React.FC = () => {
               </p>
 
               {/* Status */}
-              <div className="mt-6 py-2 w-full text-center text-white text-xl font-bold bg-gray-700 rounded-xl transition-colors duration-300 hover:bg-gray-900">
+              <div className="mt-6 py-2 w-full text-center text-white text-xl font-bold bg-gray-700 bg-opacity-50 rounded-xl transition-colors duration-300 hover:bg-gray-900">
                 {raffle.status}
               </div>
             </div>

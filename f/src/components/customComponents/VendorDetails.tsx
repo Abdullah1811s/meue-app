@@ -124,7 +124,7 @@ const VendorDetails = ({ vendor }: { vendor: any }) => {
               <h3 className="font-medium text-gray-700 mb-2 sm:mb-3 text-lg sm:text-xl">
                 <span className="flex items-center gap-2">
                   <Tag className="h-5 w-5 text-[#DBC166]" />
-                  Wheel Offer
+                  Exclusive Member Offer
                 </span>
               </h3>
               <motion.div

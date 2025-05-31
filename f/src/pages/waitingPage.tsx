@@ -791,8 +791,8 @@ export default function Home() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mt-8"
             >
               {[
-                { Icon: '/p7.avif', title: "Top Affiliates Get VIP Perks", desc: "Enjoy exclusive access & rewards." },
-                { Icon: '/p8.avif', title: "Live Performance Tracking", desc: "Monitor your earnings in real-time." }
+                { Icon: '/p8.avif', title: "Top Affiliates Get VIP Perks", desc: "Enjoy exclusive access & rewards." },
+                { Icon: '/p7.avif', title: "Live Performance Tracking", desc: "Monitor your earnings in real-time." }
               ].map(({ Icon, title, desc }, index) => (
                 <motion.div
                   key={index}

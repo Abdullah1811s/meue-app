@@ -31,7 +31,10 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({ vendors }) => {
   }
 
   // Filter only approved vendors
-  const approvedVendors = vendors.filter((vendor) => vendor.status === "approved");
+  const approvedVendors = Array.isArray(vendors)
+  ? vendors.filter((vendor) => vendor.status === "approved")
+  : [];
+
 
   // Duplicate vendors array to create a seamless infinite scroll effect
   const duplicatedVendors = useMemo(() => [...approvedVendors, ...approvedVendors, ...approvedVendors], [approvedVendors]);
@@ -44,7 +47,7 @@ const InfiniteScroll: React.FC<InfiniteScrollProps> = ({ vendors }) => {
         initial={{ x: 0 }}
         animate={{ x: [-width, 0] }}
         transition={{
-          x: { repeat: Infinity, repeatType: "loop", duration: 70, ease: "linear" },
+          x: { repeat: Infinity, repeatType: "loop", duration: 330, ease: "linear" },
         }}
       >
         {duplicatedVendors.map((vendor, index) => (
