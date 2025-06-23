@@ -798,7 +798,7 @@ function VendorOnboarding() {
                           maxLength={15}
                           {...register("representativePhone", {
                             required: "Phone number is required",
-                           
+
                           })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                           placeholder="Enter phone number"

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -18,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import AnalogTimer from '@/components/customComponents/AnalogTimer';
 import AppTimer from '@/components/customComponents/apptimer';
 import { useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 // import { useSelector } from 'react-redux';
 
 // Enhanced animation variants
@@ -106,6 +109,8 @@ export default function Home() {
   const isAuth = useSelector((state: any) => state.auth.isUserAuthenticated)
   const isPaid = useSelector((state: any) => state.auth.isPaid)
   const isInView = useInView(sectionRef, { once: true, margin: "-100px 0px" });
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedAmount, setSelectedAmount] = useState<"R10" | "R50" | null>(null);
 
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [showTimer, setShowTimer] = useState(true);
@@ -163,7 +168,7 @@ export default function Home() {
       localStorage.removeItem("hasRefreshed");
       startTimer(new Date().toISOString()); // Assume payment just happened now
     }
-  }, [isPaid]); 
+  }, [isPaid]);
 
   const fetchData = async () => {
     try {
@@ -209,6 +214,52 @@ export default function Home() {
     );
   };
 
+
+
+  const startTimer = (paidDate: any) => {
+    const paidTime = new Date(paidDate).getTime();
+    const expireTime = paidTime + 60 * 60 * 1000;
+
+    const updateTimer = () => {
+      const currentTime = new Date().getTime();
+      const remainingTime = expireTime - currentTime;
+
+      if (remainingTime <= 0) {
+        // Show message that the session has ended
+        setTimeLeft("Your payment session has ended. Please make a payment to continue.");
+
+        // Check if the page has already been refreshed
+        const hasRefreshed = localStorage.getItem("hasRefreshed");
+
+        if (!hasRefreshed) {
+          // Set the flag in localStorage to indicate the page has been refreshed
+          localStorage.setItem("hasRefreshed", "true");
+
+          // Refresh the page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000); // Wait for 2 seconds before refreshing
+        }
+        return;
+      }
+
+      const minutesLeft = Math.floor((remainingTime / (1000 * 60)) % 60);
+      const secondsLeft = Math.floor((remainingTime / 1000) % 60);
+
+      setTimeLeft(
+        minutesLeft > 30
+          ? `${minutesLeft} min ${secondsLeft} sec left before another payment.`
+          : `Pay again in ${minutesLeft} min ${secondsLeft} sec.`
+      );
+    };
+
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(timerInterval);
+  };
+
+  //yoco R50
   const handleClick = async () => {
     if (isDisabled) return;
 
@@ -233,7 +284,7 @@ export default function Home() {
           setIsDisabled(false);
           return;
         }
-
+        toast.success("sending")
         const response = await axios.post(
           `${API_BASE_URL}/payment/checkout`,
           {
@@ -258,6 +309,7 @@ export default function Home() {
     }
   };
 
+  //yoco R10
   const handleClickR10 = async () => {
     if (isDisabled) return;
 
@@ -307,52 +359,116 @@ export default function Home() {
     }
   };
 
-  // const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));
+  //peach R10
+  const handlePeachPayR10 = async () => {
+    if (isDisabled) return;
 
+    setIsDisabled(true);
 
-  const startTimer = (paidDate: any) => {
-    const paidTime = new Date(paidDate).getTime();
-    const expireTime = paidTime + 60 * 60 * 1000; 
+    // Check if user is authenticated
+    if (!isAuth) {
+      // Navigate to signup if user is not authenticated
+      setTimeout(() => {
+        navigate('/signup');
+        setIsDisabled(false);
+      }, 1000);
+    } else {
+      try {
+        // Get the UserToken and id from localStorage
+        const UserToken = localStorage.getItem('UserToken');
+        const id = localStorage.getItem('id'); // Assuming 'id' is stored in localStorage
 
-    const updateTimer = () => {
-      const currentTime = new Date().getTime();
-      const remainingTime = expireTime - currentTime;
-
-      if (remainingTime <= 0) {
-        // Show message that the session has ended
-        setTimeLeft("Your payment session has ended. Please make a payment to continue.");
-  
-        // Check if the page has already been refreshed
-        const hasRefreshed = localStorage.getItem("hasRefreshed");
-  
-        if (!hasRefreshed) {
-          // Set the flag in localStorage to indicate the page has been refreshed
-          localStorage.setItem("hasRefreshed", "true");
-  
-          // Refresh the page after a short delay
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000); // Wait for 2 seconds before refreshing
+        if (!id) {
+          // Handle case where 'id' is not available
+          console.error("User ID is missing in localStorage");
+          setIsDisabled(false);
+          return;
         }
-        return;
+
+        const response = await axios.post(
+          `${API_BASE_URL}/payment/checkout/peach`,
+          {
+            amount: 10,
+            id
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${UserToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        window.location.href = response.data.redirectUrl;
+      } catch (error) {
+        console.error("Payment error:", error);
+      } finally {
+        setIsDisabled(false);
       }
+    }
+  }
+  //peach R10
+  const handlePeachPayR50 = async () => {
+    if (isDisabled) return;
 
-      const minutesLeft = Math.floor((remainingTime / (1000 * 60)) % 60);
-      const secondsLeft = Math.floor((remainingTime / 1000) % 60);
+    setIsDisabled(true);
 
-      setTimeLeft(
-        minutesLeft > 30
-          ? `${minutesLeft} min ${secondsLeft} sec left before another payment.`
-          : `Pay again in ${minutesLeft} min ${secondsLeft} sec.`
-      );
-    };
+    // Check if user is authenticated
+    if (!isAuth) {
+      // Navigate to signup if user is not authenticated
+      setTimeout(() => {
+        navigate('/signup');
+        setIsDisabled(false);
+      }, 1000);
+    } else {
+      try {
+        // Get the UserToken and id from localStorage
+        const UserToken = localStorage.getItem('UserToken');
+        const id = localStorage.getItem('id'); // Assuming 'id' is stored in localStorage
 
-    updateTimer();
-    const timerInterval = setInterval(updateTimer, 1000);
+        if (!id) {
+          // Handle case where 'id' is not available
+          console.error("User ID is missing in localStorage");
+          setIsDisabled(false);
+          return;
+        }
 
-    return () => clearInterval(timerInterval);
-  };
+        const response = await axios.post(
+          `${API_BASE_URL}/payment/checkout/peach`,
+          {
+            amount: 50,
+            id
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${UserToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        window.location.href = response.data.redirectUrl;
+      } catch (error) {
+        console.error("Payment error:", error);
+      } finally {
+        setIsDisabled(false);
+      }
+    }
+  }
 
+
+  const handlePaymentR50 = async (method: "peach" | "yoco") => {
+    if (method === "peach") {
+      handlePeachPayR50();
+    } else {
+      handleClick();
+    }
+  }
+  const handlePaymentR10 = async (method: "peach" | "yoco") => {
+    if (method === "peach") {
+      await handlePeachPayR10();
+    } else {
+      await handleClickR10();
+    }
+  }
 
 
   return (
@@ -485,7 +601,10 @@ export default function Home() {
                       boxShadow: '0 4px 10px rgba(219, 193, 102, 0.3)',
                     }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={handleClick}
+                    onClick={() => {
+                      setSelectedAmount("R50");
+                      setShowPaymentModal(true);
+                    }}
                     disabled={isDisabled}
                     className={`
               bg-gradient-to-r from-[#DBC166] via-[#E5C478] to-[#EFD18A]
@@ -526,29 +645,78 @@ export default function Home() {
                       boxShadow: '0 2px 6px rgba(219, 193, 102, 0.2)',
                     }}
                     whileTap={{ scale: 0.9 }}
-                    onClick={handleClickR10}
+                    onClick={() => {
+                      setSelectedAmount("R10");
+                      setShowPaymentModal(true);
+                    }}
                     disabled={isDisabled}
                     className={`
-              bg-gradient-to-r from-[#EFD18A] via-[#E5C478] to-[#DBC166]
-              text-black
-              xs:w-auto 
-              mt-2 
-              px-3 xs:px-4 sm:px-6 md:px-8 
-              py-1 xs:py-1.5 sm:py-2 md:py-2.5
-              rounded-full 
-              text-xs sm:text-sm 
-              font-medium 
-              shadow-md
-              transition-all 
-              duration-300 
-              ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
-            `}
+    bg-gradient-to-r from-[#EFD18A] via-[#E5C478] to-[#DBC166]
+    text-black
+    xs:w-auto 
+    mt-2 
+    px-3 xs:px-4 sm:px-6 md:px-8 
+    py-1 xs:py-1.5 sm:py-2 md:py-2.5
+    rounded-full 
+    text-xs sm:text-sm 
+    font-medium 
+    shadow-md
+    transition-all 
+    duration-300 
+    ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+  `}
                   >
                     💰 1-Hour Access – R10!
                   </motion.button>
+
                 </div>
+
               )}
             </div>
+            {showPaymentModal && selectedAmount && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-xl shadow-lg w-[300px] text-center">
+                  <h2 className="text-lg font-bold mb-4">Choose Payment Method</h2>
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        if (selectedAmount === "R50") {
+                          handlePaymentR50("peach");
+                        } else {
+                          handlePaymentR10("peach");
+                        }
+                        setShowPaymentModal(false);
+                      }}
+                      className="bg-[#EFD18A] hover:bg-[#E5C478] text-black font-semibold py-2 rounded"
+                    >
+                      Pay with Peach
+                    </button>
+                    <button
+                      onClick={() => {
+                        toast.success("yoco clicked")
+                        if (selectedAmount === "R50") {
+                          handlePaymentR50("yoco");
+                        } else {
+                          handlePaymentR10("yoco");
+                        }
+                        setShowPaymentModal(false);
+                      }}
+                      className="bg-[#DBC166] hover:bg-[#E5C478] text-black font-semibold py-2 rounded"
+                    >
+                      Pay with Yoco
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setShowPaymentModal(false)}
+                    className="text-sm text-gray-500 mt-4 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+
           </div>
 
           {/* Navigation Buttons - More responsive positioning */}

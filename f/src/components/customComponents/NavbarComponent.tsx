@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { ChevronDown, ChevronUp, Menu, X } from "lucide-react";
@@ -6,6 +7,13 @@ import { logout, setUserPaid } from "@/store/authSlice";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import axios from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const NavbarComponent = () => {
     const id = localStorage.getItem("id");
@@ -17,15 +25,13 @@ const NavbarComponent = () => {
     const [loading, setLoading] = useState(true);
     const [isPaid, setIsPaid] = useState(false);
     const [openDrop, setOpenDrop] = useState(false);
+    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
     const isVendorAuthenticated = useSelector((state: any) => state.auth.isVendorAuthenticated);
 
     // Refs for click outside detection
     const navRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-
-
 
     // Handle clicks outside the mobile menu
     useEffect(() => {
@@ -59,9 +65,7 @@ const NavbarComponent = () => {
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-
-
-
+    // Payment handlers
     const handleClickPayNowR10 = async () => {
         try {
             const UserToken = localStorage.getItem('UserToken');
@@ -85,6 +89,73 @@ const NavbarComponent = () => {
         }
     };
 
+    const handleClickPayNowR50 = async () => {
+        try {
+            const UserToken = localStorage.getItem('UserToken');
+            const response = await axios.post(
+                `${API_BASE_URL}/payment/checkout`,
+                {
+                    amount: 5000,
+                    currency: "ZAR",
+                    id
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${UserToken}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            window.location.href = response.data.redirectUrl;
+        } catch (error: any) {
+            console.log("Payment error", error);
+        }
+    };
+
+    const handlePeachPayR10 = async () => {
+        try {
+            const UserToken = localStorage.getItem('UserToken');
+            const response = await axios.post(
+                `${API_BASE_URL}/payment/checkout/peach`,
+                {
+                    amount: 10,
+                    id
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${UserToken}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            window.location.href = response.data.redirectUrl;
+        } catch (error: any) {
+            console.log("Payment error", error);
+        }
+    }
+
+    const handlePeachPayR50 = async () => {
+        try {
+            const UserToken = localStorage.getItem('UserToken');
+            const response = await axios.post(
+                `${API_BASE_URL}/payment/checkout/peach`,
+                {
+                    amount: 50,
+                    id
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${UserToken}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            window.location.href = response.data.redirectUrl;
+        } catch (error: any) {
+            console.log("Payment error", error);
+        }
+    }
+
     const handleLogout = () => {
         localStorage.removeItem("UserToken");
         localStorage.removeItem("id");
@@ -96,8 +167,6 @@ const NavbarComponent = () => {
         navigate(route);
         setIsOpen(false);
     };
-
-
 
     useEffect(() => {
         const fetchUserPaymentStatus = async () => {
@@ -111,13 +180,12 @@ const NavbarComponent = () => {
             } catch (error: any) {
                 console.error("Error fetching user:", error.message);
             } finally {
-                setLoading(false); // Set loading to false when done
+                setLoading(false);
             }
         };
 
         if (id) fetchUserPaymentStatus();
     }, [id, API_BASE_URL, dispatch]);
-
 
     return (
         <div ref={navRef} className="relative">
@@ -225,7 +293,7 @@ const NavbarComponent = () => {
 
                                 {!isPaid && !loading && (
                                     <Button
-                                        onClick={handleClickPayNowR10}
+                                        onClick={() => setPaymentDialogOpen(true)}
                                         className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
                                     >
                                         Pay Now
@@ -255,7 +323,6 @@ const NavbarComponent = () => {
                                 >
                                     LOGOUT
                                 </Button>
-
                             </>
                         )}
                     </div>
@@ -284,7 +351,6 @@ const NavbarComponent = () => {
                             >
                                 Home
                             </Link>
-
                         </li>
 
                         <li>
@@ -374,7 +440,7 @@ const NavbarComponent = () => {
                                 </Button>
                                 {!isPaid && !loading && (
                                     <Button
-                                        onClick={handleClickPayNowR10}
+                                        onClick={() => setPaymentDialogOpen(true)}
                                         className="text-white px-5 py-2 border border-[#DBC166] rounded-full transition hover:bg-[#DBC166] hover:text-black"
                                     >
                                         Pay Now
@@ -414,6 +480,56 @@ const NavbarComponent = () => {
                     </div>
                 </div>
             )}
+
+            {/* Payment Dialog */}
+            <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+                <DialogContent className="sm:max-w-[425px] bg-black text-white border border-[#DBC166]">
+                    <DialogHeader>
+                        <DialogTitle className="text-[#DBC166] text-2xl">Choose Payment Method</DialogTitle>
+                        <DialogDescription className="text-white">
+                            Select your preferred payment option
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-4 py-4">
+                        <div className="border border-[#DBC166] rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-[#DBC166] mb-2">Pay with Yoco</h3>
+                            <div className="flex flex-col gap-2">
+                                <Button 
+                                    onClick={handleClickPayNowR10}
+                                    className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
+                                >
+                                    Pay R10 with Yoco
+                                </Button>
+                                <Button 
+                                    onClick={handleClickPayNowR50}
+                                    className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
+                                >
+                                    Pay R50 with Yoco
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        <div className="border border-[#DBC166] rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-[#DBC166] mb-2">Pay with Peach Payments</h3>
+                            <div className="flex flex-col gap-2">
+                                <Button 
+                                    onClick={handlePeachPayR10}
+                                    className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
+                                >
+                                    Pay R10 with Peach
+                                </Button>
+                                <Button 
+                                    onClick={handlePeachPayR50}
+                                    className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
+                                >
+                                    Pay R50 with Peach
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

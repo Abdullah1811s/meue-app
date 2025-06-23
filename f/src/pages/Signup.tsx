@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff, Home } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -66,6 +67,7 @@ const signUpSchema = z.object({
   referralCode: z.string().optional(),
   geolocation: z.boolean().optional(),
   paymentOption: z.string().min(1, "Please select a payment option"),
+  paymentMethod: z.string().min(1, "Please select a payment method"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -86,15 +88,7 @@ function SignUp() {
   const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("");
   const [referralCode, setReferralCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const refCode = params.get('ref');
-    if (refCode) {
-      setReferralCode(refCode);
-    }
-  }, [])
-
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const {
     register,
     handleSubmit,
@@ -103,6 +97,21 @@ function SignUp() {
   } = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
   });
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
+  }, [])
+
+  useEffect(() => {
+    if (referralCode) {
+      setValue("referralCode", referralCode); // Ensure referral code is registered
+    }
+  }, [referralCode, setValue]);
+
+
 
   const handleCaptcha = (token: string | null) => {
     setCaptchaToken(token);
@@ -119,6 +128,13 @@ function SignUp() {
     setSelectedPaymentOption(option);
     setValue('paymentOption', option);
   };
+  const handlePaymentMethodChange = (method: string) => {
+    setSelectedPaymentMethod(method);
+    setValue('paymentMethod', method);
+  };
+
+
+  //=================payment functions==========================
 
   const handleClickPayNowR50 = async (id: string) => {
     try {
@@ -166,11 +182,49 @@ function SignUp() {
     }
   };
 
-  useEffect(() => {
-    if (referralCode) {
-      setValue("referralCode", referralCode); // Ensure referral code is registered
+  const handlePeachPayR10 = async (id: string) => {
+    try {
+      const UserToken = localStorage.getItem('UserToken');
+      const response = await axios.post(
+        `${API_BASE_URL}/payment/checkout/peach`,
+        {
+          amount: 10,
+          id
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${UserToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      window.location.href = response.data.redirectUrl;
+    } catch (error: any) {
+      console.log("Payment error", error);
     }
-  }, [referralCode, setValue]);
+  }
+
+  const handlePeachPayR50 = async (id: string) => {
+    try {
+      const UserToken = localStorage.getItem('UserToken');
+      const response = await axios.post(
+        `${API_BASE_URL}/payment/checkout/peach`,
+        {
+          amount: 50,
+          id
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${UserToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      window.location.href = response.data.redirectUrl;
+    } catch (error: any) {
+      console.log("Payment error", error);
+    }
+  }
 
 
   const onSubmit = async (data: SignUpForm) => {
@@ -187,7 +241,7 @@ function SignUp() {
         }
       );
 
-      console.log("Sign-Up Response:", UserResponse?.data); // Debugging Log
+
 
       const token = UserResponse?.data?.token;
       const userId = UserResponse?.data?.user?._id; // Ensure userId exists
@@ -200,17 +254,26 @@ function SignUp() {
       localStorage.setItem("UserToken", token);
       localStorage.setItem("id", userId);
 
-      console.log("User ID set in localStorage:", localStorage.getItem("id")); // Debugging Log
 
       dispatch(userLogin());
 
       setSignupSuccess(true);
-
-      if (selectedPaymentOption === "r50") {
-        handleClickPayNowR50(userId);
-      } else {
-        handleClickPayNowR10(userId);
+      if (data.paymentMethod === "peach") {
+        if (data.paymentOption == "r50") {
+          handlePeachPayR50(userId);
+        }
+        else {
+          handlePeachPayR10(userId)
+        }
       }
+      else {
+        if (selectedPaymentOption === "r50") {
+          handleClickPayNowR50(userId);
+        } else {
+          handleClickPayNowR10(userId);
+        }
+      }
+
 
     } catch (error: any) {
       console.error("Signup Error:", error?.response?.data?.message || error?.message);
@@ -649,6 +712,7 @@ function SignUp() {
             </div>
 
             {/* Payment Options */}
+
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -666,42 +730,27 @@ function SignUp() {
                 <motion.div
                   initial={{ x: -30, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: 0.5,
-                    ease: [0.25, 0.1, 0.25, 1]
-                  }}
+                  transition={{ duration: 0.3, delay: 0.5 }}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ease-out ${selectedPaymentOption === "r50" ? "border-[#DBC166] bg-[#F8F5E8] shadow-sm" : "border-gray-200 hover:border-[#DBC166]"}`}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedPaymentOption === "r50" ? "border-[#DBC166] bg-[#F8F5E8] shadow-sm" : "border-gray-200 hover:border-[#DBC166]"}`}
                   onClick={() => handlePaymentOptionChange("r50")}
                 >
                   <div className="flex items-start">
-                    <motion.div
-                      className="flex items-center h-5"
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <input
-                        type="radio"
-                        className="h-4 w-4 text-[#DBC166] focus:ring-[#DBC166] border-gray-300"
-                        checked={selectedPaymentOption === "r50"}
-                        onChange={() => { }}
-                      />
-                    </motion.div>
+                    <input
+                      type="radio"
+                      className="h-4 w-4 text-[#DBC166] focus:ring-[#DBC166]"
+                      checked={selectedPaymentOption === "r50"}
+                      onChange={() => { }}
+                    />
                     <div className="ml-3">
                       <div className="flex justify-between items-center">
-                        <motion.span
-                          className="block text-sm font-medium text-gray-700"
-                          whileHover={{ x: 2 }}
-                        >
+                        <span className="block text-sm font-medium text-gray-700">
                           Premium Beta Access (R50)
-                        </motion.span>
-                        <motion.span
-                          className="text-sm font-bold text-[#C5AD59]"
-                          whileHover={{ scale: 1.05 }}
-                        >
+                        </span>
+                        <span className="text-sm font-bold text-[#C5AD59]">
                           R50 once-off
-                        </motion.span>
+                        </span>
                       </div>
                       <ul className="mt-2 space-y-1 text-sm text-gray-600">
                         {[
@@ -710,21 +759,10 @@ function SignUp() {
                           "No additional payments needed",
                           "Best value for frequent participants"
                         ].map((benefit, index) => (
-                          <motion.li
-                            key={index}
-                            className="flex items-start"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.55 + (index * 0.05) }}
-                          >
-                            <motion.span
-                              className="text-[#DBC166] mr-2"
-                              whileHover={{ scale: 1.2 }}
-                            >
-                              ✓
-                            </motion.span>
+                          <li key={index} className="flex items-start">
+                            <span className="text-[#DBC166] mr-2">✓</span>
                             <span>{benefit}</span>
-                          </motion.li>
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -735,65 +773,39 @@ function SignUp() {
                 <motion.div
                   initial={{ x: 30, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: 0.55,
-                    ease: [0.25, 0.1, 0.25, 1]
-                  }}
+                  transition={{ duration: 0.3, delay: 0.55 }}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ease-out ${selectedPaymentOption === "r10" ? "border-[#DBC166] bg-[#F8F5E8] shadow-sm" : "border-gray-200 hover:border-[#DBC166]"}`}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedPaymentOption === "r10" ? "border-[#DBC166] bg-[#F8F5E8] shadow-sm" : "border-gray-200 hover:border-[#DBC166]"}`}
                   onClick={() => handlePaymentOptionChange("r10")}
                 >
                   <div className="flex items-start">
-                    <motion.div
-                      className="flex items-center h-5"
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <input
-                        type="radio"
-                        className="h-4 w-4 text-[#DBC166] focus:ring-[#DBC166] border-gray-300"
-                        checked={selectedPaymentOption === "r10"}
-                        onChange={() => { }}
-                      />
-                    </motion.div>
+                    <input
+                      type="radio"
+                      className="h-4 w-4 text-[#DBC166] focus:ring-[#DBC166]"
+                      checked={selectedPaymentOption === "r10"}
+                      onChange={() => { }}
+                    />
                     <div className="ml-3">
                       <div className="flex justify-between items-center">
-                        <motion.span
-                          className="block text-sm font-medium text-gray-700"
-                          whileHover={{ x: 2 }}
-                        >
+                        <span className="block text-sm font-medium text-gray-700">
                           Sneak Peek Access (R10)
-                        </motion.span>
-                        <motion.span
-                          className="text-sm font-bold text-[#C5AD59]"
-                          whileHover={{ scale: 1.05 }}
-                        >
+                        </span>
+                        <span className="text-sm font-bold text-[#C5AD59]">
                           R10 per session
-                        </motion.span>
+                        </span>
                       </div>
                       <ul className="mt-2 space-y-1 text-sm text-gray-600">
                         {[
                           "1-hour access per purchase",
-                          "1 entry into each raffle on access day",
+                          "1 bonus entry if a raffle draw is scheduled on your access day",
                           "Can be purchased multiple times",
                           "Flexible pay-as-you-go option"
                         ].map((benefit, index) => (
-                          <motion.li
-                            key={index}
-                            className="flex items-start"
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.6 + (index * 0.05) }}
-                          >
-                            <motion.span
-                              className="text-[#DBC166] mr-2"
-                              whileHover={{ scale: 1.2 }}
-                            >
-                              ✓
-                            </motion.span>
+                          <li key={index} className="flex items-start">
+                            <span className="text-[#DBC166] mr-2">✓</span>
                             <span>{benefit}</span>
-                          </motion.li>
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -803,6 +815,68 @@ function SignUp() {
 
               {errors.paymentOption && (
                 <p className="mt-2 text-sm text-red-600">{errors.paymentOption.message}</p>
+              )}
+
+              {/* Payment Method Selection */}
+              {selectedPaymentOption && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.6 }}
+                  className="mt-4"
+                >
+                  <div className="flex items-center mb-3">
+                    <div className="flex-grow h-px bg-gray-200"></div>
+                    <span className="px-3 text-sm text-gray-500 font-medium">Payment Method</span>
+                    <div className="flex-grow h-px bg-gray-200"></div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Peach Payments */}
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`border rounded-lg p-3 cursor-pointer transition-all ${selectedPaymentMethod === 'peach' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+                      onClick={() => handlePaymentMethodChange('peach')}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="radio"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                          checked={selectedPaymentMethod === 'peach'}
+                          onChange={() => { }}
+                        />
+                        <div className="ml-3">
+                          <span className="text-sm font-medium text-gray-700">Peach Payments</span>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Yoco Payments */}
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`border rounded-lg p-3 cursor-pointer transition-all ${selectedPaymentMethod === 'yoco' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}
+                      onClick={() => handlePaymentMethodChange('yoco')}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="radio"
+                          className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+                          checked={selectedPaymentMethod === 'yoco'}
+                          onChange={() => { }}
+                        />
+                        <div className="ml-3">
+                          <span className="text-sm font-medium text-gray-700">Yoco</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {errors.paymentMethod && (
+                    <p className="mt-2 text-sm text-red-600">{errors.paymentMethod.message}</p>
+                  )}
+                </motion.div>
               )}
             </motion.div>
 

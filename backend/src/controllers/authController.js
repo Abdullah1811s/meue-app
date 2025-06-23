@@ -129,6 +129,7 @@ export const signUp = async (req, res) => {
         if (!isCaptchaValid) {
             return res.status(400).json({ message: "Captcha verification failed please reload and try again" });
         }
+        
         if (!name || !email || !password || !phone || !town || !city || !province || !street || !postalCode) {
             return res.status(400).json({ message: "All fields are required" });
         }

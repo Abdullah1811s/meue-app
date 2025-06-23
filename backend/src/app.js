@@ -18,7 +18,7 @@ import paymentRoute from './routes/PaymentRoute.js'
 import raffRoute from './routes/RaffRoutes.js'
 import wheelRoute from './routes/wheelRoutes.js'
 import timeRoutes from "./routes/timeRoute.js";
-import { handleWebhook } from "./controllers/PaymentController.js";
+import { handleWebhook, handleWebhookPeach } from "./controllers/PaymentController.js";
 import { resetExpiredR10Users } from './utils/R10check.js'
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
@@ -32,7 +32,7 @@ app.post(
     express.raw({ type: 'application/json' }),
     handleWebhook
 );
-//  app.use(cors());
+
 
 app.use(cors({
     origin: [FRONTEND_URL],
@@ -69,9 +69,9 @@ app.use('/api/wheel', wheelRoute);
 app.use("/api/time", timeRoutes);
 io.on("connection", (socket) => {
     try {
-        console.log("User connected: ", socket.id);
+        
         socket.on("disconnect", () => {
-            console.log(`❌ User disconnected: ${socket.id}`);
+            
         });
     } catch (error) {
         console.error("Socket error:", error);
