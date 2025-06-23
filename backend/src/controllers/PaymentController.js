@@ -259,7 +259,7 @@ export const handleWebhookPeach = async (req, res) => {
     console.log(body)
     if (body.verificationCode) {
       console.log("Verification webhook received:", body);
-      res.status(200).send("Verification OK");
+      return res.status(200).send("Verification OK");
     }
     console.log("Webhook data received:", data);
 
@@ -277,7 +277,7 @@ export const handleWebhookPeach = async (req, res) => {
     if (resultCode === "000.100.110") {
       console.log(`Payment verified for user ${userId}`);
 
-    
+
       if (!mongoose.Types.ObjectId.isValid(userId)) {
         console.error("Invalid MongoDB ObjectId for userId:", userId);
         return res.status(400).send("Invalid user ID");
@@ -286,7 +286,7 @@ export const handleWebhookPeach = async (req, res) => {
       const id = new mongoose.Types.ObjectId(userId);
       console.log("🆔 Converted userId to ObjectId:", id.toString());
 
-   
+
       let userType;
       let entries;
       let updateFields = { isPaid: true };
@@ -306,7 +306,7 @@ export const handleWebhookPeach = async (req, res) => {
       }
 
       updateFields.userType = userType;
-      
+
       // Update user document
       const updatedUser = await usersModel.findOneAndUpdate(
         { _id: id },
