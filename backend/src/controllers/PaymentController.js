@@ -276,7 +276,9 @@ export const handleWebhookPeach = async (req, res) => {
     console.log("Result Code:", resultCode);
     console.log("Status:", status);
 
-    if (resultCode === "000.000.000") {
+    
+    if (/^(000\.000\.|000\.100\.1|000\.[36]|000\.400\.(1|11)0)/.test(resultCode)) {
+
       console.log(`Payment verified for user ${userId}`);
 
 
