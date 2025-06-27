@@ -18,6 +18,8 @@ const {
 
 } = process.env;
 
+
+
 export const Payment = async (req, res) => {
   try {
     const { amount, currency, id } = req.body;
@@ -274,7 +276,7 @@ export const handleWebhookPeach = async (req, res) => {
     console.log("Result Code:", resultCode);
     console.log("Status:", status);
 
-    if (resultCode === "000.100.110") {
+    if (resultCode === "000.000.000") {
       console.log(`Payment verified for user ${userId}`);
 
 
