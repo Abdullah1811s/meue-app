@@ -9,7 +9,7 @@ export const getMainWebTime = async (req, res) => {
     const { mainWebTime, updatedAt } = timeData;
     const elapsedSeconds = Math.floor((Date.now() - new Date(updatedAt)) / 1000);
     const remainingTime = Math.max(0, mainWebTime - elapsedSeconds);
-
+    console.log("main web: " , mainWebTime);
     res.json({ mainWebTime: remainingTime });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -25,7 +25,7 @@ export const getAppTime = async (req, res) => {
     const { appTime, updatedAt } = timeData;
     const elapsedSeconds = Math.floor((Date.now() - new Date(updatedAt)) / 1000);
     const remainingTime = Math.max(0, appTime - elapsedSeconds);
-
+    console.log("app time: " , appTime)
     res.json({ appTime: remainingTime });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });

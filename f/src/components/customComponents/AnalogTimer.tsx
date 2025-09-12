@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-const TOTAL_SECONDS = 45 * 24 * 60 * 60; // 45 days in seconds
+const TOTAL_SECONDS = 14 * 24 * 60 * 60; 
 const LOCAL_STORAGE_KEY = "mainWebTimeData";
 const FETCH_INTERVAL = 5 * 60 * 1000; // 5 minutes in ms
 
@@ -26,7 +26,7 @@ const AnalogTimer = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/time/mainWebTime`);
       const data = await res.json();
-
+      console.log(data);
       const newTime = {
         timeValue: data.mainWebTime,
         fetchTimestamp: now,

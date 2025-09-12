@@ -1910,12 +1910,17 @@ const AdminDashboard = () => {
                         )}
                         {vendor.socialMediaHandles?.twitter && (
                           <a href={vendor.socialMediaHandles?.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
-                            Twitter
+                            X
                           </a>
                         )}
                         {vendor.socialMediaHandles?.tiktok && (
                           <a href={vendor.socialMediaHandles?.tiktok} target="_blank" rel="noopener noreferrer" className="text-black underline">
                             TikTok
+                          </a>
+                        )}
+                        {vendor.socialMediaHandles?.linkedin && (
+                          <a href={vendor.socialMediaHandles?.linkedin} target="_blank" rel="noopener noreferrer" className="text-black underline">
+                            linkedin
                           </a>
                         )}
                       </div>

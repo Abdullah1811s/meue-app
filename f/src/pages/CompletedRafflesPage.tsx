@@ -28,6 +28,7 @@ interface Participant {
 }
 
 interface Prize {
+  quantity: number;
   _id: string;
 
   name: string;
@@ -105,7 +106,7 @@ export default function UserDashboard() {
       //   ) : [],
       //   participants: raffle.participants || []
       // }));
-     
+
       setUpcomingRaffles(res.data.scheduled);
     } catch (error) {
       console.error("Error fetching upcoming raffles:", error);
@@ -244,9 +245,9 @@ export default function UserDashboard() {
       day: 'numeric',
     });
   };
-  
+
   // Output: "Apr 4, 2025"
-  
+
 
   const CustomCard = ({ children, className = "", isDrawing = false }: {
     children: React.ReactNode;
@@ -435,11 +436,14 @@ export default function UserDashboard() {
                       </div>
 
                       <div className="mt-4 pt-4 border-t">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${raffle.isVisible
-                          ? "bg-[#DBC166] text-white"
-                          : "bg-gray-100 text-gray-600"
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${raffle.isVisible && raffle.prizes?.some(prize => prize.quantity > 0)
+                            ? "bg-[#DBC166] text-white"  // Open (visible + prizes available)
+                            : "bg-gray-100 text-gray-600" // Closed (either hidden OR no prizes)
                           }`}>
-                          {raffle.isVisible ? "Open" : "Closed"}
+                          {raffle.isVisible && raffle.prizes?.some(prize => prize.quantity > 0)
+                            ? "Open"
+                            : "Closed"
+                          }
                         </span>
                       </div>
                     </div>

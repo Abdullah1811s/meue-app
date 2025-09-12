@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -70,6 +72,8 @@ type VendorFormData = {
     instagram?: string;
     twitter?: string;
     tiktok?: string;
+    linkedin?: string;
+
   };
   countryCode: string
   representativeName: string;
@@ -326,6 +330,7 @@ function VendorOnboarding() {
   const onSubmit = async (data: VendorFormData) => {
     setLoading(true);
     window.scrollTo({ top: 0, behavior: "smooth" })
+
     try {
       const response1 = await axios.get(`${API_BASE_URL}/vendor/check-email`, {
         params: { businessEmail: data.businessEmail }
@@ -701,7 +706,7 @@ function VendorOnboarding() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Twitter</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">X</label>
                       <input
                         {...register("socialMediaHandles.twitter")}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
@@ -711,6 +716,13 @@ function VendorOnboarding() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
                       <input
                         {...register("socialMediaHandles.tiktok")}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Linkedin</label>
+                      <input
+                        {...register("socialMediaHandles.linkedin")}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#C5AD59] focus:border-transparent"
                       />
                     </div>

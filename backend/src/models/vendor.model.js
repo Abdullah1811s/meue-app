@@ -22,7 +22,8 @@ const VendorSchema = new mongoose.Schema({
     facebook: { type: String },
     instagram: { type: String },
     twitter: { type: String },
-    tiktok: { type: String }
+    tiktok: { type: String },
+    linkedin: { type: String }
   },
   resetPasswordToken: { type: String },
   resetPasswordExpire: { type: Date },
