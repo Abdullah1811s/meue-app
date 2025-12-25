@@ -309,7 +309,7 @@ const NavbarComponent = () => {
     active:scale-95
   "
                                 >
-                                    Draws
+                                    Promotions
                                 </Button>
                                 <Button
                                     onClick={handleLogout}

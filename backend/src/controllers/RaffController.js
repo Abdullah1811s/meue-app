@@ -68,8 +68,8 @@ export const getAllRaff = async (req, res) => {
 
 export const makeNewRaff = async (req, res) => {
     try {
-        const { name, scheduleAt, prizes, vendorId } = req.body;
-
+        const { name, scheduleAt, prizes, vendorId, banner , termsAndConditions } = req.body;
+        console.log(req.body)
         if (!name || !prizes) {
             return res.status(400).json({ message: "Name, scheduled date, and prizes are required." });
         }
@@ -86,8 +86,6 @@ export const makeNewRaff = async (req, res) => {
                 return res.status(400).json({ message: "Invalid scheduled date format. Please provide a valid date." });
             }
         }
-
-
 
         let endDateObj = null;
         if (prizes.endDate) {
@@ -138,8 +136,10 @@ export const makeNewRaff = async (req, res) => {
                 prizes,
                 scheduledAt: scheduledDate,
                 participants,
-                vendorId
-            });
+                vendorId,
+                banner,
+                termsAndConditions
+            }); 
 
             const completeRaff = await raffModel.findById(newRaff._id)
                 .populate('participants.user')
@@ -857,7 +857,7 @@ export const toggleVisibility = async (req, res, io) => {
 
                     // Send email to vendor if email exists
                     if (vendorEmail) {
-                        
+
                         const smtpConfig1 = {
                             host: "mail.themenuportal.co.za",
                             port: 465,

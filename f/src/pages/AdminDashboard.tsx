@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { io } from "socket.io-client";
@@ -22,7 +24,8 @@ import {
   Loader,
   ChevronDownIcon,
   Trash,
-  AlertTriangle
+  AlertTriangle,
+  FileText
 
 } from 'lucide-react';
 import {
@@ -165,6 +168,8 @@ interface RaffleItem {
 
   scheduledAt: string;
   status: "completed" | "scheduled";
+  banner?:string;
+  termsAndConditions?:string;
 }
 
 interface Prize {
@@ -281,11 +286,11 @@ const AdminDashboard = () => {
     password: ''          // Password for the new admin
   });
 
-
-
+  const [raffleBanner, setRaffleBanner] = useState<any>(null);
+  const [bannerPreview, setBannerPreview] = useState<any>(null);
   const [editingStates, setEditingStates] = useState<Record<string, number | null>>({});
   const [updatedOffering, setUpdatedOffering] = useState<any>({ name: '', quantity: '' });
-
+  const [termsAndConditions, setTermsAndConditions] = useState<any>("");
   const startEditing = (vendorId: string, index: number, offering: any) => {
     setEditingStates(prev => ({ ...prev, [vendorId]: index }));
     setUpdatedOffering({
@@ -450,9 +455,74 @@ const AdminDashboard = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const getSignature = async (folder: any) => {
+    try {
+
+      const response = await axios.post(`${API_BASE_URL}/generateSignature`, { folder });
+
+      // console.log("The signature response is ", response);
+      return response.data;
+    }
+    catch (error) {
+      console.error("Error in getting signature for ", folder)
+    }
+  }
+
+  const makeCloudinaryApiCall = async (data: FormData) => {
+    try {
+      const cloudName = import.meta.env.VITE_CLOUD_NAME;
+      const api = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
+      const res = await axios.post(api, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      const { secure_url, public_id } = res.data;
+
+      return { secure_url, public_id };
+    } catch (error) {
+      console.error("Cloudinary Upload Error:", error);
+    }
+  };
+
+  const uploadRaffleBanner = async (timestamp: number, signature: string) => {
+    if (!raffleBanner) {
+      console.error("No banner for raffle has selected");
+      return null;
+    }
+
+    const data = new FormData();
+    data.append("file", raffleBanner);
+    data.append("timestamp", timestamp.toString());
+    data.append("signature", signature);
+    data.append("api_key", import.meta.env.VITE_CLOUD_API);
+    data.append("folder", "raffleBanner");
+
+
+
+    try {
+      const result = await makeCloudinaryApiCall(data);
+
+      return result; // Return just the URL
+    } catch (error) {
+      console.error("Bank Confirmation Upload Failed:", error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    let raff = null;
 
+    try {
+      const { timestamp, signature } = await getSignature("raffleBanner");
+      raff = await uploadRaffleBanner(timestamp, signature);
+      console.log("BANNER: ", raff)
+    } catch (error) {
+      console.error("Error uploading bank confirmation:", error);
+      toast.error("Failed to upload bank confirmation. Please try again.");
+      return;
+    }
     if (isSubmitting) return;
 
     try {
@@ -520,7 +590,9 @@ const AdminDashboard = () => {
         scheduleAt: formattedDate,
         prizes: preparedPrizes,
         status: "scheduled",
-        isVisible: false
+        isVisible: false,
+        banner: raff?.secure_url,
+        termsAndConditions: termsAndConditions
       };
 
 
@@ -1080,6 +1152,8 @@ const AdminDashboard = () => {
     }
   };
 
+
+
   const createRaffle = async (offering: any, vendorId: string, name: string) => {
     const prize = [{
       name: offering.name,
@@ -1087,6 +1161,7 @@ const AdminDashboard = () => {
       quantity: offering.quantity,
       ...(offering.endDate && { endDate: new Date(offering.endDate) })
     }];
+
 
     await axios.post(`${API_BASE_URL}/Raff/createRaff`, {
       name,
@@ -1819,6 +1894,8 @@ const AdminDashboard = () => {
                                       {isRaffLoading ? 'Loading...' : 'Create Raffle'}
                                     </button>
 
+
+                                    {/* creater new raff */}
                                     <Dialog open={isOpen} onOpenChange={setIsOpen}>
                                       <DialogContent>
                                         <DialogHeader>
@@ -2292,16 +2369,17 @@ const AdminDashboard = () => {
                       <Plus size={20} strokeWidth={2} />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md max-w-[95vw] mx-auto">
+                  <DialogContent className="sm:max-w-md max-w-[95vw] mx-auto max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Create New Raff</DialogTitle>
+                      <DialogTitle>Create New Raff(Admin)</DialogTitle>
                       <DialogDescription>
                         Fill out the details to create a new raff.
                       </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                      <div className="grid w-full items-center gap-2">
-                        <label htmlFor="name">Raff Name</label>
+                    <form onSubmit={handleSubmit} className="space-y-3 py-2">
+                      {/* Raff Name */}
+                      <div className="grid gap-1">
+                        <label htmlFor="name" className="text-sm font-medium">Raff Name</label>
                         <Input
                           id="name"
                           name="name"
@@ -2309,10 +2387,13 @@ const AdminDashboard = () => {
                           onChange={handleChange}
                           placeholder="Enter raff name"
                           required
+                          className="h-8 text-sm"
                         />
                       </div>
-                      <div className="grid w-full items-center gap-2">
-                        <label htmlFor="scheduledAt">Schedule Date</label>
+
+                      {/* Schedule Date */}
+                      <div className="grid gap-1">
+                        <label htmlFor="scheduledAt" className="text-sm font-medium">Schedule Date</label>
                         <input
                           type="date"
                           id="scheduledAt"
@@ -2321,7 +2402,6 @@ const AdminDashboard = () => {
                             const selectedDate = new Date(e.target.value);
                             selectedDate.setHours(0, 0, 0, 0);
 
-                            // Check if selectedDate is after any prize end date
                             const isAfterAnyEndDate = formData.prizes.some((prize: any) => {
                               if (prize.endDate) {
                                 const prizeEnd = new Date(prize.endDate);
@@ -2342,39 +2422,89 @@ const AdminDashboard = () => {
                             }));
                           }}
                           required
-                          min={new Date().toISOString().split('T')[0]} // Prevent past dates
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          min={new Date().toISOString().split('T')[0]}
+                          className="flex h-8 text-sm rounded-md border border-input bg-background px-3 py-1"
                         />
                       </div>
 
-                      <div className="grid w-full items-center gap-2">
-                        <label>Prizes</label>
+                      {/* Raffle Banner */}
+                      <div className="grid gap-1">
+                        <label className="text-sm font-medium">Raffle Banner</label>
+                        <div className="relative flex items-center justify-center w-full border border-dashed border-gray-300 rounded p-2 bg-gray-50 hover:bg-gray-100 transition">
+                          <input
+                            type="file"
+                            id="raffleBanner"
+                            accept=".jpg,.jpeg,.png"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onChange={(e: any) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setRaffleBanner(file);
+                                setBannerPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                          />
+                          <span className="text-xs text-gray-600">
+                            {bannerPreview ? "Change banner" : "Click to upload JPG/PNG"}
+                          </span>
+                        </div>
+
+                        {/* Banner preview */}
+                        {bannerPreview && (
+                          <div className="mt-1 flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <img
+                                src={bannerPreview}
+                                alt="Banner preview"
+                                className="w-12 h-8 object-cover rounded border"
+                              />
+                              <span className="text-xs text-gray-700 truncate max-w-[120px]">{raffleBanner?.name}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="text-xs text-red-500 hover:underline"
+                              onClick={() => {
+                                setRaffleBanner(null);
+                                setBannerPreview(null);
+                                const fileInput = document.getElementById('raffleBanner') as HTMLInputElement;
+                                if (fileInput) fileInput.value = '';
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Prizes */}
+                      <div className="grid gap-1">
+                        <label className="text-sm font-medium">Prizes</label>
                         {formData.prizes.map((prize: any, index: any) => (
-                          <div key={index} className="space-y-2">
-                            <div className="flex items-center gap-2">
+                          <div key={index} className="space-y-1 border border-gray-200 rounded p-2 mb-1">
+                            <div className="flex items-center gap-1">
                               <Input
                                 placeholder={`Prize Name ${index + 1}`}
                                 value={prize.name}
                                 onChange={(e) => handlePrizeChange(index, 'name', e.target.value)}
                                 required
+                                className="h-7 text-sm"
                               />
-
                             </div>
-                            <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex flex-wrap items-center gap-2">
                               {/* Quantity Field */}
-                              <div className="flex items-center gap-2">
-                                <label htmlFor="quantity" className="font-medium">Quantity:</label>
+                              <div className="flex items-center gap-1">
+                                <label className="text-xs font-medium">Qty:</label>
                                 <Input
-                                  placeholder="Quantity"
+                                  placeholder="Qty"
                                   value={prize.quantity}
                                   onChange={(e) => handlePrizeChange(index, 'quantity', e.target.value)}
-                                  className="w-24"
+                                  className="h-7 w-16 text-sm"
                                 />
                               </div>
 
                               {/* End Date Field */}
-                              <div className="flex items-center gap-2">
-                                <label htmlFor="endDate" className="font-medium">End Date:</label>
+                              <div className="flex items-center gap-1">
+                                <label className="text-xs font-medium">End:</label>
                                 <input
                                   type="date"
                                   value={prize.endDate || ""}
@@ -2384,7 +2514,7 @@ const AdminDashboard = () => {
                                     today.setHours(0, 0, 0, 0);
 
                                     if (selectedDate <= today) {
-                                      alert("End date must be in the future (not today or earlier).");
+                                      alert("End date must be in the future.");
                                       return;
                                     }
 
@@ -2395,42 +2525,52 @@ const AdminDashboard = () => {
                                     tomorrow.setDate(tomorrow.getDate() + 1);
                                     return tomorrow.toISOString().split("T")[0];
                                   })()}
-                                  className="px-3 py-2 border rounded-md border-gray-300 text-sm focus:ring-2 focus:ring-[#C5AD59] focus:outline-none"
+                                  className="h-7 text-xs px-2 border rounded-md border-gray-300"
                                 />
                               </div>
 
-
-
-                              {/* Remove Button (Only if multiple prizes exist) */}
+                              {/* Remove Button */}
                               {formData.prizes.length > 1 && (
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removePrizeField(index)}
-                                  className="h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                                  className="h-6 w-6 rounded-full bg-red-500 text-white hover:bg-red-600"
                                 >
-                                  <X size={16} />
+                                  <X size={12} />
                                 </Button>
                               )}
                             </div>
-
                           </div>
                         ))}
-
                       </div>
 
-                      <DialogFooter className="sm:justify-end">
+                      {/* Terms & Conditions */}
+                      <div className="grid gap-1">
+                        <label htmlFor="termsAndConditions" className="text-sm font-medium">Terms & Conditions</label>
+                        <textarea
+                          id="termsAndConditions"
+                          value={termsAndConditions}
+                          onChange={(e: any) => setTermsAndConditions(e.target.value)}
+                          placeholder="Enter terms and conditions for this raffle..."
+                          rows={2}
+                          className="text-sm rounded-md border border-input bg-background px-3 py-1 resize-none"
+                        />
+                      </div>
+
+                      <DialogFooter className="sm:justify-end pt-2">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setOpenDialog(false)}
+                          className="h-8 text-sm"
                         >
                           Cancel
                         </Button>
                         <Button
                           type="submit"
-                          className="bg-[#DBC166] hover:bg-[#c0a855] text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-[#DBC166] hover:bg-[#c0a855] text-black h-8 text-sm disabled:opacity-50"
                           disabled={isSubmitting}
                         >
                           {isSubmitting ? "Creating..." : "Create Raff"}
@@ -2460,12 +2600,51 @@ const AdminDashboard = () => {
                         transition={{ duration: 0.5 }}
                         className="border p-4 rounded-lg shadow-md bg-white flex flex-col"
                       >
+                        {/* Banner Display */}
+                        {item.banner && item.banner ? (
+                          <div className="mb-3">
+                            <img
+                              src={item.banner}
+                              alt={`${item.name} banner`}
+                              className="w-full h-32 object-cover rounded-lg border"
+                              onError={(e: any) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://via.placeholder.com/400x128/cccccc/ffffff?text=No+Banner";
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="mb-3 p-3 bg-gray-100 rounded-lg border border-dashed border-gray-300">
+                            <p className="text-gray-500 text-sm text-center">📷 No banner uploaded</p>
+                          </div>
+                        )}
+
                         <h3 className="text-lg font-bold truncate">{item.name || "Unnamed Raff"}</h3>
+
+                        {/* Terms & Conditions Display */}
+                        {item.termsAndConditions ? (
+                          <div className="mb-3">
+                            <p className="text-sm font-medium flex items-center gap-1 mb-1">
+                              <FileText size={16} className="text-purple-500 flex-shrink-0" />
+                              Terms & Conditions:
+                            </p>
+                            <div className="text-sm text-gray-700  p-3 rounded border border-black max-h-24 overflow-y-auto">
+                              {item.termsAndConditions}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mb-3">
+                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <FileText size={16} className="flex-shrink-0" />
+                              No terms & conditions specified
+                            </p>
+                          </div>
+                        )}
 
                         {/* Scheduled At */}
                         <p className="text-sm text-gray-600 flex items-center gap-1">
                           <Calendar size={16} className="text-blue-500 flex-shrink-0" />
-                          <span>Scheduled at: {new Date(item.scheduledAt).toISOString().split('T')[0]}</span>
+                          <span>Scheduled at: {item.scheduledAt ? new Date(item.scheduledAt).toISOString().split('T')[0] : "Not scheduled"}</span>
                         </p>
 
                         {/* End Dates */}
@@ -2489,7 +2668,6 @@ const AdminDashboard = () => {
                           </ul>
                         </div>
 
-
                         {/* Quantities */}
                         <div className="text-sm text-gray-600 mt-2">
                           <div className="flex items-center gap-1 mb-1">
@@ -2497,10 +2675,9 @@ const AdminDashboard = () => {
                             <span>Quantities:</span>
                           </div>
                           <ul className="list-disc ml-5">
-                            {item.prizes.length > 0 ? (
-                              item?.prizes.map((prize: any, index: number) => {
-
-                                if (prize === null || prize.quantity === null) {
+                            {item.prizes && item.prizes.length > 0 ? (
+                              item.prizes.map((prize: any, index: number) => {
+                                if (!prize || prize.quantity === null || prize.quantity === undefined) {
                                   return (
                                     <li key={`quantity-${index}`} className="break-words">
                                       No Prize Information Available
@@ -2515,18 +2692,15 @@ const AdminDashboard = () => {
                                 );
                               })
                             ) : (
-                              <li className="break-words">No Quantity Available </li>
+                              <li className="break-words">No Quantity Available</li>
                             )}
                           </ul>
                         </div>
 
-
-
-
                         {/* Prizes */}
                         <p className="text-sm font-medium mt-2">🎁 Prizes:</p>
                         <ul className="list-disc ml-4 text-sm text-gray-700">
-                          {item.prizes.length > 0 ? (
+                          {item.prizes && item.prizes.length > 0 ? (
                             item.prizes.map((prize: any, index: number) => (
                               <li key={`prize-${index}`} className="break-words">
                                 {prize?.name ? prize.name : "No Prize"}
@@ -2536,7 +2710,6 @@ const AdminDashboard = () => {
                             <li className="break-words">No Prizes Available</li>
                           )}
                         </ul>
-
 
                         {/* Participants */}
                         <p className="text-sm font-medium mt-2 flex items-center gap-1">
@@ -2550,7 +2723,7 @@ const AdminDashboard = () => {
                                   <div className="flex justify-between items-center mb-2">
                                     <span className="text-gray-700 font-semibold">Total Entries:</span>
                                     <span className={`px-3 py-1 text-sm font-bold rounded-md ${participant.entries === 10 ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>
-                                      {participant.entries} {participant.entries > 1 ? 'entries' : 'entry'}
+                                      {participant.entries || 0} {participant.entries > 1 ? 'entries' : 'entry'}
                                     </span>
                                   </div>
 
@@ -2609,31 +2782,29 @@ const AdminDashboard = () => {
                             {loading === item._id ? "Deleting..." : <><Trash2 size={16} className="flex-shrink-0" /> Delete</>}
                           </Button>
 
-
-
-                          {!Array.isArray(item.prizes) || item.prizes.length === 0 ? (
+                          {!Array.isArray(item.prizes) || !item.prizes || item.prizes.length === 0 ? (
                             <p className="text-sm text-red-500 font-semibold">
                               ⚠️ This raffle is no longer available. Reason: No prizes assigned.
                             </p>
                           ) : item.prizes.every((prize: any) => {
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
-                            const prizeEndDate = prize.endDate ? new Date(prize.endDate) : null;
+                            const prizeEndDate = prize?.endDate ? new Date(prize.endDate) : null;
                             if (prizeEndDate) prizeEndDate.setHours(0, 0, 0, 0);
 
                             // Prize is invalid if either:
                             // 1. Quantity is zero, OR
                             // 2. End date exists and is today or in the past
-                            return prize.quantity <= 0 || (prizeEndDate && prizeEndDate <= today);
+                            return prize?.quantity <= 0 || (prizeEndDate && prizeEndDate <= today);
                           }) ? (
                             <p className="text-sm text-red-500 font-semibold">
                               ⚠️ This raffle is no longer available. Reason:{" "}
-                              {item.prizes.every((prize: any) => prize.quantity <= 0)
+                              {item.prizes.every((prize: any) => prize?.quantity <= 0)
                                 ? "All prizes are given away."
                                 : item.prizes.every((prize: any) => {
                                   const today = new Date();
                                   today.setHours(0, 0, 0, 0);
-                                  const prizeEndDate = prize.endDate ? new Date(prize.endDate) : null;
+                                  const prizeEndDate = prize?.endDate ? new Date(prize.endDate) : null;
                                   if (prizeEndDate) prizeEndDate.setHours(0, 0, 0, 0);
                                   return prizeEndDate && prizeEndDate <= today;
                                 })
@@ -2655,8 +2826,8 @@ const AdminDashboard = () => {
                                   const today = new Date().toISOString().split("T")[0];
                                   const hasValidPrizes = item.prizes.some(
                                     (prize: any) =>
-                                      prize.quantity > 0 &&
-                                      (!prize.endDate || new Date(prize.endDate).toISOString().split("T")[0] !== today)
+                                      prize?.quantity > 0 &&
+                                      (!prize?.endDate || new Date(prize.endDate).toISOString().split("T")[0] !== today)
                                   );
 
                                   return item.isVisible
@@ -2668,7 +2839,6 @@ const AdminDashboard = () => {
                               )}
                             </Button>
                           )}
-
                         </div>
                       </motion.div>
                     ))}

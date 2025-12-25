@@ -8,7 +8,7 @@ const RaffSchema = new mongoose.Schema(
     },
     vendorId: {
       type: String,
-   
+
     },
     prizes: {
       type: [
@@ -65,6 +65,12 @@ const RaffSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    banner: {
+      type: String
+    },
+    termsAndConditions:{
+      type:String,
+    }
   },
   { timestamps: { createdAt: true, updatedAt: true } }
 );

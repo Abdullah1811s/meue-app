@@ -250,7 +250,7 @@ function VendorOnboarding() {
 
       const response = await axios.post(`${API_BASE_URL}/generateSignature`, { folder });
 
-      console.log("The signature response is ", response);
+      // console.log("The signature response is ", response);
       return response.data;
     }
     catch (error) {

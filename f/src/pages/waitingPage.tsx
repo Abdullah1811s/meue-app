@@ -85,9 +85,11 @@ const scaleUp = {
 
 
 const images = [
-  "/s2.avif",
-  "/s3.avif",
-  "/s111.avif",
+  "/new1.avif",
+  "/new2.avif",
+  "/new5.avif",
+  "/new3.jpg",
+  "/new4.avif",
 
 ];
 
@@ -99,6 +101,8 @@ export default function Home() {
   const navigate = useNavigate();
   const sectionRef = useRef(null);
   const [isDisabled, setIsDisabled] = useState(false);
+  const [portraitMap, setPortraitMap] = useState<Record<number, boolean>>({});
+
   const [hasFetched, setHasFetched] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -517,19 +521,29 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 100, damping: 15 }}
             >
               {images.map((img, index) => (
-                <img
+                <div
                   key={index}
-                  src={img}
-                  alt={`Slide ${index}`}
-                  className="w-full h-full rounded-lg object-cover flex-shrink-0"
-                  loading={index === currentSlide ? "eager" : "lazy"}
-                  fetchPriority={index === currentSlide ? "high" : "auto"}
-                  decoding="async"
-                  width="800"
-                  height="600"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+                  className="w-full h-full aspect-[4/3] overflow-hidden rounded-lg flex-shrink-0 bg-black"
+                >
+                  <img
+                    src={img}
+                    alt={`Slide ${index}`}
+                    onLoad={(e) => {
+                      const { naturalWidth, naturalHeight } = e.currentTarget;
+                      setPortraitMap(prev => ({
+                        ...prev,
+                        [index]: naturalHeight > naturalWidth
+                      }));
+                    }}
+                    className={`w-full h-full ${portraitMap[index] ? "object-contain" : "object-cover"
+                      }`}
+                    loading={index === currentSlide ? "eager" : "lazy"}
+                    decoding="async"
+                  />
+                </div>
               ))}
+
+
             </motion.div>
           </motion.div>
 

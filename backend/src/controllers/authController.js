@@ -40,22 +40,33 @@ export const verifyCaptcha = async (captchaToken) => {
 
 export const Login = async (req, res) => {
     try {
+        console.log("🔹 Login request received:", req.body);
 
         const { email, password, captchaToken } = req.body;
-        if (!email || !password)
+
+        if (!email || !password) {
+            console.log("❌ Missing fields:", { email, password });
             return res.status(400).json({ message: "All fields are required" });
+        }
         if (!captchaToken) {
+            console.log("❌ Missing captcha token");
             return res.status(400).json({ success: false, message: "Captcha required" });
         }
 
         const isCaptchaValid = await verifyCaptcha(captchaToken);
+        console.log("🧩 Captcha validation result:", isCaptchaValid);
+
         if (!isCaptchaValid) {
             return res.status(400).json({ message: "Captcha verification failed please reload and try again" });
         }
 
         if (email.endsWith("@adminMenu.com")) {
+            console.log("🔸 Admin login attempt:", email);
             const admin = await Admin.findOne({ email });
+            console.log("Admin found:", !!admin);
+
             if (!admin || !(await admin.comparePassword(password))) {
+                console.log("❌ Invalid admin credentials");
                 return res.status(401).json({ message: "Invalid Admin Credentials" });
             }
 
@@ -65,6 +76,7 @@ export const Login = async (req, res) => {
                 role: admin.role
             };
             const adminToken = generateToken(adminTokenPayload);
+            console.log("✅ Admin login successful:", admin.email);
 
             return res.status(200).json({
                 message: "Admin Logged in",
@@ -77,27 +89,35 @@ export const Login = async (req, res) => {
         }
 
         // Normal User Login
+        console.log("👤 User login attempt:", email);
         const user = await usersModel.findOne({ email });
-        if (!user || !(await user.comparePassword(password)))
-            return res.status(401).json({ message: "Email or Password is wrong" });
+        console.log("User found:", !!user);
 
-        const tokenPayload = {
-            id: user._id,
-            name: user.name,
-            role: user.role
-        };
+        if (!user || !(await user.comparePassword(password))) {
+            console.log("❌ Invalid user credentials");
+            return res.status(401).json({ message: "Email or Password is wrong" });
+        }
+
+        const tokenPayload = { id: user._id, name: user.name, role: user.role };
         const token = generateToken(tokenPayload);
 
         const referrals = await referralModel.find({ referrer: user._id });
+        console.log(`📊 Found ${referrals.length} referrals for user`);
+
         const today = new Date().setHours(0, 0, 0, 0);
         const lastLogin = user.dailyLoginDate ? new Date(user.dailyLoginDate).setHours(0, 0, 0, 0) : null;
 
         if (lastLogin !== today) {
+            console.log("🎁 Daily login points awarded");
             user.dailyLoginDate = new Date();
-            user.DailyLoginPoint += 10
+            user.DailyLoginPoint += 10;
             await addPoints(user._id, 10);
             await user.save();
+        } else {
+            console.log("🕒 Daily login points already claimed today");
         }
+
+        console.log("✅ User login successful:", email);
         return res.status(200).json({
             message: "User Logged in",
             user: {
@@ -110,7 +130,7 @@ export const Login = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error)
+        console.error("🔥 Error in Login:", error);
         return res.status(500).json({
             message: "Server error Please try again later",
             error: error.message
@@ -121,21 +141,26 @@ export const Login = async (req, res) => {
 
 export const signUp = async (req, res) => {
     try {
-        let referrer1;
-        let referrer2;
+        console.log("🟢 Signup request received:", req.body);
+
+        let referrer1, referrer2;
         const { name, email, password, phone, referralCode, city, province, street, town, postalCode, captchaToken } = req.body;
 
         const isCaptchaValid = await verifyCaptcha(captchaToken);
+        console.log("🧩 Captcha validation result:", isCaptchaValid);
+
         if (!isCaptchaValid) {
             return res.status(400).json({ message: "Captcha verification failed please reload and try again" });
         }
-        
+
         if (!name || !email || !password || !phone || !town || !city || !province || !street || !postalCode) {
+            console.log("❌ Missing required fields");
             return res.status(400).json({ message: "All fields are required" });
         }
 
         const isEmailExist = await usersModel.findOne({ email });
         if (isEmailExist) {
+            console.log("❌ Email already exists:", email);
             return res.status(409).json({ message: "Email already registered, please log in" });
         }
 
@@ -143,28 +168,33 @@ export const signUp = async (req, res) => {
         let referrer = null;
 
         if (referralCode) {
-
+            console.log("🔗 Referral code provided:", referralCode);
             referrer1 = await affiliateModel.findOne({ referralCode });
-            referrer2 = await usersModel.findOne({ referralCodeShare: referralCode }); //increase the point of this user
+            referrer2 = await usersModel.findOne({ referralCodeShare: referralCode });
+            console.log("Referrer found:", !!referrer1 || !!referrer2);
 
             if (referrer2) {
-                referrer2.ReferralPoint += 100
+                console.log("💰 Awarding points to user referrer:", referrer2.email);
+                referrer2.ReferralPoint += 100;
                 await referrer2.save();
                 await addPoints(referrer2._id, 100);
             }
+
             referrer = referrer1 || referrer2;
 
             if (referrer) {
                 finalReferralCode = referrer.referralCode;
             } else {
+                console.log("❌ Invalid referral code");
                 return res.status(400).json({ message: "Invalid referral code" });
             }
         } else {
-
             finalReferralCode = generateReferralCode();
+            console.log("🆕 Generated new referral code:", finalReferralCode);
         }
 
         const referralCodeShare = generateReferralCode();
+        console.log("📩 User share referral code:", referralCodeShare);
 
         const newUser = await usersModel.create({
             name,
@@ -181,8 +211,10 @@ export const signUp = async (req, res) => {
             referralCodeShare
         });
 
-        if (referrer) {
+        console.log("✅ New user created:", newUser.email);
 
+        if (referrer) {
+            console.log("🔗 Creating referral record for referrer:", referrer._id);
             const code = referrer.referralCodeShare || finalReferralCode;
 
             const newr = await referralModel.create({
@@ -192,70 +224,38 @@ export const signUp = async (req, res) => {
                 referralCode: code,
                 status: "pending",
             });
-            if (!newr) return res.status(409).json({ message: "Can't find the code " });
 
-
+            console.log("Referral record created:", newr ? newr._id : "Failed");
+            if (!newr) return res.status(409).json({ message: "Can't find the code" });
         }
 
-        // Generate token for the new user
-        const tokenPayload = {
-            id: newUser._id,
-            name: newUser.name,
-            role: newUser.role
-        };
+        const tokenPayload = { id: newUser._id, name: newUser.name, role: newUser.role };
         const token = generateToken(tokenPayload);
 
         newUser.signupPoint += 125;
         await addPoints(newUser._id, newUser.signupPoint);
-        newUser.save();
+        await newUser.save();
+        console.log("🏆 Signup points awarded:", newUser.signupPoint);
+
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
             port: 465,
             user: "support@themenuportal.co.za",
         };
-        const message = `
-  <h2>The Menu Team
-</h2>
-  <p>Hi ${newUser.name || "there"},</p>
 
-  <p>Welcome to <strong>The Menu</strong> – where deals, rewards, raffles, and surprises meet <em>YOU</em> right where you are.</p>
-
-  <p>You’ve just joined South Africa’s most exciting lifestyle platform. No fluff. No loyalty tricks. Just real value, delivered daily.</p>
-
-  <p><strong>Here’s what to do next:</strong></p>
-  <ol style="padding-left: 1.2rem;">
-    <li>Explore Our Partners – discover exclusive offers from vendors across the country.</li>
-    <li>Spin the Wheel – your first reward could be waiting.</li>
-    <li>Refer & Earn – invite friends and climb the leaderboard.</li>
-    <li>Explore Your Dashboard – track raffles, offers, and unlock new perks.</li>
-  </ol>
-
-  <p>This is <strong>your world. Your way.</strong> And it just got better.</p>
-
-  <p>
-    <a href="https://themenuportal.co.za/Login" style="display: inline-block; background: #DBC166; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 10px;">
-      Go and login
-    </a>
-  </p>
-
-  <p>Thanks for being part of the movement.</p>
-
-  <p>
-    <strong>The Menu Team</strong><br/>
-    <a href="https://www.themenuportal.co.za">www.themenuportal.co.za</a><br/>
-    Support: <a href="mailto:support@themenuportal.co.za">support@themenuportal.co.za</a>
-  </p>
-`;
-
-
+        console.log("📧 Sending welcome email to:", newUser.email);
         await sendEmail(
             smtpConfig,
             newUser.email,
             "Welcome to the Menu - Your World Your Way.",
             "Your Account is Ready – Let the Excitement Begin!",
-            message
+            `
+            <h2>The Menu Team</h2>
+            <p>Hi ${newUser.name || "there"}, welcome to The Menu!</p>
+            `
         );
 
+        console.log("✅ Signup complete:", newUser.email);
         return res.status(201).json({
             message: "User created successfully",
             user: { ...newUser.toObject(), password: undefined },
@@ -263,12 +263,13 @@ export const signUp = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error while signing up:", error);
+        console.error("🔥 Error while signing up:", error);
         return res.status(500).json({
-            error: error,
+            error: error.message,
         });
     }
 };
+
 
 
 
