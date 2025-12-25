@@ -85,6 +85,7 @@ const scaleUp = {
 
 
 const images = [
+  "/new0.avif",
   "/new1.avif",
   "/new2.avif",
   "/new5.avif",

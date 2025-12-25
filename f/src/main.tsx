@@ -40,6 +40,7 @@ import AffiliateResetPassword from './pages/AffiliateResetPassword.tsx'
 import VendorForgotPassword from './pages/VendorForgotPassword.tsx'
 import VendorResetPassword from './pages/VendorResetPassword.tsx'
 import NotFound from './pages/NotFound.tsx'
+import CampaignTermsOfService from './pages/CampaignTermsOfService.tsx'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -66,6 +67,8 @@ const router = createBrowserRouter(
       <Route path="/doc/FAQ" element={<FAQPage />} />
       <Route path="/doc/Privacy" element={<PrivacyPolicy />} />
       <Route path="/doc/TOS" element={<TermsOfService />} />
+      <Route path="/doc/campaignTerms" element={<CampaignTermsOfService />} />
+      <Route path="draw" element={<CompletedRafflesPage />} />
 
 
 
@@ -79,7 +82,6 @@ const router = createBrowserRouter(
 
       {/* User Protected Routes */}
       <Route path="users/:id" element={<PrivateRoute />}>
-        <Route path="draw" element={<CompletedRafflesPage />} />
         <Route path="success" element={<PaymentSuccess />} />
         <Route path="failure" element={<PaymentFailure />} />
         <Route path="cancel" element={<PaymentCancel />} />
@@ -99,7 +101,7 @@ const router = createBrowserRouter(
       <Route path="affiliated" element={<AffiliatedProtectedRoute />}>
         <Route path="dashboard/:id" element={<AffiliatedDashboard />} />
       </Route>
-      
+
       <Route path="*" element={<NotFound />} />
     </Route>
   )

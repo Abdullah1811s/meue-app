@@ -168,8 +168,8 @@ interface RaffleItem {
 
   scheduledAt: string;
   status: "completed" | "scheduled";
-  banner?:string;
-  termsAndConditions?:string;
+  banner?: string;
+  termsAndConditions?: string;
 }
 
 interface Prize {
@@ -2601,23 +2601,27 @@ const AdminDashboard = () => {
                         className="border p-4 rounded-lg shadow-md bg-white flex flex-col"
                       >
                         {/* Banner Display */}
-                        {item.banner && item.banner ? (
+                        {item.banner ? (
                           <div className="mb-3">
-                            <img
-                              src={item.banner}
-                              alt={`${item.name} banner`}
-                              className="w-full h-32 object-cover rounded-lg border"
-                              onError={(e: any) => {
-                                e.target.onerror = null;
-                                e.target.src = "https://via.placeholder.com/400x128/cccccc/ffffff?text=No+Banner";
-                              }}
-                            />
+                            <a href={item.banner} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={item.banner}
+                                alt={`${item.name} banner`}
+                                className="w-full h-20 object-cover rounded-md border hover:opacity-90 transition"
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.src =
+                                    "https://via.placeholder.com/400x80/cccccc/ffffff?text=No+Banner";
+                                }}
+                              />
+                            </a>
                           </div>
                         ) : (
-                          <div className="mb-3 p-3 bg-gray-100 rounded-lg border border-dashed border-gray-300">
-                            <p className="text-gray-500 text-sm text-center">📷 No banner uploaded</p>
+                          <div className="mb-3 p-2 bg-gray-100 rounded-md border border-dashed border-gray-300">
+                            <p className="text-gray-500 text-xs text-center">No banner uploaded</p>
                           </div>
                         )}
+
 
                         <h3 className="text-lg font-bold truncate">{item.name || "Unnamed Raff"}</h3>
 
@@ -2628,9 +2632,14 @@ const AdminDashboard = () => {
                               <FileText size={16} className="text-purple-500 flex-shrink-0" />
                               Terms & Conditions:
                             </p>
-                            <div className="text-sm text-gray-700  p-3 rounded border border-black max-h-24 overflow-y-auto">
-                              {item.termsAndConditions}
-                            </div>
+                            <a
+                              href={item.termsAndConditions}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 underline"
+                            >
+                              View Terms & Conditions
+                            </a>
                           </div>
                         ) : (
                           <div className="mb-3">

@@ -8,11 +8,11 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import axios from "axios";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 
 const NavbarComponent = () => {
@@ -256,6 +256,18 @@ const NavbarComponent = () => {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </li>
+                        <Button
+                            onClick={() => navigate(`/draw`)}
+                            className="
+    text-white px-5 py-2 border border-[#DBC166] rounded-full 
+    transition-all duration-300 ease-in-out 
+    hover:bg-[#DBC166] hover:text-black 
+    hover:shadow-md hover:scale-105
+    active:scale-95
+  "
+                        >
+                            Promotions
+                        </Button>
                     </ul>
 
                     <div className="flex items-center space-x-3">
@@ -490,18 +502,18 @@ const NavbarComponent = () => {
                             Select your preferred payment option
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="grid gap-4 py-4">
                         <div className="border border-[#DBC166] rounded-lg p-4">
                             <h3 className="text-lg font-semibold text-[#DBC166] mb-2">Pay with Yoco</h3>
                             <div className="flex flex-col gap-2">
-                                <Button 
+                                <Button
                                     onClick={handleClickPayNowR10}
                                     className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
                                 >
                                     Pay R10 with Yoco
                                 </Button>
-                                <Button 
+                                <Button
                                     onClick={handleClickPayNowR50}
                                     className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
                                 >
@@ -509,17 +521,17 @@ const NavbarComponent = () => {
                                 </Button>
                             </div>
                         </div>
-                        
+
                         <div className="border border-[#DBC166] rounded-lg p-4">
                             <h3 className="text-lg font-semibold text-[#DBC166] mb-2">Pay with Peach Payments</h3>
                             <div className="flex flex-col gap-2">
-                                <Button 
+                                <Button
                                     onClick={handlePeachPayR10}
                                     className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
                                 >
                                     Pay R10 with Peach
                                 </Button>
-                                <Button 
+                                <Button
                                     onClick={handlePeachPayR50}
                                     className="bg-[#DBC166] text-black hover:bg-[#C8A13A]"
                                 >

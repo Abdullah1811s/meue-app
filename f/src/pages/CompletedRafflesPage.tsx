@@ -48,10 +48,10 @@ interface RaffleItem {
   status: "completed" | "scheduled";
   isVisible: boolean;
   banner?: string;
-  termsAndConditions?: string;
+  termsAndConditions?: any;
 }
 
-interface UpcomingRaffle {  
+interface UpcomingRaffle {
   _id: string;
   name: string;
   prizes: Prize[];
@@ -329,24 +329,26 @@ export default function UserDashboard() {
                     <CustomCard isDrawing={drawingRaffle === raffle._id}>
                       {/* Banner Section */}
                       {bannerUrl ? (
-                        <div className="relative h-40 overflow-hidden">
+                        <div className="w-full flex justify-center bg-gray-100">
                           <img
                             src={bannerUrl}
                             alt={`${raffle.name} banner`}
-                            className="w-full h-full object-cover"
+                            className="w-full max-w-full h-auto object-contain"
                             onError={(e: any) => {
                               e.target.onerror = null;
-                              e.target.src = "https://via.placeholder.com/400x160/f5f5dc/dbc166?text=No+Banner";
-                              e.target.className = "w-full h-full object-cover bg-gray-100";
+                              e.target.src =
+                                "https://via.placeholder.com/800x200/f5f5dc/dbc166?text=No+Banner";
+                              e.target.className = "w-full max-w-full h-auto object-contain";
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                         </div>
                       ) : (
-                        <div className="h-40 bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 flex items-center justify-center">
+                        <div className="w-full bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 flex items-center justify-center p-10">
                           <p className="text-gray-500">📷 No banner</p>
                         </div>
                       )}
+
+
 
                       <div className="bg-[#DBC166] p-4">
                         <h3 className="text-xl font-bold text-white">{raffle.name}</h3>
@@ -448,7 +450,10 @@ export default function UserDashboard() {
                           {raffle.termsAndConditions && (
                             <div className="mb-3">
                               <button
-                                onClick={() => handleShowTerms(raffle.termsAndConditions)}
+                                onClick={() => {
+                                  const url = raffle.termsAndConditions;
+                                  window.open(url, "_blank");
+                                }}
                                 className="flex items-center gap-2 text-sm text-black hover:text-[#c0a855] border-2 border-[#DBC166] p-2 cursor-pointer font-medium"
                               >
                                 <FileText size={16} />
