@@ -21,6 +21,7 @@ import AnalogTimer from '@/components/customComponents/AnalogTimer';
 import AppTimer from '@/components/customComponents/apptimer';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import PopupBanner from './PopupBanner';
 // import { useSelector } from 'react-redux';
 
 // Enhanced animation variants
@@ -85,13 +86,10 @@ const scaleUp = {
 
 
 const images = [
-  "/new0.avif",
-  "/new1.avif",
-  "/new2.avif",
-  "/new5.avif",
-  "/new3.jpg",
-  "/new4.avif",
-
+ 
+  "/s2.avif",
+  "/s3.avif",
+  "/s111.avif",
 ];
 
 export default function Home() {
@@ -496,6 +494,7 @@ export default function Home() {
         animate="visible"
         className="flex flex-col items-center justify-center px-4 sm:px-6 md:px-10 py-2 w-full max-w-7xl mx-auto"
       >
+          <PopupBanner />
         {(!isMobile || showTimer) && (
           <>
             <AnalogTimer />
@@ -507,7 +506,9 @@ export default function Home() {
             <p>{timeLeft}</p>
           </div>
         )}
-
+        {/* <div>
+         <img src="/new00.webp" alt="" />
+        </div> */}
         {/* hero section */}
         <motion.section
           initial="hidden"

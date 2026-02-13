@@ -68,7 +68,7 @@ const router = createBrowserRouter(
       <Route path="/doc/Privacy" element={<PrivacyPolicy />} />
       <Route path="/doc/TOS" element={<TermsOfService />} />
       <Route path="/doc/campaignTerms" element={<CampaignTermsOfService />} />
-      <Route path="draw" element={<CompletedRafflesPage />} />
+      <Route path="promotions" element={<CompletedRafflesPage />} />
 
 
 
@@ -82,6 +82,7 @@ const router = createBrowserRouter(
 
       {/* User Protected Routes */}
       <Route path="users/:id" element={<PrivateRoute />}>
+      <Route path="promotions" element={<CompletedRafflesPage />} />
         <Route path="success" element={<PaymentSuccess />} />
         <Route path="failure" element={<PaymentFailure />} />
         <Route path="cancel" element={<PaymentCancel />} />

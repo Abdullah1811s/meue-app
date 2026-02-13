@@ -257,7 +257,7 @@ const NavbarComponent = () => {
                             </DropdownMenu>
                         </li>
                         <Button
-                            onClick={() => navigate(`/draw`)}
+                            onClick={() => navigate(`/promotions`)}
                             className="
     text-white px-5 py-2 border border-[#DBC166] rounded-full 
     transition-all duration-300 ease-in-out 
@@ -312,7 +312,7 @@ const NavbarComponent = () => {
                                     </Button>
                                 )}
                                 <Button
-                                    onClick={() => navigate(`/users/${id}/draw`)}
+                                    onClick={() => navigate(`/users/${id}/promotions`)}
                                     className="
     text-white px-5 py-2 border border-[#DBC166] rounded-full 
     transition-all duration-300 ease-in-out 
@@ -418,6 +418,21 @@ const NavbarComponent = () => {
                                 Affiliate Registration
                             </Link>
                         </li>
+                        <Button
+                            onClick={() => {
+                                navigate(`/promotions`);
+                                setIsOpen(false);
+                            }}
+                            className="
+    text-white px-5 py-2 border border-[#DBC166] rounded-full 
+    transition-all duration-300 ease-in-out 
+    hover:bg-[#DBC166] hover:text-black 
+    hover:shadow-md hover:scale-105
+    active:scale-95
+  "
+                        >
+                            Promotions
+                        </Button>
                     </ul>
 
                     <div className="flex flex-col gap-2 w-full px-4">
@@ -460,7 +475,7 @@ const NavbarComponent = () => {
                                 )}
                                 <Button
                                     onClick={() => {
-                                        navigate(`/users/${id}/draw`);
+                                        navigate(`/users/${id}/promotions`);
                                         setIsOpen(false);
                                     }}
                                     className="
@@ -471,7 +486,7 @@ const NavbarComponent = () => {
     active:scale-95
   "
                                 >
-                                    Draws
+                                    Promotions
                                 </Button>
                                 <Button
                                     onClick={() => {

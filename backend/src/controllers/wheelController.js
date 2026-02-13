@@ -40,8 +40,16 @@ export const addVendorOnWheel = async (req, res) => {
             {
                 $group: {
                     _id: null,
-                    vendorCount: { $sum: { $size: "$vendor.offerings" } },
-                    adminCount: { $sum: { $size: "$admin.offerings" } },
+                    vendorCount: {
+                        $sum: {
+                            $size: { $ifNull: ["$vendor.offerings", []] }
+                        }
+                    },
+                    adminCount: {
+                        $sum: {
+                            $size: { $ifNull: ["$admin.offerings", []] }
+                        }
+                    }
                 }
             },
             {
@@ -50,6 +58,7 @@ export const addVendorOnWheel = async (req, res) => {
                 }
             }
         ]);
+
 
         const totalCount = totalOfferingsCount[0]?.totalOfferings || 0;
         console.log("Total offerings count: ", totalCount);

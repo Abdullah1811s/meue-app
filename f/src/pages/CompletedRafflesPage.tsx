@@ -6,6 +6,8 @@ import { io } from "socket.io-client";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { CalendarIcon, Gift, Trophy, User, MapPin, Mail, FileText, X } from "lucide-react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL_SOCKET);
 
@@ -33,7 +35,6 @@ interface Prize {
   _id: string;
   name: string;
 }
-
 
 interface RaffleItem {
   name: string;
@@ -64,6 +65,11 @@ interface UpcomingRaffle {
 
 export default function UserDashboard() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const navigate = useNavigate();
+
+  // Get authentication state from Redux
+  const isAuthenticated = useSelector((state: any) => state.auth.isUserAuthenticated);
+
   const [upcomingRaffles, setUpcomingRaffles] = useState<RaffleItem[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [withWinnerRaffles, setWithWinnerRaffles] = useState<RaffleItem[]>([]);
@@ -85,6 +91,81 @@ export default function UserDashboard() {
     toast.dismiss();
     type === 'success' ? toast.success(message) : toast.error(message);
   }, []);
+
+  // Handle image click - redirect to signup if not authenticated
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    // Prevent click if user is already authenticated
+    if (isAuthenticated) {
+      return; // Do nothing if user is logged in
+    }
+
+    // Only redirect if user is not authenticated
+    e.stopPropagation();
+    navigate('/signup');
+  }, [isAuthenticated, navigate]);
+
+  // Add click overlay to images
+  const ImageWithClickHandler = ({ src, alt, className, isClickable = true }: {
+    src: string;
+    alt: string;
+    className: string;
+    isClickable?: boolean;
+  }) => (
+    <div className="relative w-full">
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        onError={(e: any) => {
+          e.target.onerror = null;
+          e.target.src = "https://via.placeholder.com/800x200/f5f5dc/dbc166?text=No+Banner";
+          e.target.className = className;
+        }}
+      />
+      {isClickable && !isAuthenticated && (
+        <div
+          className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer flex items-center justify-center"
+          onClick={handleImageClick}
+        >
+          <div className="opacity-0 hover:opacity-100 transition-opacity duration-300 bg-black/70 text-white px-4 py-2 rounded-lg font-semibold">
+            Click to Sign Up and Participate!
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Add similar handler for completed raffle banners
+  const CompletedImageWithClickHandler = ({ src, alt, className }: {
+    src: string;
+    alt: string;
+    className: string;
+  }) => (
+    <div className="relative">
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        onError={(e: any) => {
+          e.target.onerror = null;
+          e.target.src = "https://via.placeholder.com/400x128/f5f5dc/dbc166?text=Winner+Banner";
+          e.target.className = className;
+        }}
+      />
+      {!isAuthenticated && (
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent cursor-pointer"
+          onClick={handleImageClick}
+        >
+          <div className="absolute bottom-2 left-2 opacity-0 hover:opacity-100 transition-opacity duration-300">
+            <span className="bg-black/70 text-white px-2 py-1 rounded text-xs">
+              Sign up for future raffles
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   const fetchCompletedRaffles = useCallback(async () => {
     try {
@@ -260,6 +341,30 @@ export default function UserDashboard() {
       <div className="container mx-auto p-4 px-12 bg-white min-h-screen">
         <h1 className="text-3xl font-bold text-[#DBC166] mb-8 text-center">🎉 The Menu Power Pick 🎉</h1>
 
+        {/* Authentication Notice Banner */}
+        {!isAuthenticated && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 rounded-lg border border-[#DBC166]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Trophy className="text-[#DBC166]" size={24} />
+                <p className="text-gray-700">
+                  <span className="font-bold text-[#DBC166]">Sign up now</span> to participate in upcoming Promotions and win amazing prizes!
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/signup')}
+                className="bg-[#DBC166] text-black px-4 py-2 rounded-full font-bold hover:bg-[#c0a855] transition"
+              >
+                Sign Up
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Terms & Conditions Modal */}
         {showTermsModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -296,10 +401,10 @@ export default function UserDashboard() {
           </div>
         )}
 
-        {/* Upcoming Raffles */}
-        <section className="mb-12">
+        {/* Upcoming Promotions*/}
+        <section className="mb-12 ">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">
-            Don't Miss Out on Our Exciting Raffles!
+            Don't Miss Out on Our Exciting Promotions!
           </h2>
           {upcomingLoading ? (
             <div className="flex justify-center p-8">
@@ -311,10 +416,10 @@ export default function UserDashboard() {
             </div>
           ) : upcomingRaffles.length === 0 ? (
             <p className="col-span-full text-center p-8 text-gray-500">
-              We're preparing some exciting new raffles for you. Please check back soon!
+              We're preparing some exciting new Promotionsfor you. Please check back soon!
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingRaffles.map((raffle) => {
                 const bannerUrl = getBannerUrl(raffle.banner);
 
@@ -330,25 +435,28 @@ export default function UserDashboard() {
                       {/* Banner Section */}
                       {bannerUrl ? (
                         <div className="w-full flex justify-center bg-gray-100">
-                          <img
+                          <ImageWithClickHandler
                             src={bannerUrl}
                             alt={`${raffle.name} banner`}
                             className="w-full max-w-full h-auto object-contain"
-                            onError={(e: any) => {
-                              e.target.onerror = null;
-                              e.target.src =
-                                "https://via.placeholder.com/800x200/f5f5dc/dbc166?text=No+Banner";
-                              e.target.className = "w-full max-w-full h-auto object-contain";
-                            }}
+                            isClickable={!drawingRaffle} // Disable click during drawing
                           />
                         </div>
                       ) : (
-                        <div className="w-full bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 flex items-center justify-center p-10">
+                        <div
+                          className="w-full bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 flex items-center justify-center p-10 cursor-pointer"
+                          onClick={!isAuthenticated && !drawingRaffle ? handleImageClick : undefined}
+                        >
                           <p className="text-gray-500">📷 No banner</p>
+                          {!isAuthenticated && !drawingRaffle && (
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10">
+                              <span className="bg-black/70 text-white px-3 py-1 rounded text-sm">
+                                Click to sign up
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
-
-
 
                       <div className="bg-[#DBC166] p-4">
                         <h3 className="text-xl font-bold text-white">{raffle.name}</h3>
@@ -356,6 +464,7 @@ export default function UserDashboard() {
                           <CalendarIcon className="w-4 h-4" />
                           {formatDateTime(raffle.scheduledAt)}
                         </p>
+
                       </div>
 
                       {drawingRaffle === raffle._id ? (
@@ -446,6 +555,21 @@ export default function UserDashboard() {
                         </div>
                       ) : (
                         <div className="p-4">
+                          {/* Sign Up Call to Action */}
+                          {!isAuthenticated && (
+                            <div className="mb-4 p-3 bg-gradient-to-r from-[#F5F5DC]/50 to-[#DBC166]/20 rounded-lg border border-[#DBC166]/30">
+                              <p className="text-sm text-gray-700 mb-2">
+                                <span className="font-bold text-[#DBC166]">Want to participate?</span>
+                              </p>
+                              <button
+                                onClick={() => navigate('/signup')}
+                                className="w-full bg-[#DBC166] text-black py-2 rounded-md text-sm font-bold hover:bg-[#c0a855] transition"
+                              >
+                                Sign Up to Enter
+                              </button>
+                            </div>
+                          )}
+
                           {/* Terms & Conditions Button */}
                           {raffle.termsAndConditions && (
                             <div className="mb-3">
@@ -491,14 +615,8 @@ export default function UserDashboard() {
                           </div>
 
                           <div className="mt-4 pt-4 border-t">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${raffle.isVisible && raffle.prizes?.some(prize => prize.quantity > 0)
-                              ? "bg-[#DBC166] text-white"
-                              : "bg-gray-100 text-gray-600"
-                              }`}>
-                              {raffle.isVisible && raffle.prizes?.some(prize => prize.quantity > 0)
-                                ? "Open"
-                                : "Closed"
-                              }
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm  bg-[#DBC166] text-white`}>
+                              Open
                             </span>
                           </div>
                         </div>
@@ -511,9 +629,9 @@ export default function UserDashboard() {
           )}
         </section>
 
-        {/* Raffles with Winners */}
+        {/* Promotionswith Winners */}
         <section>
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Raffles with Winners</h2>
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Promotions  with Winners</h2>
 
           {loading ? (
             <div className="flex justify-center p-8">
@@ -537,18 +655,13 @@ export default function UserDashboard() {
                     transition={{ duration: 0.3 }}
                   >
                     <CustomCard>
-                      {/* Banner Section for Completed Raffles */}
+                      {/* Banner Section for Completed Promotions*/}
                       {bannerUrl ? (
                         <div className="relative h-32 overflow-hidden">
-                          <img
+                          <CompletedImageWithClickHandler
                             src={bannerUrl}
                             alt={`${raffle.name} banner`}
                             className="w-full h-full object-cover"
-                            onError={(e: any) => {
-                              e.target.onerror = null;
-                              e.target.src = "https://via.placeholder.com/400x128/f5f5dc/dbc166?text=Winner+Banner";
-                              e.target.className = "w-full h-full object-cover bg-gray-100";
-                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                           <div className="absolute top-2 right-2 bg-[#DBC166] text-white px-2 py-1 rounded text-xs font-bold">
@@ -556,11 +669,21 @@ export default function UserDashboard() {
                           </div>
                         </div>
                       ) : (
-                        <div className="h-32 bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 flex items-center justify-center relative">
+                        <div
+                          className="h-32 bg-gradient-to-r from-[#F5F5DC] to-[#DBC166]/30 flex items-center justify-center relative cursor-pointer"
+                          onClick={!isAuthenticated ? handleImageClick : undefined}
+                        >
                           <p className="text-gray-500">📷 No banner</p>
                           <div className="absolute top-2 right-2 bg-[#DBC166] text-white px-2 py-1 rounded text-xs font-bold">
                             🏆 WINNER
                           </div>
+                          {!isAuthenticated && (
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                              <span className="bg-black/70 text-white px-3 py-1 rounded text-sm">
+                                Sign up for future raffles
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -573,7 +696,22 @@ export default function UserDashboard() {
                       </div>
 
                       <div className="p-4">
-                        {/* Terms & Conditions Button for Completed Raffles */}
+                        {/* Sign Up Call to Action for Completed Promotions*/}
+                        {!isAuthenticated && (
+                          <div className="mb-4 p-3 bg-gradient-to-r from-[#F5F5DC]/50 to-[#DBC166]/20 rounded-lg border border-[#DBC166]/30">
+                            <p className="text-sm text-gray-700 mb-2">
+                              <span className="font-bold text-[#DBC166]">Missed this raffle?</span> Sign up to participate in upcoming ones!
+                            </p>
+                            <button
+                              onClick={() => navigate('/signup')}
+                              className="w-full bg-[#DBC166] text-black py-2 rounded-md text-sm font-bold hover:bg-[#c0a855] transition"
+                            >
+                              Sign Up Now
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Terms & Conditions Button for Completed Promotions*/}
                         {raffle.termsAndConditions && (
                           <div className="mb-3">
                             <button
@@ -623,7 +761,7 @@ export default function UserDashboard() {
 
               {withWinnerRaffles.length === 0 && (
                 <div className="col-span-full text-center p-8 text-gray-500">
-                  No raffles with winners yet.
+                  No Promotions with winners yet.
                 </div>
               )}
             </div>
