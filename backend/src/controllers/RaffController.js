@@ -598,7 +598,7 @@ export const updateRaffWithWinner = async (req, res) => {
                 const smtpConfig = {
                     host: "mail.themenuportal.co.za",
                     port: 465,
-                    user: "support@themenuportal.co.za",
+                    user: "members@themenuportal.co.za",
                 };
 
                 console.log(`📩 Sending email to: ${winnerEmail}`);
@@ -843,7 +843,7 @@ export const toggleVisibility = async (req, res, io) => {
                 const smtpConfig = {
                     host: "mail.themenuportal.co.za",
                     port: 465,
-                    user: "support@themenuportal.co.za",
+                    user: "members@themenuportal.co.za",
                 };
                 try {
                     // Send email to winner

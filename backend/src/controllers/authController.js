@@ -240,7 +240,7 @@ export const signUp = async (req, res) => {
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
             port: 465,
-            user: "support@themenuportal.co.za",
+            user: "members@themenuportal.co.za",
         };
 
         console.log("📧 Sending welcome email to:", newUser.email);
@@ -330,7 +330,7 @@ export const forgotPassword = async (req, res) => {
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
             port: 465,
-            user: "support@themenuportal.co.za",
+            user: "members@themenuportal.co.za",
         };
 
         await sendEmail(
@@ -396,7 +396,7 @@ export const resetPassword = async (req, res) => {
         const smtpConfig = {
             host: "mail.themenuportal.co.za",
             port: 465,
-            user: "support@themenuportal.co.za",
+            user: "members@themenuportal.co.za",
         };
 
         await sendEmail(

@@ -133,7 +133,7 @@ export const delUser = async (req, res) => {
     const smtpConfig = {
       host: "mail.themenuportal.co.za",
       port: 465,
-      user: "support@themenuportal.co.za",
+      user: "members@themenuportal.co.za",
     };
 
     const emailSent = await sendEmail(
